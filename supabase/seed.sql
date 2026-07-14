@@ -1,0 +1,2 @@
+-- Optional local seed. Prefer creating households via the app during Phase 0.
+-- Kept intentionally empty of user PII.
