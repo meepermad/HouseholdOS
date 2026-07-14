@@ -3,6 +3,7 @@
 :root {
   --background: #f3efe6;
   --foreground: #142033;
+  --ink: #142033;
   --surface: #fffdf8;
   --accent: #1f6f5b;
   --accent-soft: #d7ebe4;
@@ -12,6 +13,7 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-ink: var(--ink);
   --color-surface: var(--surface);
   --color-accent: var(--accent);
   --color-accent-soft: var(--accent-soft);

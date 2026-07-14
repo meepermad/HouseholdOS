@@ -4,7 +4,9 @@ import path from "node:path";
 import os from "node:os";
 
 const hasSupabase = Boolean(
-  process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+  process.env.NEXT_PUBLIC_SUPABASE_URL &&
+    (process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY),
 );
 
 function playwrightBrowsersInstalled(): boolean {
@@ -15,9 +17,12 @@ function playwrightBrowsersInstalled(): boolean {
   return fs.readdirSync(base).some((name) => name.startsWith("chromium"));
 }
 
-test.describe("membership critical path", () => {
+test.describe("foundation critical path", () => {
   test.skip(!hasSupabase, "Requires Supabase env for end-to-end auth flows");
-  test.skip(!playwrightBrowsersInstalled(), "Run `npx playwright install` (needs free disk space)");
+  test.skip(
+    !playwrightBrowsersInstalled(),
+    "Run `npx playwright install` (needs free disk space)",
+  );
 
   test("landing offers auth entry points", async ({ page }) => {
     await page.goto("/");
@@ -26,9 +31,17 @@ test.describe("membership critical path", () => {
     await expect(page.getByRole("link", { name: "Sign in" })).toBeVisible();
   });
 
-  test("signup page renders", async ({ page }) => {
+  test("signup and login pages render", async ({ page }) => {
     await page.goto("/signup");
     await expect(page.getByRole("heading", { name: "Create account" })).toBeVisible();
-    await expect(page.getByLabel("Email")).toBeVisible();
+    await page.goto("/login");
+    await expect(page.getByRole("heading", { name: "Sign in" })).toBeVisible();
+    await page.goto("/forgot-password");
+    await expect(page.getByRole("heading", { name: "Forgot password" })).toBeVisible();
+  });
+
+  test("protected route redirects unauthenticated users", async ({ page }) => {
+    await page.goto("/app");
+    await expect(page).toHaveURL(/\/login/);
   });
 });

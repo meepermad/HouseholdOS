@@ -1,2 +1,2 @@
--- Optional local seed. Prefer creating households via the app during Phase 0.
--- Kept intentionally empty of user PII.
+# Local seed intentionally has no PII.
+# Create users and households through the app (bootstrap registration) or tests.

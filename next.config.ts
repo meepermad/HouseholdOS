@@ -5,6 +5,19 @@ const withPWA = withPWAInit({
   dest: "public",
   disable: process.env.NODE_ENV === "development",
   register: true,
+  // Do not aggressively cache authenticated household navigations.
+  workboxOptions: {
+    runtimeCaching: [
+      {
+        urlPattern: ({ request, url }: { request: Request; url: URL }) =>
+          request.mode === "navigate" &&
+          (url.pathname.startsWith("/app") ||
+            url.pathname.startsWith("/onboarding") ||
+            url.pathname.startsWith("/join")),
+        handler: "NetworkOnly",
+      },
+    ],
+  },
 });
 
 const nextConfig: NextConfig = {

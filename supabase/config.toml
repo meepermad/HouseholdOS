@@ -21,7 +21,7 @@ enabled = false
 enabled = true
 port = 54323
 
-[inbucket]
+[local_smtp]
 enabled = true
 port = 54324
 
@@ -32,9 +32,15 @@ file_size_limit = "50MiB"
 [auth]
 enabled = true
 site_url = "http://127.0.0.1:3000"
-additional_redirect_urls = ["http://localhost:3000"]
+additional_redirect_urls = ["http://localhost:3000", "http://localhost:3000/auth/callback", "http://localhost:3000/reset-password"]
 enable_signup = true
 
 [auth.email]
 enable_signup = true
 enable_confirmations = false
+
+# Requires Postgres function from migration 20260714151000.
+# Hosted activation also required in Dashboard (Auth → Hooks).
+[auth.hook.before_user_created]
+enabled = true
+uri = "pg-functions://postgres/public/hook_before_user_created"

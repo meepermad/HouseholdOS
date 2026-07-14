@@ -1,44 +1,44 @@
-# HouseholdOS Architecture (Phase 0)
+# Architecture (Foundation phase)
 
-HouseholdOS is a private, mobile-first household management PWA. Phase 0 establishes identity, multi-household tenancy, membership, invitations, settings, RLS, and audit foundations.
+HouseholdOS is a private, mobile-first household management PWA. This phase establishes identity, multi-household tenancy, membership responsibilities, invitations, settings, RLS, audit events, and the protected application shell.
 
 ## Stack
 
-- Next.js App Router (`src/app`) + TypeScript + Tailwind CSS
-- Supabase Auth, PostgreSQL, Storage (Storage wired later for receipts)
-- Zod validation at mutation boundaries
-- Vitest (unit/integration) + Playwright (critical e2e)
-- PWA shell via `@ducanh2912/next-pwa` + web manifest
+- Next.js App Router (`src/app`) + TypeScript + Tailwind CSS v4
+- Supabase Auth, PostgreSQL, Storage (avatars deferred)
+- Zod validation; React Hook Form available for complex forms
+- Vitest (unit/component/integration) + Playwright (e2e)
+- Request interception via `src/proxy.ts` (Next.js 16; not legacy `middleware.ts`)
 
-## Conventions
+## Trust boundaries
 
-- Every household-owned row includes `household_id`
-- Monetary amounts are integer **cents** only (`src/lib/money.ts`) — no floating-point financial math
-- Default timezone `America/Chicago`, currency `USD`
-- Server actions recalculate/validate financial totals (later phases)
-- Confirmed financial records are immutable; corrections use amendments/reversals + audit events
-- Receipt OCR never creates confirmed reimbursements (later phases)
-- Group chat stays external; HouseholdOS stores commitments, money, ownership, evidence
+| Client | Module | Key | RLS |
+|---|---|---|---|
+| Browser | `src/lib/supabase/client.ts` | publishable | yes |
+| Authenticated server | `src/lib/supabase/server.ts` | publishable + cookies | yes |
+| Privileged server | `src/lib/supabase/privileged.ts` | secret | bypass — use sparingly |
 
-## Request path
+## Household context (hybrid)
 
-1. `src/proxy.ts` refreshes Supabase auth cookies
-2. Route layouts enforce authentication for `(app)` routes
-3. Server actions validate with Zod, check permissions, mutate via RLS/RPC
-4. Meaningful household mutations emit `audit_events`
+- Canonical routes: `/app/[householdId]/...`
+- Cookie `householdos_current_household` + `user_preferences.current_household_id`
+- Revalidated on every household layout load; revoked membership clears access
 
-## Key folders
+## Responsibilities
 
-| Path | Purpose |
-|---|---|
-| `src/app` | Routes, layouts, server actions |
-| `src/lib` | Money, permissions, audit, validations, Supabase clients |
-| `supabase/migrations` | Schema, RLS, transactional RPCs |
-| `tests/unit` | Pure logic tests |
-| `tests/integration` | RLS checks against local Supabase |
-| `tests/e2e` | Playwright membership flows |
-| `docs` | Architecture, permissions, audit |
+Normalized in `household_membership_roles`:
 
-## Out of Phase 0
+- `member`
+- `household_coordinator`
+- `financial_coordinator`
 
-Expenses, reimbursements, receipts/OCR, inventory, chores, shopping, agreements, and export jobs.
+No comma-separated role strings. No self-promotion.
+
+## Out of scope this phase
+
+## Out of scope for Phase 2 completion
+
+Receipt OCR, payment transfer integrations (Venmo/Zelle/Plaid), inventory, chores, supplies, maintenance agreements, email delivery.
+
+Phase 2 delivered: manual itemized expenses, allocation engine, reimbursement obligations, confirm/void/amend RPCs, Money UI.
+

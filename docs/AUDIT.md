@@ -1,37 +1,53 @@
-# Audit Event Strategy (Phase 0)
+# Audit events
 
 ## Principles
 
-- Append-only `audit_events` table: members may `INSERT`/`SELECT`; no `UPDATE`/`DELETE` policies
-- Every meaningful household mutation should emit an audit row
-- Prefer writing audit + domain mutation in one Postgres transaction (RPCs for create household, invite, accept invite)
-- For leave/remove, audit is written **before** membership status changes so RLS still allows the insert
-- Later phases: confirmed financial rows are never silently edited; corrections create amendments/reversals plus audit events
-- Later phases: OCR produces drafts only; confirmation is an explicit audited transition
+- Append-only `audit_events`
+- Clients write via `write_audit_event` (allowlisted event types) or SECURITY DEFINER RPCs insert directly
+- Actor is always derived from `auth.uid()` — never client-supplied
+- No `UPDATE` / `DELETE` policies for ordinary roles
+- Prefer writing audit inside transactional RPCs for financial mutations
+- Never store passwords, raw invite tokens, secret keys, or credentials
 
-## Phase 0 actions
+## Event types (foundation)
 
 - `household.created`
 - `household.updated`
 - `household.archived`
-- `member.invited`
-- `member.joined`
-- `member.role_changed`
-- `member.removed`
-- `member.left`
-- `invite.revoked`
-- `settings.updated`
+- `household.settings_updated`
+- `invitation.created`
+- `invitation.accepted`
+- `invitation.declined`
+- `invitation.revoked`
+- `membership.status_changed`
+- `membership.roles_changed`
+- `profile.recovered`
 
-## Payload shape
+## Event types (Phase 2 expenses)
+
+- `expense.created`
+- `expense.submitted_for_review`
+- `expense.confirmed`
+- `expense.amendment_created`
+- `expense.amended`
+- `expense.voided`
+- `expense.draft_deleted`
+- `reimbursement.created`
+- `reimbursement.adjusted`
+- `reimbursement.reversed`
+- `reimbursement.waived`
+
+## Shape
 
 | Column | Purpose |
 |---|---|
 | `household_id` | Tenant scope |
-| `actor_user_id` | Who performed the action |
-| `entity_type` / `entity_id` | Subject of the change |
-| `action` | Stable action string |
-| `before_state` / `after_state` | Redacted JSON snapshots |
-| `metadata` | Extra context (e.g. invitation id, transfer flag) |
-| `created_at` | Immutable timestamp |
+| `actor_user_id` | Actor |
+| `entity_type` / `entity_id` | Subject |
+| `event_type` | Stable event name |
+| `before_state` / `after_state` | Redacted JSON |
+| `reason` | Optional |
+| `correlation_id` | Group related writes |
+| `created_at` | Immutable |
 
-Helpers live in `src/lib/audit.ts`.
+Helpers: `src/lib/audit.ts`, `buildAuditRow` in `src/lib/tokens.ts`.

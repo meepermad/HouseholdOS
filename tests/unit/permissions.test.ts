@@ -1,60 +1,45 @@
 import { describe, expect, it } from "vitest";
 import {
   can,
-  canChangeRole,
-  canRemoveMember,
+  canChangeRoles,
+  normalizeRoles,
 } from "@/lib/permissions";
-import { createHouseholdSchema, inviteMemberSchema } from "@/lib/validations/household";
 
 describe("permissions", () => {
-  it("allows owners to archive and transfer, not leave", () => {
-    expect(can("owner", "household.archive")).toBe(true);
-    expect(can("owner", "member.transfer_ownership")).toBe(true);
-    expect(can("owner", "member.leave")).toBe(false);
+  it("grants invite only to household coordinators", () => {
+    expect(can(["member"], "member.invite")).toBe(false);
+    expect(can(["member", "household_coordinator"], "member.invite")).toBe(true);
   });
 
-  it("restricts admin role changes around owners", () => {
+  it("prevents self role changes", () => {
     expect(
-      canChangeRole({
-        actorRole: "admin",
-        targetCurrentRole: "member",
-        targetNextRole: "admin",
+      canChangeRoles({
+        actorRoles: ["member", "household_coordinator"],
+        actorIsTarget: true,
+        nextRoles: ["member", "household_coordinator", "financial_coordinator"],
+      }),
+    ).toBe(false);
+  });
+
+  it("allows coordinator to change another member roles", () => {
+    expect(
+      canChangeRoles({
+        actorRoles: ["member", "household_coordinator"],
         actorIsTarget: false,
+        nextRoles: ["member", "financial_coordinator"],
       }),
     ).toBe(true);
-    expect(
-      canChangeRole({
-        actorRole: "admin",
-        targetCurrentRole: "owner",
-        targetNextRole: "member",
-        actorIsTarget: false,
-      }),
-    ).toBe(false);
   });
 
-  it("prevents removing owners", () => {
-    expect(
-      canRemoveMember({
-        actorRole: "owner",
-        targetRole: "owner",
-        actorIsTarget: false,
-      }),
-    ).toBe(false);
-  });
-});
-
-describe("zod household schemas", () => {
-  it("accepts valid create payload", () => {
-    const result = createHouseholdSchema.safeParse({ name: "Oak Street" });
-    expect(result.success).toBe(true);
+  it("normalizes roles to always include member", () => {
+    expect(normalizeRoles(["financial_coordinator"])).toEqual([
+      "member",
+      "financial_coordinator",
+    ]);
   });
 
-  it("rejects owner invites", () => {
-    const result = inviteMemberSchema.safeParse({
-      householdId: "11111111-1111-1111-1111-111111111111",
-      email: "a@example.com",
-      role: "owner",
-    });
-    expect(result.success).toBe(false);
+  it("grants expense capabilities to every active role", () => {
+    expect(can(["member"], "expense.create")).toBe(true);
+    expect(can(["financial_coordinator"], "expense.void")).toBe(true);
   });
 });
