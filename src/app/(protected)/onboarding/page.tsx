@@ -74,7 +74,10 @@ export default async function OnboardingPage() {
             <ul className="space-y-2">
               {households.map((h) => (
                 <li key={h.id}>
-                  <ActionForm action={switchHouseholdAction}>
+                  <ActionForm
+                    action={switchHouseholdAction}
+                    pendingLabel="Opening household…"
+                  >
                     <input type="hidden" name="householdId" value={h.id} />
                     <button
                       type="submit"

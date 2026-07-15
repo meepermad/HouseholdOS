@@ -103,14 +103,13 @@ export async function assertActiveMembership(
     );
   }
 
-  const roles = await getMembershipRoles(membership.id);
-
-  // Preference sync is DB-only and safe in RSC; cookie sync happens in actions.
-  try {
-    await syncCurrentHouseholdPreference(householdId);
-  } catch {
-    // Preference write must not block authorized dashboard access.
-  }
+  // Roles + preference sync are independent after membership is known.
+  const [roles] = await Promise.all([
+    getMembershipRoles(membership.id),
+    syncCurrentHouseholdPreference(householdId).catch(() => {
+      // Preference write must not block authorized dashboard access.
+    }),
+  ]);
 
   return {
     userId: user.id,

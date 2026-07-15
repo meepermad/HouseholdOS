@@ -37,4 +37,9 @@ Add production Site URL and `https://<your-domain>/auth/callback` in the Supabas
 
 ## PWA
 
-Service worker is enabled in production via `@ducanh2912/next-pwa`. Do not cache authenticated household HTML/API responses aggressively; the default configure path should exclude Next document navigation from opaque offline caching for private routes.
+Service worker is enabled in production via `@ducanh2912/next-pwa` (`next.config.ts`).
+
+- Authenticated navigations under `/app`, `/onboarding`, and `/join` use Workbox **NetworkOnly** — do not cache household HTML or financial responses for offline reuse.
+- Static assets may be cached; a client banner prompts “Refresh to update” when a waiting worker is detected.
+- Manifest (`public/manifest.webmanifest`): `display: standalone`, `start_url: /app`, theme/background colors aligned with the light page background (`#f3efe6`). Runtime `theme-color` meta tracks light/dark resolution.
+- The site remains fully usable without installation.

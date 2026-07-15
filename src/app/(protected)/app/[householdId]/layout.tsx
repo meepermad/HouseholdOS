@@ -41,11 +41,17 @@ export default async function HouseholdLayout({
   }
 
   const supabase = await createClient();
-  const { data: household, error: householdError } = await supabase
-    .from("households")
-    .select("id, name, property_nickname, status")
-    .eq("id", householdId)
-    .maybeSingle();
+
+  const [householdResult, authorized] = await Promise.all([
+    supabase
+      .from("households")
+      .select("id, name, property_nickname, status")
+      .eq("id", householdId)
+      .maybeSingle(),
+    listAuthorizedHouseholdIds(ctx.userId),
+  ]);
+
+  const { data: household, error: householdError } = householdResult;
 
   if (householdError) {
     logServerError("household_layout_query", householdError, { householdId });
@@ -58,22 +64,49 @@ export default async function HouseholdLayout({
     notFound();
   }
 
-  const authorized = await listAuthorizedHouseholdIds(ctx.userId);
   const { data: households } = await supabase
     .from("households")
     .select("id, name")
-    .in("id", authorized)
+    .in("id", authorized.length ? authorized : [household.id])
     .eq("status", "active");
 
+  const householdOptions =
+    households ?? [{ id: household.id, name: household.name }];
+
   return (
-    <div className="mx-auto flex min-h-dvh w-full max-w-lg flex-col">
-      <ShellHeader householdName={household.name} />
-      <HouseholdSwitcher
-        householdId={householdId}
-        households={households ?? [{ id: household.id, name: household.name }]}
-      />
-      <HouseholdNav householdId={householdId} />
-      <div className="flex-1 px-4 py-6">{children}</div>
+    <div className="safe-px mx-auto flex min-h-dvh w-full max-w-5xl flex-col lg:flex-row">
+      <aside className="hidden w-64 shrink-0 border-r border-border bg-navigation lg:flex lg:flex-col">
+        <div className="border-b border-border p-4">
+          <p className="font-[family-name:var(--font-display)] text-lg text-text-primary">
+            HouseholdOS
+          </p>
+          <p className="mt-1 truncate text-xs text-text-muted">{household.name}</p>
+        </div>
+        <div className="border-b border-border p-3">
+          <HouseholdSwitcher
+            householdId={householdId}
+            households={householdOptions}
+            compact
+          />
+        </div>
+        <HouseholdNav householdId={householdId} variant="sidebar" />
+      </aside>
+
+      <div className="flex min-w-0 flex-1 flex-col">
+        <div className="lg:hidden">
+          <ShellHeader householdName={household.name} />
+          <HouseholdSwitcher
+            householdId={householdId}
+            households={householdOptions}
+          />
+          <HouseholdNav householdId={householdId} variant="top" />
+        </div>
+        <div className="hidden border-b border-border lg:block">
+          <ShellHeader householdName={household.name} />
+        </div>
+        <div className="flex-1 px-4 py-6 pb-24 md:px-6 lg:pb-6">{children}</div>
+        <HouseholdNav householdId={householdId} variant="bottom" />
+      </div>
     </div>
   );
 }

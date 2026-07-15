@@ -27,19 +27,20 @@ export async function getBalancesForMembership(
   membershipId: string,
 ) {
   const supabase = await createClient();
-  const { data: owed } = await supabase
-    .from("reimbursement_obligations")
-    .select("current_amount_cents")
-    .eq("household_id", householdId)
-    .eq("debtor_membership_id", membershipId)
-    .eq("status", "pending");
-
-  const { data: owedToYou } = await supabase
-    .from("reimbursement_obligations")
-    .select("current_amount_cents")
-    .eq("household_id", householdId)
-    .eq("creditor_membership_id", membershipId)
-    .eq("status", "pending");
+  const [{ data: owed }, { data: owedToYou }] = await Promise.all([
+    supabase
+      .from("reimbursement_obligations")
+      .select("current_amount_cents")
+      .eq("household_id", householdId)
+      .eq("debtor_membership_id", membershipId)
+      .eq("status", "pending"),
+    supabase
+      .from("reimbursement_obligations")
+      .select("current_amount_cents")
+      .eq("household_id", householdId)
+      .eq("creditor_membership_id", membershipId)
+      .eq("status", "pending"),
+  ]);
 
   const youOwe = (owed ?? []).reduce((s, r) => s + r.current_amount_cents, 0);
   const youAreOwed = (owedToYou ?? []).reduce(

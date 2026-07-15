@@ -89,6 +89,7 @@ export function ExpenseItemEditor({
 
   return (
     <ActionForm
+      pendingLabel="Saving expense item…"
       action={upsertExpenseItemAction}
       className="space-y-3 rounded-md border border-line bg-surface p-3"
     >

@@ -248,7 +248,7 @@ export default async function EditExpensePage({
       />
 
       <div className="flex flex-wrap gap-2">
-        <ActionForm action={submitExpenseForReviewAction}>
+        <ActionForm action={submitExpenseForReviewAction} pendingLabel="Submitting for review…">
           <input type="hidden" name="householdId" value={householdId} />
           <input type="hidden" name="expenseId" value={expenseId} />
           <button

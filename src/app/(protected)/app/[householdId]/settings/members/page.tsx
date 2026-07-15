@@ -114,7 +114,9 @@ export default async function MembersSettingsPage({
               Pending invitations
             </h2>
             {(invitations ?? []).length === 0 ? (
-              <p className="text-sm text-slate-500">No pending invitations.</p>
+              <p className="text-sm text-text-muted">
+                No pending invitations. Create an invite link above when you are ready to add a roommate.
+              </p>
             ) : (
               <ul className="space-y-3">
                 {(invitations ?? []).map((invite) => (
@@ -128,10 +130,10 @@ export default async function MembersSettingsPage({
                         Expires {new Date(invite.expires_at).toLocaleString()}
                       </p>
                     </div>
-                    <ActionForm action={revokeInviteAction}>
+                    <ActionForm action={revokeInviteAction} pendingLabel="Revoking invitation…">
                       <input type="hidden" name="householdId" value={householdId} />
                       <input type="hidden" name="invitationId" value={invite.id} />
-                      <button type="submit" className="text-red-700 underline">
+                      <button type="submit" className="text-destructive underline">
                         Revoke
                       </button>
                     </ActionForm>

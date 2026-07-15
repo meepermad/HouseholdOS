@@ -111,7 +111,12 @@ export default async function HouseholdHomePage({
           Recent activity
         </h2>
         {(activity ?? []).length === 0 ? (
-          <p className="text-sm text-slate-500">No activity yet.</p>
+          <div className="rounded-md border border-dashed border-border px-3 py-4 text-sm text-text-secondary">
+            <p className="font-medium text-text-primary">No recent activity</p>
+            <p className="mt-1 text-text-muted">
+              Household events such as invites and expense confirmations will appear here as they happen.
+            </p>
+          </div>
         ) : (
           <ul className="space-y-2 text-sm">
             {(activity ?? []).map((event) => (

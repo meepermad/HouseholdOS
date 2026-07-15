@@ -75,7 +75,7 @@ export default async function JoinInvitePage({
         {new Date(preview.expires_at).toLocaleString()}
       </p>
       <div className="mt-8 flex gap-3">
-        <ActionForm action={acceptInviteAction}>
+        <ActionForm action={acceptInviteAction} pendingLabel="Joining household…">
           <input type="hidden" name="token" value={token} />
           <button
             type="submit"
@@ -84,7 +84,7 @@ export default async function JoinInvitePage({
             Accept
           </button>
         </ActionForm>
-        <ActionForm action={declineInviteAction}>
+        <ActionForm action={declineInviteAction} pendingLabel="Declining invitation…">
           <input type="hidden" name="token" value={token} />
           <button type="submit" className="rounded-md border border-line px-4 py-3 text-sm">
             Decline

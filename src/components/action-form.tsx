@@ -12,11 +12,13 @@ export function ActionForm({
   action,
   children,
   className,
+  pendingLabel = "Working…",
 }: {
   action: Action;
   children: React.ReactNode;
   className?: string;
   successRedirect?: string;
+  pendingLabel?: string;
 }) {
   const [state, formAction, pending] = useActionState(action, null);
 
@@ -26,18 +28,18 @@ export function ActionForm({
         {children}
       </fieldset>
       {state && !state.ok ? (
-        <p className="text-sm text-red-700" role="alert">
+        <p className="text-sm text-destructive" role="alert">
           {state.error}
         </p>
       ) : null}
       {state?.ok && state.message ? (
-        <p className="text-sm text-emerald-800" role="status">
+        <p className="text-sm text-success" role="status">
           {state.message}
         </p>
       ) : null}
       {pending ? (
-        <p className="text-sm text-slate-500" aria-live="polite">
-          Working…
+        <p className="text-sm text-text-muted" aria-live="polite" role="status">
+          {pendingLabel}
         </p>
       ) : null}
     </form>

@@ -71,6 +71,7 @@ export function ExpenseAdjustmentEditor({
     <ActionForm
       action={upsertExpenseAdjustmentAction}
       className="space-y-3 rounded-md border border-line bg-surface p-3"
+      pendingLabel="Saving adjustment…"
     >
       <input type="hidden" name="householdId" value={householdId} />
       <input type="hidden" name="expenseId" value={expenseId} />

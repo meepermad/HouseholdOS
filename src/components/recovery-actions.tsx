@@ -3,6 +3,7 @@
 /**
  * Standalone recovery action forms — no shell, ActionForm, or heavy imports.
  * Safe to render from error boundaries and global-error.
+ * Neutrally styled for light and dark readability without depending on the app shell.
  */
 
 type Style = Record<string, string | number>;
@@ -11,11 +12,12 @@ const buttonStyle: Style = {
   display: "inline-block",
   marginTop: "0.5rem",
   marginRight: "0.5rem",
+  minHeight: "2.75rem",
   padding: "0.6rem 1rem",
   borderRadius: "0.375rem",
-  border: "1px solid #d9d2c3",
-  background: "#fffdf8",
-  color: "#142033",
+  border: "1px solid #6b7280",
+  background: "transparent",
+  color: "inherit",
   fontSize: "0.875rem",
   fontWeight: 600,
   cursor: "pointer",

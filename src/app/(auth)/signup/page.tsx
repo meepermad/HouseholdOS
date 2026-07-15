@@ -36,7 +36,7 @@ export default async function SignupPage({
           Sign in
         </Link>
       </p>
-      <ActionForm action={signUpAction} className="mt-8 space-y-4">
+      <ActionForm action={signUpAction} className="mt-8 space-y-4" pendingLabel="Creating account…">
         <input type="hidden" name="next" value={next} />
         {params.invite ? (
           <input type="hidden" name="inviteToken" value={params.invite} />

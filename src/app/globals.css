@@ -5,9 +5,69 @@
   --foreground: #142033;
   --ink: #142033;
   --surface: #fffdf8;
+  --surface-elevated: #ffffff;
+  --surface-secondary: #f0ebe0;
+  --surface-interactive: #e7f0ea;
+  --text-primary: #142033;
+  --text-secondary: #3d4a5c;
+  --text-muted: #5c6b7a;
+  --border: #d9d2c3;
+  --border-strong: #b8a99a;
+  --primary: #1f6f5b;
+  --primary-foreground: #ffffff;
+  --secondary: #e8e2d4;
+  --secondary-foreground: #142033;
+  --destructive: #b42318;
+  --destructive-foreground: #ffffff;
+  --success: #0f6b4c;
+  --success-soft: #d7ebe4;
+  --warning: #9a6700;
+  --warning-soft: #fef3c7;
+  --info: #175cd3;
+  --info-soft: #dbeafe;
+  --focus-ring: #1f6f5b;
+  --overlay: rgb(20 32 51 / 0.45);
+  --skeleton: #e5dfd2;
+  --navigation: #fffdf8;
+  --input-bg: #fffdf8;
   --accent: #1f6f5b;
   --accent-soft: #d7ebe4;
   --line: #d9d2c3;
+}
+
+.dark {
+  --background: #0f1419;
+  --foreground: #e8e4db;
+  --ink: #e8e4db;
+  --surface: #1a2129;
+  --surface-elevated: #232b35;
+  --surface-secondary: #151b22;
+  --surface-interactive: #24302c;
+  --text-primary: #e8e4db;
+  --text-secondary: #b8c0ca;
+  --text-muted: #8b96a3;
+  --border: #2e3844;
+  --border-strong: #4a5563;
+  --primary: #3d9b82;
+  --primary-foreground: #0a1210;
+  --secondary: #2a3340;
+  --secondary-foreground: #e8e4db;
+  --destructive: #f97066;
+  --destructive-foreground: #1a0a08;
+  --success: #3ecf8e;
+  --success-soft: #163528;
+  --warning: #fbbf24;
+  --warning-soft: #3d2e0a;
+  --info: #60a5fa;
+  --info-soft: #1e3a5f;
+  --focus-ring: #3d9b82;
+  --overlay: rgb(0 0 0 / 0.6);
+  --skeleton: #2a3340;
+  --navigation: #1a2129;
+  --input-bg: #151b22;
+  --accent: #3d9b82;
+  --accent-soft: #1a322c;
+  --line: #2e3844;
 }
 
 @theme inline {
@@ -15,6 +75,31 @@
   --color-foreground: var(--foreground);
   --color-ink: var(--ink);
   --color-surface: var(--surface);
+  --color-surface-elevated: var(--surface-elevated);
+  --color-surface-secondary: var(--surface-secondary);
+  --color-surface-interactive: var(--surface-interactive);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
+  --color-focus-ring: var(--focus-ring);
+  --color-overlay: var(--overlay);
+  --color-skeleton: var(--skeleton);
+  --color-navigation: var(--navigation);
+  --color-input-bg: var(--input-bg);
   --color-accent: var(--accent);
   --color-accent-soft: var(--accent-soft);
   --color-line: var(--line);
@@ -24,13 +109,56 @@
 
 body {
   background:
-    radial-gradient(circle at top left, #e7f0ea 0%, transparent 40%),
-    linear-gradient(180deg, #f7f3ea 0%, #efe6d6 100%);
-  color: var(--foreground);
+    radial-gradient(circle at top left, color-mix(in srgb, var(--accent-soft) 70%, transparent) 0%, transparent 40%),
+    linear-gradient(180deg, var(--background) 0%, color-mix(in srgb, var(--background) 85%, var(--surface-secondary)) 100%);
+  color: var(--text-primary);
   font-family: var(--font-source-sans), system-ui, sans-serif;
   min-height: 100dvh;
 }
 
 a {
   color: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* PWA standalone + safe areas */
+.safe-pb {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.safe-pt {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+.safe-px {
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+}
+
+@media (display-mode: standalone) {
+  .standalone-top {
+    padding-top: max(0.5rem, env(safe-area-inset-top, 0px));
+  }
+
+  .standalone-only {
+    display: inline-flex !important;
+  }
+}
+
+.standalone-only {
+  display: none;
 }

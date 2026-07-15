@@ -22,7 +22,7 @@ export default async function NewExpensePage({
         Create a draft, then add itemized lines and confirm when reconciled.
       </p>
 
-      <ActionForm action={createExpenseDraftAction} className="space-y-3">
+      <ActionForm action={createExpenseDraftAction} className="space-y-3" pendingLabel="Saving expense…">
         <input type="hidden" name="householdId" value={householdId} />
 
         <label className="block text-sm">

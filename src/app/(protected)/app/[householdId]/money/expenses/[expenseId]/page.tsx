@@ -6,7 +6,8 @@ import {
   voidExpenseAction,
 } from "@/app/actions/expenses";
 import { assertActiveMembership } from "@/lib/household-context";
-import { formatMoney, statusLabel } from "@/lib/expenses/display";
+import { formatMoney } from "@/lib/expenses/display";
+import { ExpenseStatusBadge } from "@/components/ui/status-badge";
 import { loadExpenseBundle, recalculateBundle } from "@/lib/expenses/load-bundle";
 import { listActiveMemberOptions } from "@/lib/expenses/queries";
 import { can } from "@/lib/permissions";
@@ -29,23 +30,27 @@ export default async function ExpenseDetailPage({
     redirect(`/app/${householdId}/money/expenses/${expenseId}/edit`);
   }
 
-  const members = await listActiveMemberOptions(householdId);
+  const [members, obligationsResult, auditsResult] = await Promise.all([
+    listActiveMemberOptions(householdId),
+    supabase
+      .from("reimbursement_obligations")
+      .select("*")
+      .eq("expense_id", expenseId)
+      .order("created_at", { ascending: true }),
+    supabase
+      .from("audit_events")
+      .select("event_type, created_at, reason, after_state")
+      .eq("household_id", householdId)
+      .eq("entity_id", expenseId)
+      .order("created_at", { ascending: false })
+      .limit(20),
+  ]);
+
+  const obligations = obligationsResult.data;
+  const audits = auditsResult.data;
+
   const label = (id: string) =>
     members.find((m) => m.id === id)?.label ?? id.slice(0, 8);
-
-  const { data: obligations } = await supabase
-    .from("reimbursement_obligations")
-    .select("*")
-    .eq("expense_id", expenseId)
-    .order("created_at", { ascending: true });
-
-  const { data: audits } = await supabase
-    .from("audit_events")
-    .select("event_type, created_at, reason, after_state")
-    .eq("household_id", householdId)
-    .eq("entity_id", expenseId)
-    .order("created_at", { ascending: false })
-    .limit(20);
 
   // Rebuild explanation from stored allocation amounts when confirmed
   const calc =
@@ -60,8 +65,11 @@ export default async function ExpenseDetailPage({
       <div className="flex items-start justify-between gap-2">
         <div>
           <h1 className="text-2xl font-semibold">{e.merchant || "Expense"}</h1>
-          <p className="text-sm text-slate-600">
-            {statusLabel(e.status)} · {e.purchase_date} · {formatMoney(e.declared_total_cents)}
+          <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-text-secondary">
+            <ExpenseStatusBadge status={e.status} />
+            <span>
+              {e.purchase_date} · {formatMoney(e.declared_total_cents)}
+            </span>
           </p>
         </div>
         <Link href={`/app/${householdId}/money/expenses`} className="text-sm underline">
@@ -276,7 +284,7 @@ export default async function ExpenseDetailPage({
       {e.status === "confirmed" ? (
         <section className="space-y-4 border-t border-line pt-4">
           {can(ctx.roles, "expense.amend") ? (
-            <ActionForm action={createExpenseAmendmentAction} className="space-y-2">
+            <ActionForm action={createExpenseAmendmentAction} className="space-y-2" pendingLabel="Creating amendment…">
               <input type="hidden" name="householdId" value={householdId} />
               <input type="hidden" name="expenseId" value={expenseId} />
               <label className="block text-sm">
@@ -300,7 +308,7 @@ export default async function ExpenseDetailPage({
           ) : null}
 
           {can(ctx.roles, "expense.void") ? (
-            <ActionForm action={voidExpenseAction} className="space-y-2">
+            <ActionForm action={voidExpenseAction} className="space-y-2" pendingLabel="Voiding expense…">
               <input type="hidden" name="householdId" value={householdId} />
               <input type="hidden" name="expenseId" value={expenseId} />
               <label className="block text-sm">

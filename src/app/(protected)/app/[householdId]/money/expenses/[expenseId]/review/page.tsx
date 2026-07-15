@@ -106,7 +106,7 @@ export default async function ReviewExpensePage({
         >
           Back to edit
         </Link>
-        <ActionForm action={confirmExpenseAction}>
+        <ActionForm action={confirmExpenseAction} pendingLabel="Confirming expense…">
           <input type="hidden" name="householdId" value={householdId} />
           <input type="hidden" name="expenseId" value={expenseId} />
           <input type="hidden" name="idempotencyKey" value={idempotencyKey} />

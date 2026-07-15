@@ -57,26 +57,30 @@ export default async function LoginPage({
           Open recovery options
         </Link>
       </p>
-      <ActionForm action={signInAction} className="mt-8 space-y-4">
+      <ActionForm
+        action={signInAction}
+        className="mt-8 space-y-4"
+        pendingLabel="Signing in…"
+      >
         <input type="hidden" name="next" value={next} />
-        <label className="block text-sm">
+        <label className="block text-sm text-text-primary">
           Email
           <input
             name="email"
             type="email"
             required
             autoComplete="email"
-            className="mt-1 w-full rounded-md border border-line bg-surface px-3 py-2"
+            className="mt-1 min-h-11 w-full rounded-md border border-border bg-input-bg px-3 py-2"
           />
         </label>
-        <label className="block text-sm">
+        <label className="block text-sm text-text-primary">
           Password
           <input
             name="password"
             type="password"
             required
             autoComplete="current-password"
-            className="mt-1 w-full rounded-md border border-line bg-surface px-3 py-2"
+            className="mt-1 min-h-11 w-full rounded-md border border-border bg-input-bg px-3 py-2"
           />
         </label>
         <p className="text-sm">
@@ -86,7 +90,7 @@ export default async function LoginPage({
         </p>
         <button
           type="submit"
-          className="w-full rounded-md bg-accent px-4 py-3 text-sm font-semibold text-white"
+          className="w-full min-h-11 rounded-md bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground"
         >
           Sign in
         </button>

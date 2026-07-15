@@ -18,7 +18,7 @@ export default async function ResetPasswordPage() {
         HouseholdOS
       </p>
       <h1 className="mt-6 text-xl font-semibold">Choose a new password</h1>
-      <ActionForm action={resetPasswordAction} className="mt-8 space-y-4">
+      <ActionForm action={resetPasswordAction} className="mt-8 space-y-4" pendingLabel="Updating password…">
         <label className="block text-sm">
           New password
           <input

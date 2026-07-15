@@ -12,7 +12,7 @@ export default function ForgotPasswordPage() {
       <p className="mt-2 text-sm text-slate-600">
         We will email a reset link if an account exists for that address.
       </p>
-      <ActionForm action={forgotPasswordAction} className="mt-8 space-y-4">
+      <ActionForm action={forgotPasswordAction} className="mt-8 space-y-4" pendingLabel="Sending reset link…">
         <label className="block text-sm">
           Email
           <input

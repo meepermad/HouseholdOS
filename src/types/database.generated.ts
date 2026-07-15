@@ -958,16 +958,19 @@ export type Database = {
       user_preferences: {
         Row: {
           current_household_id: string | null
+          theme: string
           updated_at: string
           user_id: string
         }
         Insert: {
           current_household_id?: string | null
+          theme?: string
           updated_at?: string
           user_id: string
         }
         Update: {
           current_household_id?: string | null
+          theme?: string
           updated_at?: string
           user_id?: string
         }
