@@ -1,16 +1,60 @@
 import { z } from "zod";
 import { HOUSEHOLD_RESPONSIBILITIES } from "@/lib/permissions";
 
+function emptyToNull(value: unknown): string | null {
+  if (value == null) return null;
+  const s = String(value).trim();
+  return s.length === 0 ? null : s;
+}
+
+/** Convert a dollars form field to integer cents (exact, no float drift). */
+export function dollarsToCents(value: unknown): number {
+  const raw = String(value ?? "").trim();
+  if (!raw) return Number.NaN;
+  if (!/^\d+(\.\d{1,2})?$/.test(raw)) return Number.NaN;
+  const [whole, frac = ""] = raw.split(".");
+  const cents = Number.parseInt(whole, 10) * 100 + Number.parseInt(frac.padEnd(2, "0") || "0", 10);
+  return cents;
+}
+
 export const createHouseholdSchema = z
   .object({
-    name: z.string().trim().min(2).max(80),
-    propertyNickname: z.string().trim().max(80).optional().or(z.literal("")),
-    leaseStart: z.string().optional().or(z.literal("")),
-    leaseEnd: z.string().optional().or(z.literal("")),
-    timezone: z.string().min(1),
-    currency: z.string().regex(/^[A-Z]{3}$/),
-    purchaseApprovalThresholdCents: z.coerce.number().int().min(0).max(10_000_000),
-    acknowledgeReimbursementPolicy: z.union([z.literal("on"), z.literal("true"), z.boolean()]),
+    name: z.string().trim().min(2, "Household name is required.").max(80),
+    propertyNickname: z.preprocess(
+      emptyToNull,
+      z.string().trim().max(80).nullable(),
+    ),
+    leaseStart: z.preprocess(
+      emptyToNull,
+      z
+        .string()
+        .regex(/^\d{4}-\d{2}-\d{2}$/, "Lease start must be a valid date.")
+        .nullable(),
+    ),
+    leaseEnd: z.preprocess(
+      emptyToNull,
+      z
+        .string()
+        .regex(/^\d{4}-\d{2}-\d{2}$/, "Lease end must be a valid date.")
+        .nullable(),
+    ),
+    timezone: z.string().trim().min(1, "Timezone is required."),
+    currency: z
+      .string()
+      .trim()
+      .transform((v) => v.toUpperCase())
+      .pipe(z.string().regex(/^[A-Z]{3}$/, "Currency must be a 3-letter code.")),
+    /** Dollar amount from the form; converted to cents. */
+    purchaseApprovalThresholdDollars: z
+      .string()
+      .trim()
+      .min(1, "Purchase approval threshold is required."),
+    acknowledgeReimbursementPolicy: z.union([
+      z.literal("on"),
+      z.literal("true"),
+      z.boolean(),
+    ]),
+    idempotencyKey: z.string().uuid().optional(),
   })
   .superRefine((data, ctx) => {
     const ack =
@@ -28,10 +72,31 @@ export const createHouseholdSchema = z
       ctx.addIssue({
         code: "custom",
         path: ["leaseEnd"],
-        message: "Lease end must be on or after lease start.",
+        message: "Lease end must follow lease start.",
       });
     }
-  });
+    const cents = dollarsToCents(data.purchaseApprovalThresholdDollars);
+    if (!Number.isFinite(cents) || cents < 0 || cents > 10_000_000) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["purchaseApprovalThresholdDollars"],
+        message: "Enter a valid dollar amount (up to 2 decimal places).",
+      });
+    }
+  })
+  .transform((data) => ({
+    name: data.name,
+    propertyNickname: data.propertyNickname,
+    leaseStart: data.leaseStart,
+    leaseEnd: data.leaseEnd,
+    timezone: data.timezone,
+    currency: data.currency,
+    purchaseApprovalThresholdCents: dollarsToCents(
+      data.purchaseApprovalThresholdDollars,
+    ),
+    acknowledgeReimbursementPolicy: true as const,
+    idempotencyKey: data.idempotencyKey,
+  }));
 
 export const updateHouseholdSchema = z.object({
   householdId: z.string().uuid(),

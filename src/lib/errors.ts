@@ -86,26 +86,35 @@ export function mapInvitationError(message: string): AppError {
   if (m.includes("expired")) {
     return new AppError(
       "expired_invitation",
-      "This invitation has expired. Ask a household coordinator for a new link.",
+      "This invitation expired.",
     );
   }
   if (m.includes("revoked")) {
     return new AppError(
       "revoked_invitation",
-      "This invitation was revoked. Ask a household coordinator for a new link.",
+      "This invitation was revoked.",
     );
   }
   if (m.includes("email mismatch")) {
     return new AppError(
       "invalid_invitation",
-      "Sign in with the email address that received this invitation.",
+      "This invitation belongs to another email address.",
     );
   }
   if (m.includes("already used") || m.includes("already accepted")) {
     return new AppError(
       "conflict",
-      "This invitation has already been used.",
+      "This invitation has already been accepted.",
     );
+  }
+  if (m.includes("already a member") || m.includes("already member")) {
+    return new AppError(
+      "conflict",
+      "You are already a member of this household.",
+    );
+  }
+  if (m.includes("not authenticated")) {
+    return new AppError("authentication", "You must sign in first.");
   }
   if (m.includes("invalid")) {
     return new AppError(
@@ -114,6 +123,48 @@ export function mapInvitationError(message: string): AppError {
     );
   }
   return new AppError("invalid_invitation", "Unable to process this invitation.");
+}
+
+/** Map create_household / bootstrap RPC failures to user-facing copy. */
+export function mapHouseholdCreateError(message: string | undefined | null): AppError {
+  const m = (message ?? "").toLowerCase();
+  if (m.includes("not authenticated")) {
+    return new AppError("authentication", "You must sign in first.");
+  }
+  if (m.includes("profile") || m.includes("ensure_profile")) {
+    return new AppError(
+      "database_failure",
+      "Your profile could not be initialized.",
+    );
+  }
+  if (m.includes("name too short") || m.includes("household name")) {
+    return new AppError("validation", "Household name is required.");
+  }
+  if (m.includes("lease end") || m.includes("lease start")) {
+    return new AppError("validation", "Lease end must follow lease start.");
+  }
+  if (m.includes("currency")) {
+    return new AppError("validation", "Currency must be a 3-letter code like USD.");
+  }
+  if (m.includes("timezone")) {
+    return new AppError("validation", "Timezone is required.");
+  }
+  if (m.includes("threshold")) {
+    return new AppError("validation", "Purchase approval threshold is invalid.");
+  }
+  if (m.includes("reimbursement policy")) {
+    return new AppError(
+      "validation",
+      "You must acknowledge the reimbursement policy.",
+    );
+  }
+  if (m.includes("date") || m.includes("22007")) {
+    return new AppError("validation", "Lease dates must be valid calendar dates.");
+  }
+  return new AppError(
+    "database_failure",
+    "This household could not be created.",
+  );
 }
 
 export function toPublicErrorMessage(error: unknown): string {

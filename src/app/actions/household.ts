@@ -5,7 +5,13 @@ import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { can, canChangeRoles, normalizeRoles } from "@/lib/permissions";
 import { getServerEnv } from "@/lib/env/server";
-import { AppError, mapInvitationError, toPublicErrorMessage } from "@/lib/errors";
+import {
+  AppError,
+  logServerError,
+  mapHouseholdCreateError,
+  mapInvitationError,
+  toPublicErrorMessage,
+} from "@/lib/errors";
 import {
   assertActiveMembership,
   clearCurrentHouseholdCookie,
@@ -34,6 +40,7 @@ import {
 } from "@/lib/validations/household";
 import type { ActionResult } from "@/app/actions/auth";
 import type { HouseholdResponsibility } from "@/types/database";
+import { randomUUID } from "node:crypto";
 
 export async function createHouseholdAction(
   _prev: ActionResult | null,
@@ -42,13 +49,16 @@ export async function createHouseholdAction(
   try {
     const parsed = createHouseholdSchema.safeParse({
       name: formData.get("name"),
-      propertyNickname: formData.get("propertyNickname") || "",
-      leaseStart: formData.get("leaseStart") || "",
-      leaseEnd: formData.get("leaseEnd") || "",
+      propertyNickname: formData.get("propertyNickname"),
+      leaseStart: formData.get("leaseStart"),
+      leaseEnd: formData.get("leaseEnd"),
       timezone: formData.get("timezone"),
       currency: formData.get("currency"),
-      purchaseApprovalThresholdCents: formData.get("purchaseApprovalThresholdCents"),
+      purchaseApprovalThresholdDollars: formData.get(
+        "purchaseApprovalThresholdDollars",
+      ),
       acknowledgeReimbursementPolicy: formData.get("acknowledgeReimbursementPolicy"),
+      idempotencyKey: formData.get("idempotencyKey") || undefined,
     });
     if (!parsed.success) {
       return {
@@ -58,29 +68,53 @@ export async function createHouseholdAction(
     }
 
     const { supabase, user } = await requireUser();
-    if (!user) return { ok: false, error: "You must be signed in." };
+    if (!user) return { ok: false, error: "You must sign in first." };
 
-    const { data, error } = await supabase.rpc("create_household", {
-      p_name: parsed.data.name,
-      p_property_nickname: parsed.data.propertyNickname || undefined,
-      p_lease_start: parsed.data.leaseStart || undefined,
-      p_lease_end: parsed.data.leaseEnd || undefined,
-      p_timezone: parsed.data.timezone,
-      p_currency: parsed.data.currency,
-      p_purchase_approval_threshold_cents: parsed.data.purchaseApprovalThresholdCents,
-      p_acknowledge_reimbursement_policy: true,
-    });
+    const idempotencyKey = parsed.data.idempotencyKey ?? randomUUID();
 
-    if (error || !data) {
+    const { data, error } = await supabase.rpc(
+      "create_household_for_current_user",
+      {
+        p_name: parsed.data.name,
+        p_property_nickname: parsed.data.propertyNickname ?? undefined,
+        p_lease_start: parsed.data.leaseStart ?? undefined,
+        p_lease_end: parsed.data.leaseEnd ?? undefined,
+        p_timezone: parsed.data.timezone,
+        p_currency: parsed.data.currency,
+        p_purchase_approval_threshold_cents:
+          parsed.data.purchaseApprovalThresholdCents,
+        p_acknowledge_reimbursement_policy: true,
+        p_idempotency_key: idempotencyKey,
+      },
+    );
+
+    const row = Array.isArray(data) ? data[0] : data;
+    const householdId =
+      row && typeof row === "object" && "household_id" in row
+        ? String((row as { household_id: string }).household_id)
+        : null;
+
+    if (error || !householdId) {
+      logServerError("create_household_action", error, {
+        code: error?.code ?? null,
+        userId: user.id,
+      });
       return {
         ok: false,
-        error: "Unable to create the household. Please try again.",
+        error: mapHouseholdCreateError(error?.message).publicMessage,
       };
     }
 
-    await persistCurrentHousehold(data);
+    const { cookieSet } = await persistCurrentHousehold(householdId);
     revalidatePath("/app");
-    redirect(`/app/${data}`);
+    if (!cookieSet) {
+      logServerError("create_household_cookie_fallback", null, {
+        householdId,
+        userId: user.id,
+      });
+      redirect("/app");
+    }
+    redirect(`/app/${householdId}`);
   } catch (error) {
     if (error && typeof error === "object" && "digest" in error) throw error;
     return { ok: false, error: toPublicErrorMessage(error) };
@@ -99,6 +133,11 @@ export async function switchHouseholdAction(
       return { ok: false, error: "Invalid household." };
     }
     await assertActiveMembership(parsed.data.householdId);
+    const { cookieSet } = await persistCurrentHousehold(parsed.data.householdId);
+    revalidatePath("/app");
+    if (!cookieSet) {
+      redirect("/app");
+    }
     redirect(`/app/${parsed.data.householdId}`);
   } catch (error) {
     if (error && typeof error === "object" && "digest" in error) throw error;
@@ -343,15 +382,28 @@ export async function acceptInviteAction(
     });
 
     if (error || !data) {
+      logServerError("accept_invite_action", error, {
+        code: error?.code ?? null,
+        userId: user.id,
+      });
       return {
         ok: false,
-        error: mapInvitationError(error?.message ?? "Invalid invitation").publicMessage,
+        error: mapInvitationError(error?.message ?? "Invalid invitation")
+          .publicMessage,
       };
     }
 
-    await persistCurrentHousehold(data);
+    const householdId = String(data);
+    const { cookieSet } = await persistCurrentHousehold(householdId);
     revalidatePath("/app");
-    redirect(`/app/${data}`);
+    if (!cookieSet) {
+      logServerError("accept_invite_cookie_fallback", null, {
+        householdId,
+        userId: user.id,
+      });
+      redirect("/app");
+    }
+    redirect(`/app/${householdId}`);
   } catch (error) {
     if (error && typeof error === "object" && "digest" in error) throw error;
     return { ok: false, error: toPublicErrorMessage(error) };

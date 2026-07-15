@@ -16,6 +16,8 @@ export default defineConfig(({ mode }) => {
       ],
       setupFiles: ["tests/setup.ts"],
       env,
+      // Linked Auth rate-limits when many suites create users concurrently.
+      fileParallelism: false,
     },
     resolve: {
       alias: {

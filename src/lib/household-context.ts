@@ -7,7 +7,7 @@ import {
   validateCurrentHouseholdSelection,
 } from "@/lib/navigation";
 import type { HouseholdResponsibility } from "@/types/database";
-import { AppError } from "@/lib/errors";
+import { AppError, logServerError } from "@/lib/errors";
 
 export type HouseholdContext = {
   userId: string;
@@ -64,6 +64,11 @@ export async function getMembershipRoles(
   return (data ?? []).map((r) => r.role as HouseholdResponsibility);
 }
 
+/**
+ * Verify active membership for a household URL.
+ * Must not mutate cookies — layouts call this during RSC render, and Next.js
+ * only allows cookie writes from Server Actions / Route Handlers.
+ */
 export async function assertActiveMembership(
   householdId: string,
 ): Promise<HouseholdContext> {
@@ -99,7 +104,13 @@ export async function assertActiveMembership(
   }
 
   const roles = await getMembershipRoles(membership.id);
-  await persistCurrentHousehold(householdId);
+
+  // Preference sync is DB-only and safe in RSC; cookie sync happens in actions.
+  try {
+    await syncCurrentHouseholdPreference(householdId);
+  } catch {
+    // Preference write must not block authorized dashboard access.
+  }
 
   return {
     userId: user.id,
@@ -109,7 +120,22 @@ export async function assertActiveMembership(
   };
 }
 
-export async function persistCurrentHousehold(householdId: string) {
+/** DB preference only — safe from Server Components. */
+export async function syncCurrentHouseholdPreference(householdId: string) {
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("set_current_household", {
+    p_household_id: householdId,
+  });
+  if (error) {
+    throw new AppError(
+      "database_failure",
+      "The household could not be selected automatically.",
+    );
+  }
+}
+
+/** Cookie only — Server Actions / Route Handlers. */
+export async function setCurrentHouseholdCookie(householdId: string) {
   const cookieStore = await cookies();
   cookieStore.set(CURRENT_HOUSEHOLD_COOKIE, householdId, {
     httpOnly: true,
@@ -118,9 +144,24 @@ export async function persistCurrentHousehold(householdId: string) {
     path: "/",
     maxAge: 60 * 60 * 24 * 365,
   });
+}
 
-  const supabase = await createClient();
-  await supabase.rpc("set_current_household", { p_household_id: householdId });
+/**
+ * Preference + cookie. Call only from Server Actions / Route Handlers.
+ * Cookie failure is logged and returned; preference failure throws.
+ */
+export async function persistCurrentHousehold(householdId: string): Promise<{
+  cookieSet: boolean;
+}> {
+  await syncCurrentHouseholdPreference(householdId);
+
+  try {
+    await setCurrentHouseholdCookie(householdId);
+    return { cookieSet: true };
+  } catch (error) {
+    logServerError("persist_current_household_cookie", error, { householdId });
+    return { cookieSet: false };
+  }
 }
 
 export async function clearCurrentHouseholdCookie() {
@@ -139,11 +180,10 @@ export async function resolvePreferredHouseholdId(
 ): Promise<string | null> {
   const authorized = await listAuthorizedHouseholdIds(userId);
   if (authorized.length === 0) {
-    // Stale cookie with no memberships — clear so /app ↔ cookie loops stop.
     try {
       await clearCurrentHouseholdCookie();
     } catch {
-      // Cookie store may be read-only in some contexts.
+      // Cookie store may be read-only in RSC.
     }
     return null;
   }
@@ -157,7 +197,6 @@ export async function resolvePreferredHouseholdId(
   });
   if (cookieValid) return cookieValid;
 
-  // Invalid / unauthorized cookie preference — clear without throwing.
   if (fromCookie) {
     try {
       await clearCurrentHouseholdCookie();
@@ -179,14 +218,6 @@ export async function resolvePreferredHouseholdId(
   });
   if (fromPrefs) return fromPrefs;
 
-  // Persist a valid preference when cookie/prefs were stale.
-  if (authorized[0]) {
-    try {
-      await persistCurrentHousehold(authorized[0]);
-    } catch {
-      // Prefer returning an id even if preference write fails.
-    }
-  }
-
-  return authorized[0] ?? null;
+  // No cookie/preference — leave selection null so /app can show the selector.
+  return null;
 }

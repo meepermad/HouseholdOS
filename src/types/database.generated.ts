@@ -1151,6 +1151,23 @@ export type Database = {
         }
         Returns: string
       }
+      create_household_for_current_user: {
+        Args: {
+          p_acknowledge_reimbursement_policy?: boolean
+          p_currency?: string
+          p_idempotency_key?: string
+          p_lease_end?: string
+          p_lease_start?: string
+          p_name: string
+          p_property_nickname?: string
+          p_purchase_approval_threshold_cents?: number
+          p_timezone?: string
+        }
+        Returns: {
+          household_id: string
+          membership_id: string
+        }[]
+      }
       create_household_invitation: {
         Args: {
           p_email: string

@@ -16,6 +16,7 @@ export default async function AppIndexPage() {
 
   const preferred = await resolvePreferredHouseholdId(user.id);
   if (!preferred) {
+    // Memberships exist but none selected — show the selector (onboarding).
     redirect("/onboarding");
   }
 

@@ -12,7 +12,6 @@ export function ActionForm({
   action,
   children,
   className,
-  successRedirect,
 }: {
   action: Action;
   children: React.ReactNode;
@@ -21,13 +20,11 @@ export function ActionForm({
 }) {
   const [state, formAction, pending] = useActionState(action, null);
 
-  if (state?.ok && successRedirect && typeof window !== "undefined") {
-    // Prefer server redirects from actions; this is a client fallback for non-redirect success.
-  }
-
   return (
     <form action={formAction} className={className} noValidate>
-      {children}
+      <fieldset disabled={pending} className="contents">
+        {children}
+      </fieldset>
       {state && !state.ok ? (
         <p className="text-sm text-red-700" role="alert">
           {state.error}
