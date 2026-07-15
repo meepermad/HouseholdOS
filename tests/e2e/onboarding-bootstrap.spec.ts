@@ -30,6 +30,9 @@ test.describe("Phase 2.2 create and join household", () => {
     !playwrightBrowsersInstalled(),
     "Run `npx playwright install` (needs free disk space)",
   );
+  test.beforeEach(({}, testInfo) => {
+    test.skip(testInfo.project.name !== "Desktop Chrome");
+  });
 
   test("zero-membership user can create a household and re-enter after refresh", async ({
     page,

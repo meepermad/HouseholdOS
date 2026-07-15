@@ -24,22 +24,23 @@ describe("recovery UI escape hatches", () => {
     );
     expect(within(root).getByRole("button", { name: "Sign out" })).toBeInTheDocument();
     expect(
-      within(root).getByRole("button", { name: "Clear selected household" }),
+      within(root).getByRole("button", { name: "Clear household selection" }),
     ).toBeInTheDocument();
     expect(within(root).getByTestId("error-reference")).toHaveTextContent("digest-abc");
   });
 
-  it("root error boundary renders escape controls", () => {
+  it("root error boundary renders escape controls and themed copy", () => {
     render(
       <RootErrorBoundary
         error={Object.assign(new Error("boom"), { digest: "root-1" })}
         reset={vi.fn()}
       />,
     );
+    expect(screen.getByRole("heading", { name: /something went wrong/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Try again" })).toBeInTheDocument();
     expect(screen.getAllByRole("button", { name: "Sign out" }).length).toBeGreaterThan(0);
     expect(
-      screen.getAllByRole("button", { name: "Clear selected household" }).length,
+      screen.getAllByRole("button", { name: "Clear household selection" }).length,
     ).toBeGreaterThan(0);
   });
 
@@ -61,11 +62,11 @@ describe("recovery UI escape hatches", () => {
     );
     const root = screen.getByTestId("unauthorized-household");
     expect(
-      within(root).getByRole("link", { name: /return to household selection/i }),
+      within(root).getByRole("link", { name: /choose a household/i }),
     ).toHaveAttribute("href", "/app");
     expect(within(root).getByRole("button", { name: "Sign out" })).toBeInTheDocument();
     expect(
-      within(root).getByRole("button", { name: "Clear selected household" }),
+      within(root).getByRole("button", { name: "Clear household selection" }),
     ).toBeInTheDocument();
   });
 });

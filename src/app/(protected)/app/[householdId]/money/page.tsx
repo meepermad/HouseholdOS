@@ -9,6 +9,7 @@ import { ExpenseStatusBadge } from "@/components/ui/status-badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AppBackButton } from "@/components/app-back-button";
+import { MoneyActionCenter } from "@/components/payments/action-center";
 
 export const dynamic = "force-dynamic";
 
@@ -21,22 +22,22 @@ async function BalanceCards({
 }) {
   const balances = await getBalancesForMembership(householdId, membershipId);
   return (
-    <section className="grid grid-cols-1 gap-2 text-center sm:grid-cols-3">
-      <div className="rounded-md border border-border bg-surface p-3">
+      <section className="grid grid-cols-1 gap-3 text-center sm:grid-cols-3">
+      <div className="rounded-md border border-border bg-surface p-4">
         <p className="text-xs text-text-muted">You owe</p>
-        <p className="text-lg font-semibold tabular-nums" aria-label={`You owe ${formatMoney(balances.youOwe)}`}>
+        <p className="mt-1 text-lg font-semibold tabular-nums" aria-label={`You owe ${formatMoney(balances.youOwe)}`}>
           {formatMoney(balances.youOwe)}
         </p>
       </div>
-      <div className="rounded-md border border-border bg-surface p-3">
+      <div className="rounded-md border border-border bg-surface p-4">
         <p className="text-xs text-text-muted">You are owed</p>
-        <p className="text-lg font-semibold tabular-nums" aria-label={`You are owed ${formatMoney(balances.youAreOwed)}`}>
+        <p className="mt-1 text-lg font-semibold tabular-nums" aria-label={`You are owed ${formatMoney(balances.youAreOwed)}`}>
           {formatMoney(balances.youAreOwed)}
         </p>
       </div>
-      <div className="rounded-md border border-border bg-surface p-3">
+      <div className="rounded-md border border-border bg-surface p-4">
         <p className="text-xs text-text-muted">Net</p>
-        <p className="text-lg font-semibold tabular-nums" aria-label={`Net ${formatMoney(balances.net)}`}>
+        <p className="mt-1 text-lg font-semibold tabular-nums" aria-label={`Net ${formatMoney(balances.net)}`}>
           {formatMoney(balances.net)}
         </p>
       </div>
@@ -77,7 +78,7 @@ async function RecentExpenses({ householdId }: { householdId: string }) {
         <li key={e.id}>
           <Link
             href={`/app/${householdId}/money/expenses/${e.id}`}
-            className="flex flex-col gap-1 px-3 py-3 text-sm hover:bg-surface-interactive sm:flex-row sm:items-center sm:justify-between"
+            className="flex flex-col gap-2 px-4 py-3.5 text-sm hover:bg-surface-interactive sm:flex-row sm:items-center sm:justify-between"
           >
             <span className="flex flex-wrap items-center gap-2">
               <span className="font-medium">{e.merchant || "Expense"}</span>
@@ -110,7 +111,8 @@ export default async function MoneyHubPage({
           Money
         </h1>
         <p className="text-sm text-text-secondary">
-          Track shared purchases and who owes whom. Payments come in a later phase.
+          Track shared purchases, reimbursements, and external payment records. HouseholdOS
+          does not move money or verify payment providers.
         </p>
       </header>
 
@@ -126,6 +128,14 @@ export default async function MoneyHubPage({
         <BalanceCards householdId={householdId} membershipId={ctx.membershipId} />
       </Suspense>
 
+      <Suspense fallback={<Skeleton className="h-24 w-full" />}>
+        <MoneyActionCenter
+          householdId={householdId}
+          membershipId={ctx.membershipId}
+          userId={ctx.userId}
+        />
+      </Suspense>
+
       <div className="flex flex-wrap gap-2">
         {can(ctx.roles, "expense.create") ? (
           <Link
@@ -133,6 +143,14 @@ export default async function MoneyHubPage({
             className="inline-flex min-h-11 items-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
           >
             New expense
+          </Link>
+        ) : null}
+        {can(ctx.roles, "payment.create") ? (
+          <Link
+            href={`/app/${householdId}/money/payments/new`}
+            className="inline-flex min-h-11 items-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
+          >
+            Record payment
           </Link>
         ) : null}
         <Link
@@ -146,6 +164,30 @@ export default async function MoneyHubPage({
           className="inline-flex min-h-11 items-center rounded-md border border-border bg-secondary px-4 py-2 text-sm text-secondary-foreground"
         >
           Balances
+        </Link>
+        <Link
+          href={`/app/${householdId}/money/reimbursements`}
+          className="inline-flex min-h-11 items-center rounded-md border border-border bg-secondary px-4 py-2 text-sm text-secondary-foreground"
+        >
+          Reimbursements
+        </Link>
+        <Link
+          href={`/app/${householdId}/money/payments`}
+          className="inline-flex min-h-11 items-center rounded-md border border-border bg-secondary px-4 py-2 text-sm text-secondary-foreground"
+        >
+          Payments
+        </Link>
+        <Link
+          href={`/app/${householdId}/money/ledger`}
+          className="inline-flex min-h-11 items-center rounded-md border border-border bg-secondary px-4 py-2 text-sm text-secondary-foreground"
+        >
+          Ledger
+        </Link>
+        <Link
+          href={`/app/${householdId}/money/disputes`}
+          className="inline-flex min-h-11 items-center rounded-md border border-border bg-secondary px-4 py-2 text-sm text-secondary-foreground"
+        >
+          Disputes
         </Link>
       </div>
 

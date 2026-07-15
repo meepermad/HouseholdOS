@@ -135,25 +135,46 @@ a {
   }
 }
 
-/* PWA standalone + safe areas */
+/* PWA standalone + safe areas (requires viewport-fit=cover) */
+:root {
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  /* Bottom nav content row (~2.75rem) + hairline padding */
+  --app-bottom-nav-height: 3.25rem;
+}
+
 .safe-pb {
-  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-bottom: var(--safe-bottom);
 }
 
 .safe-pt {
-  padding-top: env(safe-area-inset-top, 0px);
+  padding-top: var(--safe-top);
 }
 
 .safe-px {
-  padding-left: env(safe-area-inset-left, 0px);
-  padding-right: env(safe-area-inset-right, 0px);
+  padding-left: var(--safe-left);
+  padding-right: var(--safe-right);
+}
+
+/* Sticky chrome clears Dynamic Island / notch in Safari and installed PWA */
+.shell-top {
+  padding-top: max(0.75rem, var(--safe-top));
+}
+
+/* Main column clearance under fixed bottom nav + home indicator */
+.app-main-pad {
+  padding-bottom: calc(var(--app-bottom-nav-height) + var(--safe-bottom) + 1.25rem);
+}
+
+@media (min-width: 1024px) {
+  .app-main-pad {
+    padding-bottom: 1.5rem;
+  }
 }
 
 @media (display-mode: standalone) {
-  .standalone-top {
-    padding-top: max(0.5rem, env(safe-area-inset-top, 0px));
-  }
-
   .standalone-only {
     display: inline-flex !important;
   }

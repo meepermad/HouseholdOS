@@ -31,6 +31,31 @@ export default defineConfig({
       use: { ...devices["Pixel 5"] },
     },
     {
+      // Chromium + iPhone SE viewport (WebKit not required locally).
+      name: "iPhone SE",
+      use: {
+        ...devices["Desktop Chrome"],
+        ...devices["iPhone SE"],
+        browserName: "chromium",
+      },
+    },
+    {
+      name: "iPhone 13",
+      use: {
+        ...devices["Desktop Chrome"],
+        ...devices["iPhone 13"],
+        browserName: "chromium",
+      },
+    },
+    {
+      name: "iPhone 14 Pro Max",
+      use: {
+        ...devices["Desktop Chrome"],
+        ...devices["iPhone 14 Pro Max"],
+        browserName: "chromium",
+      },
+    },
+    {
       name: "Desktop Chrome",
       use: { ...devices["Desktop Chrome"] },
     },

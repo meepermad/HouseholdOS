@@ -4,6 +4,7 @@ import {
   RecoveryClearHouseholdForm,
   RecoveryLogoutForm,
 } from "@/components/recovery-actions";
+import { RecoveryScreen, recoveryControlClass } from "@/components/recovery-screen";
 import { ensureProfileOrRecover } from "@/lib/household-context";
 import { AppError } from "@/lib/errors";
 
@@ -17,19 +18,22 @@ export default async function ProtectedLayout({
   } catch (error) {
     if (error instanceof AppError && error.code === "database_failure") {
       return (
-        <main className="mx-auto flex min-h-dvh max-w-md flex-col justify-center px-5">
-          <h1 className="text-xl font-semibold">Profile recovery needed</h1>
-          <p className="mt-2 text-sm text-slate-600">{error.publicMessage}</p>
-          <div className="mt-6 flex flex-wrap gap-2">
-            <Link href="/recovery" className="rounded-md border border-line px-3 py-2 text-sm">
-              Recovery
-            </Link>
-          </div>
-          <div className="mt-4">
-            <RecoveryClearHouseholdForm next="/onboarding" />
-            <RecoveryLogoutForm label="Sign out and try again" />
-          </div>
-        </main>
+        <RecoveryScreen
+          title="Profile recovery needed"
+          body={error.publicMessage}
+          primary={
+            <>
+              <Link href="/recovery" className={recoveryControlClass.primary}>
+                Open recovery
+              </Link>
+              <RecoveryLogoutForm
+                label="Sign out and try again"
+                variant="secondary"
+              />
+            </>
+          }
+          secondary={<RecoveryClearHouseholdForm next="/onboarding" />}
+        />
       );
     }
     redirect("/login?reason=session_expired");

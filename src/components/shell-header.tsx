@@ -17,7 +17,7 @@ export function ShellHeader({
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
-    <header className="standalone-top sticky top-0 z-30 flex items-center justify-between border-b border-border bg-navigation/95 px-4 py-3 backdrop-blur safe-px">
+    <header className="shell-top sticky top-0 z-30 flex items-center justify-between border-b border-border bg-navigation/95 px-4 pb-3 backdrop-blur safe-px">
       <div className="min-w-0">
         <Link
           href="/app"

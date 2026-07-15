@@ -52,14 +52,29 @@ test.describe("theme persistence", () => {
 });
 
 test.describe("responsive layouts", () => {
-  test("login has no horizontal overflow on mobile", async ({ page }) => {
-    await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto("/login");
-    const overflow = await page.evaluate(() => {
-      return document.documentElement.scrollWidth > document.documentElement.clientWidth + 1;
+  for (const viewport of [
+    { name: "iPhone SE", width: 375, height: 667 },
+    { name: "iPhone 14/15", width: 390, height: 844 },
+    { name: "iPhone Pro Max", width: 430, height: 932 },
+    { name: "landscape", width: 844, height: 390 },
+  ]) {
+    test(`login has no horizontal overflow on ${viewport.name}`, async ({
+      page,
+    }) => {
+      await page.setViewportSize({
+        width: viewport.width,
+        height: viewport.height,
+      });
+      await page.goto("/login");
+      const overflow = await page.evaluate(() => {
+        return (
+          document.documentElement.scrollWidth >
+          document.documentElement.clientWidth + 1
+        );
+      });
+      expect(overflow).toBe(false);
     });
-    expect(overflow).toBe(false);
-  });
+  }
 
   test("login uses wider layout on desktop without overflow", async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
@@ -68,6 +83,37 @@ test.describe("responsive layouts", () => {
       return document.documentElement.scrollWidth > document.documentElement.clientWidth + 1;
     });
     expect(overflow).toBe(false);
+  });
+});
+
+test.describe("iPhone safe-area CSS", () => {
+  test("viewport-fit=cover is present", async ({ page }) => {
+    await page.goto("/login");
+    const fit = await page.evaluate(() => {
+      const meta = document.querySelector('meta[name="viewport"]');
+      return meta?.getAttribute("content") ?? "";
+    });
+    expect(fit.toLowerCase()).toContain("viewport-fit=cover");
+  });
+
+  test("safe-area utility classes resolve padding with insets", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/login");
+    const styles = await page.evaluate(() => {
+      const main = document.querySelector("main");
+      if (!main) return null;
+      const cs = getComputedStyle(main);
+      return {
+        hasSafePt: main.classList.contains("safe-pt"),
+        hasSafePb: main.classList.contains("safe-pb"),
+        paddingTop: cs.paddingTop,
+        paddingBottom: cs.paddingBottom,
+      };
+    });
+    expect(styles?.hasSafePt).toBe(true);
+    expect(styles?.hasSafePb).toBe(true);
   });
 });
 

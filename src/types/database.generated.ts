@@ -123,6 +123,58 @@ export type Database = {
         }
         Relationships: []
       }
+      dispute_events: {
+        Row: {
+          actor_membership_id: string
+          created_at: string
+          dispute_id: string
+          event_type: string
+          household_id: string
+          id: string
+          note: string | null
+        }
+        Insert: {
+          actor_membership_id: string
+          created_at?: string
+          dispute_id: string
+          event_type: string
+          household_id: string
+          id?: string
+          note?: string | null
+        }
+        Update: {
+          actor_membership_id?: string
+          created_at?: string
+          dispute_id?: string
+          event_type?: string
+          household_id?: string
+          id?: string
+          note?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dispute_events_actor_membership_id_fkey"
+            columns: ["actor_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dispute_events_dispute_id_fkey"
+            columns: ["dispute_id"]
+            isOneToOne: false
+            referencedRelation: "reimbursement_disputes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dispute_events_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       expense_adjustment_allocations: {
         Row: {
           adjustment_id: string
@@ -829,6 +881,382 @@ export type Database = {
           },
         ]
       }
+      notification_deliveries: {
+        Row: {
+          attempt_count: number
+          channel: string
+          created_at: string
+          event_id: string
+          id: string
+          last_error: string | null
+          next_attempt_at: string | null
+          sent_at: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          attempt_count?: number
+          channel: string
+          created_at?: string
+          event_id: string
+          id?: string
+          last_error?: string | null
+          next_attempt_at?: string | null
+          sent_at?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          attempt_count?: number
+          channel?: string
+          created_at?: string
+          event_id?: string
+          id?: string
+          last_error?: string | null
+          next_attempt_at?: string | null
+          sent_at?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_deliveries_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "notification_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notification_events: {
+        Row: {
+          actor_membership_id: string | null
+          created_at: string
+          entity_id: string
+          entity_type: string
+          event_type: string
+          household_id: string | null
+          id: string
+          idempotency_key: string
+          payload: Json
+        }
+        Insert: {
+          actor_membership_id?: string | null
+          created_at?: string
+          entity_id: string
+          entity_type: string
+          event_type: string
+          household_id?: string | null
+          id?: string
+          idempotency_key: string
+          payload?: Json
+        }
+        Update: {
+          actor_membership_id?: string | null
+          created_at?: string
+          entity_id?: string
+          entity_type?: string
+          event_type?: string
+          household_id?: string | null
+          id?: string
+          idempotency_key?: string
+          payload?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_events_actor_membership_id_fkey"
+            columns: ["actor_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notification_events_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payment_allocations: {
+        Row: {
+          amount_cents: number
+          created_at: string
+          household_id: string
+          id: string
+          obligation_id: string
+          payment_id: string
+        }
+        Insert: {
+          amount_cents: number
+          created_at?: string
+          household_id: string
+          id?: string
+          obligation_id: string
+          payment_id: string
+        }
+        Update: {
+          amount_cents?: number
+          created_at?: string
+          household_id?: string
+          id?: string
+          obligation_id?: string
+          payment_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_allocations_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_allocations_obligation_id_fkey"
+            columns: ["obligation_id"]
+            isOneToOne: false
+            referencedRelation: "obligation_balances_v"
+            referencedColumns: ["obligation_id"]
+          },
+          {
+            foreignKeyName: "payment_allocations_obligation_id_fkey"
+            columns: ["obligation_id"]
+            isOneToOne: false
+            referencedRelation: "reimbursement_obligations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_allocations_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payment_private_details: {
+        Row: {
+          created_at: string
+          external_reference: string | null
+          household_id: string
+          payment_id: string
+          private_note: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          external_reference?: string | null
+          household_id: string
+          payment_id: string
+          private_note?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          external_reference?: string | null
+          household_id?: string
+          payment_id?: string
+          private_note?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_private_details_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_private_details_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: true
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payment_reversals: {
+        Row: {
+          created_at: string
+          household_id: string
+          id: string
+          payment_id: string
+          reason: string
+          reversed_by_membership_id: string
+        }
+        Insert: {
+          created_at?: string
+          household_id: string
+          id?: string
+          payment_id: string
+          reason: string
+          reversed_by_membership_id: string
+        }
+        Update: {
+          created_at?: string
+          household_id?: string
+          id?: string
+          payment_id?: string
+          reason?: string
+          reversed_by_membership_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_reversals_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_reversals_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: true
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_reversals_reversed_by_membership_id_fkey"
+            columns: ["reversed_by_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payments: {
+        Row: {
+          cancelled_at: string | null
+          cancelled_by_membership_id: string | null
+          claimed_paid_at: string | null
+          client_idempotency_key: string
+          confirmed_at: string | null
+          confirmed_by_membership_id: string | null
+          created_at: string
+          created_by_membership_id: string
+          currency: string
+          external_method: string
+          household_id: string
+          id: string
+          public_note: string | null
+          recipient_membership_id: string
+          rejected_at: string | null
+          rejected_by_membership_id: string | null
+          rejection_reason: string | null
+          reversed_at: string | null
+          sender_membership_id: string
+          status: string
+          submitted_at: string | null
+          total_amount_cents: number
+          updated_at: string
+        }
+        Insert: {
+          cancelled_at?: string | null
+          cancelled_by_membership_id?: string | null
+          claimed_paid_at?: string | null
+          client_idempotency_key: string
+          confirmed_at?: string | null
+          confirmed_by_membership_id?: string | null
+          created_at?: string
+          created_by_membership_id: string
+          currency: string
+          external_method: string
+          household_id: string
+          id?: string
+          public_note?: string | null
+          recipient_membership_id: string
+          rejected_at?: string | null
+          rejected_by_membership_id?: string | null
+          rejection_reason?: string | null
+          reversed_at?: string | null
+          sender_membership_id: string
+          status?: string
+          submitted_at?: string | null
+          total_amount_cents: number
+          updated_at?: string
+        }
+        Update: {
+          cancelled_at?: string | null
+          cancelled_by_membership_id?: string | null
+          claimed_paid_at?: string | null
+          client_idempotency_key?: string
+          confirmed_at?: string | null
+          confirmed_by_membership_id?: string | null
+          created_at?: string
+          created_by_membership_id?: string
+          currency?: string
+          external_method?: string
+          household_id?: string
+          id?: string
+          public_note?: string | null
+          recipient_membership_id?: string
+          rejected_at?: string | null
+          rejected_by_membership_id?: string | null
+          rejection_reason?: string | null
+          reversed_at?: string | null
+          sender_membership_id?: string
+          status?: string
+          submitted_at?: string | null
+          total_amount_cents?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_cancelled_by_membership_id_fkey"
+            columns: ["cancelled_by_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_confirmed_by_membership_id_fkey"
+            columns: ["confirmed_by_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_created_by_membership_id_fkey"
+            columns: ["created_by_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_recipient_membership_id_fkey"
+            columns: ["recipient_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_rejected_by_membership_id_fkey"
+            columns: ["rejected_by_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_sender_membership_id_fkey"
+            columns: ["sender_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_path: string | null
@@ -874,6 +1302,116 @@ export type Database = {
         }
         Relationships: []
       }
+      reimbursement_disputes: {
+        Row: {
+          created_at: string
+          dispute_type: string
+          expense_id: string | null
+          household_id: string
+          id: string
+          obligation_id: string | null
+          payment_id: string | null
+          raised_by_membership_id: string
+          reason: string
+          related_corrective_entity_id: string | null
+          related_corrective_entity_type: string | null
+          resolution_note: string | null
+          resolution_type: string | null
+          resolved_at: string | null
+          resolved_by_membership_id: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          dispute_type: string
+          expense_id?: string | null
+          household_id: string
+          id?: string
+          obligation_id?: string | null
+          payment_id?: string | null
+          raised_by_membership_id: string
+          reason: string
+          related_corrective_entity_id?: string | null
+          related_corrective_entity_type?: string | null
+          resolution_note?: string | null
+          resolution_type?: string | null
+          resolved_at?: string | null
+          resolved_by_membership_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          dispute_type?: string
+          expense_id?: string | null
+          household_id?: string
+          id?: string
+          obligation_id?: string | null
+          payment_id?: string | null
+          raised_by_membership_id?: string
+          reason?: string
+          related_corrective_entity_id?: string | null
+          related_corrective_entity_type?: string | null
+          resolution_note?: string | null
+          resolution_type?: string | null
+          resolved_at?: string | null
+          resolved_by_membership_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reimbursement_disputes_expense_id_fkey"
+            columns: ["expense_id"]
+            isOneToOne: false
+            referencedRelation: "expenses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reimbursement_disputes_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reimbursement_disputes_obligation_id_fkey"
+            columns: ["obligation_id"]
+            isOneToOne: false
+            referencedRelation: "obligation_balances_v"
+            referencedColumns: ["obligation_id"]
+          },
+          {
+            foreignKeyName: "reimbursement_disputes_obligation_id_fkey"
+            columns: ["obligation_id"]
+            isOneToOne: false
+            referencedRelation: "reimbursement_obligations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reimbursement_disputes_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reimbursement_disputes_raised_by_membership_id_fkey"
+            columns: ["raised_by_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reimbursement_disputes_resolved_by_membership_id_fkey"
+            columns: ["resolved_by_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reimbursement_obligations: {
         Row: {
           created_at: string
@@ -883,9 +1421,12 @@ export type Database = {
           expense_id: string
           household_id: string
           id: string
+          obligation_kind: string
           original_amount_cents: number
           reversed_by_obligation_id: string | null
           settled_at: string | null
+          source_expense_amendment_id: string | null
+          source_obligation_id: string | null
           status: string
           updated_at: string
         }
@@ -897,9 +1438,12 @@ export type Database = {
           expense_id: string
           household_id: string
           id?: string
+          obligation_kind?: string
           original_amount_cents: number
           reversed_by_obligation_id?: string | null
           settled_at?: string | null
+          source_expense_amendment_id?: string | null
+          source_obligation_id?: string | null
           status?: string
           updated_at?: string
         }
@@ -911,9 +1455,12 @@ export type Database = {
           expense_id?: string
           household_id?: string
           id?: string
+          obligation_kind?: string
           original_amount_cents?: number
           reversed_by_obligation_id?: string | null
           settled_at?: string | null
+          source_expense_amendment_id?: string | null
+          source_obligation_id?: string | null
           status?: string
           updated_at?: string
         }
@@ -950,7 +1497,200 @@ export type Database = {
             foreignKeyName: "reimbursement_obligations_reversed_by_obligation_id_fkey"
             columns: ["reversed_by_obligation_id"]
             isOneToOne: false
+            referencedRelation: "obligation_balances_v"
+            referencedColumns: ["obligation_id"]
+          },
+          {
+            foreignKeyName: "reimbursement_obligations_reversed_by_obligation_id_fkey"
+            columns: ["reversed_by_obligation_id"]
+            isOneToOne: false
             referencedRelation: "reimbursement_obligations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reimbursement_obligations_source_expense_amendment_id_fkey"
+            columns: ["source_expense_amendment_id"]
+            isOneToOne: false
+            referencedRelation: "expense_amendments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reimbursement_obligations_source_obligation_id_fkey"
+            columns: ["source_obligation_id"]
+            isOneToOne: false
+            referencedRelation: "obligation_balances_v"
+            referencedColumns: ["obligation_id"]
+          },
+          {
+            foreignKeyName: "reimbursement_obligations_source_obligation_id_fkey"
+            columns: ["source_obligation_id"]
+            isOneToOne: false
+            referencedRelation: "reimbursement_obligations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reimbursement_waiver_reversals: {
+        Row: {
+          created_at: string
+          household_id: string
+          id: string
+          reason: string
+          reversed_by_membership_id: string
+          waiver_id: string
+        }
+        Insert: {
+          created_at?: string
+          household_id: string
+          id?: string
+          reason: string
+          reversed_by_membership_id: string
+          waiver_id: string
+        }
+        Update: {
+          created_at?: string
+          household_id?: string
+          id?: string
+          reason?: string
+          reversed_by_membership_id?: string
+          waiver_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reimbursement_waiver_reversals_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reimbursement_waiver_reversals_reversed_by_membership_id_fkey"
+            columns: ["reversed_by_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reimbursement_waiver_reversals_waiver_id_fkey"
+            columns: ["waiver_id"]
+            isOneToOne: true
+            referencedRelation: "reimbursement_waivers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reimbursement_waivers: {
+        Row: {
+          amount_cents: number
+          created_at: string
+          created_by_membership_id: string
+          household_id: string
+          id: string
+          obligation_id: string
+          reason: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount_cents: number
+          created_at?: string
+          created_by_membership_id: string
+          household_id: string
+          id?: string
+          obligation_id: string
+          reason: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount_cents?: number
+          created_at?: string
+          created_by_membership_id?: string
+          household_id?: string
+          id?: string
+          obligation_id?: string
+          reason?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reimbursement_waivers_created_by_membership_id_fkey"
+            columns: ["created_by_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reimbursement_waivers_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reimbursement_waivers_obligation_id_fkey"
+            columns: ["obligation_id"]
+            isOneToOne: false
+            referencedRelation: "obligation_balances_v"
+            referencedColumns: ["obligation_id"]
+          },
+          {
+            foreignKeyName: "reimbursement_waivers_obligation_id_fkey"
+            columns: ["obligation_id"]
+            isOneToOne: false
+            referencedRelation: "reimbursement_obligations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_notifications: {
+        Row: {
+          action_href: string | null
+          body: string
+          created_at: string
+          event_id: string
+          household_id: string | null
+          id: string
+          read_at: string | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          action_href?: string | null
+          body?: string
+          created_at?: string
+          event_id: string
+          household_id?: string | null
+          id?: string
+          read_at?: string | null
+          title: string
+          user_id: string
+        }
+        Update: {
+          action_href?: string | null
+          body?: string
+          created_at?: string
+          event_id?: string
+          household_id?: string | null
+          id?: string
+          read_at?: string | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_notifications_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "notification_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_notifications_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
             referencedColumns: ["id"]
           },
         ]
@@ -993,9 +1733,93 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      obligation_balances_v: {
+        Row: {
+          confirmed_paid_cents: number | null
+          created_at: string | null
+          creditor_membership_id: string | null
+          debtor_membership_id: string | null
+          effective_amount_cents: number | null
+          expense_id: string | null
+          household_id: string | null
+          obligation_id: string | null
+          obligation_kind: string | null
+          official_outstanding_cents: number | null
+          original_amount_cents: number | null
+          pending_payment_cents: number | null
+          projected_outstanding_cents: number | null
+          settlement_state: string | null
+          stored_status: string | null
+          updated_at: string | null
+          waived_cents: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reimbursement_obligations_creditor_membership_id_fkey"
+            columns: ["creditor_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reimbursement_obligations_debtor_membership_id_fkey"
+            columns: ["debtor_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reimbursement_obligations_expense_id_fkey"
+            columns: ["expense_id"]
+            isOneToOne: false
+            referencedRelation: "expenses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reimbursement_obligations_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
+      _allow_privileged_mutation: { Args: never; Returns: boolean }
+      _blocking_submitted_payment_id: {
+        Args: { p_expense_id: string }
+        Returns: string
+      }
+      _create_refund_obligation: {
+        Args: {
+          p_amendment_id: string
+          p_amount_cents: number
+          p_corr: string
+          p_expense_id: string
+          p_household_id: string
+          p_original_creditor: string
+          p_original_debtor: string
+          p_source_obligation_id: string
+        }
+        Returns: string
+      }
+      _emit_notification_event: {
+        Args: {
+          p_action_href?: string
+          p_actor_membership_id: string
+          p_body: string
+          p_entity_id: string
+          p_entity_type: string
+          p_event_type: string
+          p_household_id: string
+          p_idempotency_key: string
+          p_payload: Json
+          p_recipient_user_ids: string[]
+          p_title: string
+        }
+        Returns: string
+      }
       _expense_audit: {
         Args: {
           p_after_state?: Json
@@ -1007,6 +1831,35 @@ export type Database = {
           p_household_id: string
           p_reason?: string
         }
+        Returns: undefined
+      }
+      _membership_user_id: {
+        Args: { p_membership_id: string }
+        Returns: string
+      }
+      _official_outstanding_cents: {
+        Args: { p_obligation_id: string }
+        Returns: number
+      }
+      _payment_audit: {
+        Args: {
+          p_after_state?: Json
+          p_before_state?: Json
+          p_correlation_id?: string
+          p_entity_id: string
+          p_entity_type: string
+          p_event_type: string
+          p_household_id: string
+          p_reason?: string
+        }
+        Returns: undefined
+      }
+      _raise_if_submitted_payments: {
+        Args: { p_expense_id: string }
+        Returns: undefined
+      }
+      _sync_obligation_settlement_status: {
+        Args: { p_obligation_id: string }
         Returns: undefined
       }
       accept_household_invitation: {
@@ -1026,6 +1879,40 @@ export type Database = {
         Returns: boolean
       }
       can_view_expense: { Args: { p_expense_id: string }; Returns: boolean }
+      cancel_payment: {
+        Args: { p_payment_id: string }
+        Returns: {
+          cancelled_at: string | null
+          cancelled_by_membership_id: string | null
+          claimed_paid_at: string | null
+          client_idempotency_key: string
+          confirmed_at: string | null
+          confirmed_by_membership_id: string | null
+          created_at: string
+          created_by_membership_id: string
+          currency: string
+          external_method: string
+          household_id: string
+          id: string
+          public_note: string | null
+          recipient_membership_id: string
+          rejected_at: string | null
+          rejected_by_membership_id: string | null
+          rejection_reason: string | null
+          reversed_at: string | null
+          sender_membership_id: string
+          status: string
+          submitted_at: string | null
+          total_amount_cents: number
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "payments"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       change_membership_roles: {
         Args: {
           p_household_id: string
@@ -1033,6 +1920,10 @@ export type Database = {
           p_roles: string[]
         }
         Returns: undefined
+      }
+      cleanup_test_household_data: {
+        Args: { p_test_run_id: string }
+        Returns: number
       }
       confirm_expense: {
         Args: {
@@ -1104,6 +1995,40 @@ export type Database = {
         SetofOptions: {
           from: "*"
           to: "expenses"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      confirm_payment: {
+        Args: { p_payment_id: string }
+        Returns: {
+          cancelled_at: string | null
+          cancelled_by_membership_id: string | null
+          claimed_paid_at: string | null
+          client_idempotency_key: string
+          confirmed_at: string | null
+          confirmed_by_membership_id: string | null
+          created_at: string
+          created_by_membership_id: string
+          currency: string
+          external_method: string
+          household_id: string
+          id: string
+          public_note: string | null
+          recipient_membership_id: string
+          rejected_at: string | null
+          rejected_by_membership_id: string | null
+          rejection_reason: string | null
+          reversed_at: string | null
+          sender_membership_id: string
+          status: string
+          submitted_at: string | null
+          total_amount_cents: number
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "payments"
           isOneToOne: true
           isSetofReturn: false
         }
@@ -1182,6 +2107,30 @@ export type Database = {
         }
         Returns: string
       }
+      create_reimbursement_waiver: {
+        Args: {
+          p_amount_cents: number
+          p_obligation_id: string
+          p_reason: string
+        }
+        Returns: {
+          amount_cents: number
+          created_at: string
+          created_by_membership_id: string
+          household_id: string
+          id: string
+          obligation_id: string
+          reason: string
+          status: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "reimbursement_waivers"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       current_membership_id: {
         Args: { p_household_id: string }
         Returns: string
@@ -1233,9 +2182,90 @@ export type Database = {
         Args: { p_household_id: string; p_reason?: string }
         Returns: undefined
       }
+      mark_notification_read: {
+        Args: { p_notification_id: string }
+        Returns: undefined
+      }
       membership_belongs_to_household: {
         Args: { p_household_id: string; p_membership_id: string }
         Returns: boolean
+      }
+      obligation_confirmed_paid_inline: {
+        Args: { p_obligation_id: string }
+        Returns: number
+      }
+      obligation_waived_cents_inline: {
+        Args: { p_obligation_id: string }
+        Returns: number
+      }
+      open_dispute: {
+        Args: {
+          p_dispute_type: string
+          p_expense_id?: string
+          p_household_id: string
+          p_obligation_id?: string
+          p_payment_id?: string
+          p_reason: string
+        }
+        Returns: {
+          created_at: string
+          dispute_type: string
+          expense_id: string | null
+          household_id: string
+          id: string
+          obligation_id: string | null
+          payment_id: string | null
+          raised_by_membership_id: string
+          reason: string
+          related_corrective_entity_id: string | null
+          related_corrective_entity_type: string | null
+          resolution_note: string | null
+          resolution_type: string | null
+          resolved_at: string | null
+          resolved_by_membership_id: string | null
+          status: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "reimbursement_disputes"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      reject_payment: {
+        Args: { p_payment_id: string; p_reason: string }
+        Returns: {
+          cancelled_at: string | null
+          cancelled_by_membership_id: string | null
+          claimed_paid_at: string | null
+          client_idempotency_key: string
+          confirmed_at: string | null
+          confirmed_by_membership_id: string | null
+          created_at: string
+          created_by_membership_id: string
+          currency: string
+          external_method: string
+          household_id: string
+          id: string
+          public_note: string | null
+          recipient_membership_id: string
+          rejected_at: string | null
+          rejected_by_membership_id: string | null
+          rejection_reason: string | null
+          reversed_at: string | null
+          sender_membership_id: string
+          status: string
+          submitted_at: string | null
+          total_amount_cents: number
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "payments"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       remove_household_member: {
         Args: {
@@ -1245,6 +2275,94 @@ export type Database = {
         }
         Returns: undefined
       }
+      resolve_dispute: {
+        Args: {
+          p_dispute_id: string
+          p_related_corrective_entity_id?: string
+          p_related_corrective_entity_type?: string
+          p_resolution_note: string
+          p_resolution_type: string
+        }
+        Returns: {
+          created_at: string
+          dispute_type: string
+          expense_id: string | null
+          household_id: string
+          id: string
+          obligation_id: string | null
+          payment_id: string | null
+          raised_by_membership_id: string
+          reason: string
+          related_corrective_entity_id: string | null
+          related_corrective_entity_type: string | null
+          resolution_note: string | null
+          resolution_type: string | null
+          resolved_at: string | null
+          resolved_by_membership_id: string | null
+          status: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "reimbursement_disputes"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      reverse_payment: {
+        Args: { p_payment_id: string; p_reason: string }
+        Returns: {
+          cancelled_at: string | null
+          cancelled_by_membership_id: string | null
+          claimed_paid_at: string | null
+          client_idempotency_key: string
+          confirmed_at: string | null
+          confirmed_by_membership_id: string | null
+          created_at: string
+          created_by_membership_id: string
+          currency: string
+          external_method: string
+          household_id: string
+          id: string
+          public_note: string | null
+          recipient_membership_id: string
+          rejected_at: string | null
+          rejected_by_membership_id: string | null
+          rejection_reason: string | null
+          reversed_at: string | null
+          sender_membership_id: string
+          status: string
+          submitted_at: string | null
+          total_amount_cents: number
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "payments"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      reverse_reimbursement_waiver: {
+        Args: { p_reason: string; p_waiver_id: string }
+        Returns: {
+          amount_cents: number
+          created_at: string
+          created_by_membership_id: string
+          household_id: string
+          id: string
+          obligation_id: string
+          reason: string
+          status: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "reimbursement_waivers"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       revoke_household_invitation: {
         Args: { p_household_id: string; p_invitation_id: string }
         Returns: undefined
@@ -1252,6 +2370,51 @@ export type Database = {
       set_current_household: {
         Args: { p_household_id: string }
         Returns: undefined
+      }
+      submit_payment: {
+        Args: {
+          p_allocations: Json
+          p_claimed_paid_at?: string
+          p_external_method: string
+          p_external_reference?: string
+          p_household_id: string
+          p_idempotency_key: string
+          p_private_note?: string
+          p_public_note?: string
+          p_recipient_membership_id: string
+          p_total_amount_cents: number
+        }
+        Returns: {
+          cancelled_at: string | null
+          cancelled_by_membership_id: string | null
+          claimed_paid_at: string | null
+          client_idempotency_key: string
+          confirmed_at: string | null
+          confirmed_by_membership_id: string | null
+          created_at: string
+          created_by_membership_id: string
+          currency: string
+          external_method: string
+          household_id: string
+          id: string
+          public_note: string | null
+          recipient_membership_id: string
+          rejected_at: string | null
+          rejected_by_membership_id: string | null
+          rejection_reason: string | null
+          reversed_at: string | null
+          sender_membership_id: string
+          status: string
+          submitted_at: string | null
+          total_amount_cents: number
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "payments"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       void_expense: {
         Args: { p_expense_id: string; p_reason: string }
@@ -1282,6 +2445,34 @@ export type Database = {
         SetofOptions: {
           from: "*"
           to: "expenses"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      withdraw_dispute: {
+        Args: { p_dispute_id: string }
+        Returns: {
+          created_at: string
+          dispute_type: string
+          expense_id: string | null
+          household_id: string
+          id: string
+          obligation_id: string | null
+          payment_id: string | null
+          raised_by_membership_id: string
+          reason: string
+          related_corrective_entity_id: string | null
+          related_corrective_entity_type: string | null
+          resolution_note: string | null
+          resolution_type: string | null
+          resolved_at: string | null
+          resolved_by_membership_id: string | null
+          status: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "reimbursement_disputes"
           isOneToOne: true
           isSetofReturn: false
         }

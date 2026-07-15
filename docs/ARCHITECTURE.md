@@ -1,6 +1,6 @@
 # Architecture
 
-HouseholdOS is a private, mobile-first household management PWA. Identity, multi-household tenancy, membership responsibilities, invitations, settings, RLS, audit events, the protected application shell, and manual expenses are in place.
+HouseholdOS is a private, mobile-first household management PWA. Identity, multi-household tenancy, membership responsibilities, invitations, settings, RLS, audit events, the protected application shell, manual expenses, and external payment settlement recording are in place.
 
 ## Stack
 
@@ -35,10 +35,14 @@ HouseholdOS is a private, mobile-first household management PWA. Identity, multi
 
 ## Application shell
 
-- Mobile: bottom navigation (Home, Money, Settings) with safe-area padding
+- Mobile: fixed bottom nav with notch/home-indicator safe areas (`viewport-fit=cover`, `shell-top`, `app-main-pad`, `safe-pb`)
 - Desktop (`lg+`): sidebar navigation + wider content (capped ~`max-w-5xl`)
-- Unimplemented domains (Tasks, House, Records) are hidden from primary nav
-- Standalone PWA: safe-area and optional in-app Back control; authenticated navigations are `NetworkOnly` in the service worker
+- Nav config lives in `src/lib/nav-items.ts`:
+  - Bottom bar shows only enabled `surface: "primary"` items (capped at 4) so new domains do not crowd the thumb bar
+  - Sidebar lists all enabled items (primary + `more`)
+  - Unshipped domains (Tasks, House, Records) stay `enabled: false`
+  - When primary slots are full, ship new roots as `surface: "more"` (and later a More screen) instead of growing the bottom bar endlessly
+- Standalone PWA: safe-area chrome and optional in-app Back control; authenticated navigations are `NetworkOnly` in the service worker
 
 ## Loading and mutations
 
@@ -56,6 +60,40 @@ Normalized in `household_membership_roles`:
 
 No comma-separated role strings. No self-promotion.
 
+## Settlement ledger
+
+HouseholdOS does **not** transfer money. Members record external payments (Venmo, Zelle, cash, etc.) as metadata.
+
+- `reimbursement_obligations.current_amount_cents` = **effective** amount after expense correction (not open balance)
+- Official outstanding is ledger-derived via `obligation_balances_v`:
+
+```text
+effective − confirmed allocations − active waivers = official outstanding
+projected = official − submitted (pending) allocations
+```
+
+- Payment lifecycle: `draft` → `submitted` → `confirmed` | `rejected` | `cancelled`; `confirmed` → `reversed` (once)
+- Private external references / private notes live in `payment_private_details` (RLS: sender ∪ recipient only)
+- Amendments/voids after payment preserve payment history and may create refund obligations (`obligation_kind = refund`)
+
+## Notifications (outbox)
+
+Domain financial RPCs insert durable `notification_events` transactionally and fan out `user_notifications` for in-app action-center entries. External delivery (web push / email) is reserved for Phase 3.1 — never performed inside the financial transaction. Notification payloads must not include private payment references or secrets.
+
+## Roadmap
+
+```text
+Phase 3 — Payment settlement ledger + payment-related in-app notifications (current)
+Phase 3.1 — Notification delivery: web push, email, preferences, quiet hours, retries
+Phase 4 — Shared HouseholdOS calendar, recurrence, reminders, secure iCalendar feed
+Phase 5 — Chores / responsibility rotations on calendar + notifications
+Phase 6 — Inventory, supplies, shopping lists, pantry
+Phase 6.5 — Recipe requests matched to pantry / constraints
+Later — LifeOS connector; optional Google/Apple calendar sync
+```
+
+Calendar stages (when Phase 4 starts): internal calendar → revocable iCal feed → LifeOS connector → optional provider sync. No provider OAuth in Phase 3.
+
 ## Out of scope (current)
 
-Receipt OCR, payment settlements / transfer integrations, inventory, chores, supplies, grocery/recipes, full offline sync, email delivery.
+Receipt OCR, actual bank/Venmo/Zelle/Plaid transfers, inventory, chores, supplies, grocery/recipes product UI, calendar product UI, full offline sync, SMS, email/push delivery workers.

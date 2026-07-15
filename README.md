@@ -2,7 +2,7 @@
 
 Private, mobile-first household management PWA for shared expenses, ownership, responsibilities, and commitments.
 
-**Foundation phase** ships: auth, private registration policy, profiles, households, memberships/responsibilities, invitations, settings, RLS, audit events, protected shell, and tests. Domain features (expenses, OCR, inventory, chores, etc.) come later.
+Auth, households, memberships, invitations, manual expenses, and **external payment settlement recording** (confirm/reject/cancel/reverse, waivers, disputes, in-app notification outbox) are in place. HouseholdOS does not move money or verify payment providers. See `docs/ARCHITECTURE.md` for the roadmap (notifications delivery, calendar, chores, inventory).
 
 ## Stack
 

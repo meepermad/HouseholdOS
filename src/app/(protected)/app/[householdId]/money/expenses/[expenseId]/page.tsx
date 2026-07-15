@@ -77,12 +77,12 @@ export default async function ExpenseDetailPage({
         </Link>
       </div>
 
-      <dl className="grid grid-cols-2 gap-2 rounded-md border border-line bg-surface p-3 text-sm">
-        <dt className="text-slate-500">Payer</dt>
+      <dl className="grid grid-cols-2 gap-x-3 gap-y-2 rounded-md border border-border bg-surface p-4 text-sm">
+        <dt className="text-text-muted">Payer</dt>
         <dd>{label(e.payer_membership_id)}</dd>
-        <dt className="text-slate-500">Creator</dt>
+        <dt className="text-text-muted">Creator</dt>
         <dd>{label(e.created_by_membership_id)}</dd>
-        <dt className="text-slate-500">Confirmed</dt>
+        <dt className="text-text-muted">Confirmed</dt>
         <dd>{e.confirmed_at ? new Date(e.confirmed_at).toLocaleString() : "—"}</dd>
         {e.void_reason ? (
           <>
@@ -124,7 +124,7 @@ export default async function ExpenseDetailPage({
         </h2>
         <ul className="space-y-3">
           {bundle.items.map((item) => (
-            <li key={item.id} className="rounded-md border border-line bg-surface p-3 text-sm">
+            <li key={item.id} className="rounded-md border border-border bg-surface p-4 text-sm">
               <div className="flex justify-between font-medium">
                 <span>{item.description}</span>
                 <span>{formatMoney(item.total_cents)}</span>
@@ -155,7 +155,7 @@ export default async function ExpenseDetailPage({
           </h2>
           <ul className="space-y-2">
             {bundle.adjustments.map((adj) => (
-              <li key={adj.id} className="rounded-md border border-line bg-surface p-3 text-sm">
+              <li key={adj.id} className="rounded-md border border-border bg-surface p-4 text-sm">
                 <div className="flex justify-between font-medium">
                   <span>
                     {adj.description}{" "}

@@ -91,7 +91,7 @@ export function ExpenseItemEditor({
     <ActionForm
       pendingLabel="Saving expense item…"
       action={upsertExpenseItemAction}
-      className="space-y-3 rounded-md border border-line bg-surface p-3"
+      className="space-y-3 rounded-md border border-border bg-surface p-4"
     >
       <input type="hidden" name="householdId" value={householdId} />
       <input type="hidden" name="expenseId" value={expenseId} />
@@ -183,7 +183,7 @@ export function ExpenseItemEditor({
         <fieldset className="space-y-2">
           <legend className="text-sm font-medium">Members</legend>
           {members.map((m) => (
-            <div key={m.id} className="space-y-1 rounded border border-line/60 p-2">
+            <div key={m.id} className="space-y-2 rounded-md border border-border p-3">
               <label className="inline-flex items-center gap-2 text-sm">
                 <input
                   type="checkbox"

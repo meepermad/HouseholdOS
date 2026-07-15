@@ -1,16 +1,18 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import "@/app/globals.css";
 import {
   RecoveryClearHouseholdForm,
   RecoveryLinks,
   RecoveryLogoutForm,
 } from "@/components/recovery-actions";
+import { RecoveryScreen, recoveryControlClass } from "@/components/recovery-screen";
 import { formatErrorReference } from "@/lib/recovery";
 
 /**
- * Last-resort error UI. Must define its own html/body and avoid importing
- * the root layout, shell, providers, or complex app components.
+ * Last-resort error UI. Defines its own html/body but imports globals so
+ * light/dark tokens match the rest of HouseholdOS.
  */
 export default function GlobalError({
   error,
@@ -23,74 +25,46 @@ export default function GlobalError({
   const reference = formatErrorReference(error.digest);
 
   useEffect(() => {
+    try {
+      const raw = localStorage.getItem("householdos-theme");
+      const mode =
+        raw === "light" || raw === "dark" || raw === "system" ? raw : "system";
+      const dark =
+        mode === "dark" ||
+        (mode === "system" &&
+          window.matchMedia("(prefers-color-scheme: dark)").matches);
+      document.documentElement.classList.toggle("dark", dark);
+      document.documentElement.style.colorScheme = dark ? "dark" : "light";
+    } catch {
+      /* private mode */
+    }
     headingRef.current?.focus();
   }, []);
 
   return (
-    <html lang="en">
-      <body
-        style={{
-          margin: 0,
-          minHeight: "100dvh",
-          fontFamily: "system-ui, sans-serif",
-          color: "#142033",
-          background: "#f3efe6",
-        }}
-      >
-        <main
-          style={{
-            maxWidth: "28rem",
-            margin: "0 auto",
-            padding: "2.5rem 1.25rem",
-          }}
-        >
-          <p style={{ fontSize: "1.25rem", fontWeight: 600 }}>HouseholdOS</p>
-          <h1
-            ref={headingRef}
-            tabIndex={-1}
-            style={{ marginTop: "1rem", fontSize: "1.25rem", outline: "none" }}
-          >
-            Application error
-          </h1>
-          <p
-            role="status"
-            aria-live="polite"
-            style={{ marginTop: "0.5rem", fontSize: "0.875rem", color: "#475569" }}
-          >
-            A critical error interrupted this page. Retry, open recovery, or sign
-            out. No household data is deleted by these actions.
-          </p>
-          {reference ? (
-            <p style={{ marginTop: "0.75rem", fontSize: "0.75rem", color: "#94a3b8" }}>
-              Reference: {reference}
-            </p>
-          ) : null}
-
-          <div style={{ marginTop: "1.5rem" }}>
-            <button
-              type="button"
-              onClick={reset}
-              aria-label="Try again"
-              style={{
-                marginRight: "0.5rem",
-                padding: "0.6rem 1rem",
-                borderRadius: "0.375rem",
-                border: "1px solid #1f6f5b",
-                background: "#1f6f5b",
-                color: "#fff",
-                fontSize: "0.875rem",
-                fontWeight: 600,
-                cursor: "pointer",
-              }}
-            >
-              Try again
-            </button>
-            <RecoveryClearHouseholdForm />
-            <RecoveryLogoutForm />
-          </div>
-
-          <RecoveryLinks showLogin />
-        </main>
+    <html lang="en" suppressHydrationWarning>
+      <body className="min-h-dvh antialiased">
+        <RecoveryScreen
+          headingRef={headingRef}
+          title="Application error"
+          body="A critical error interrupted this page. Retry, open recovery, or sign out. No household data is deleted by these actions."
+          reference={reference}
+          primary={
+            <>
+              <button
+                type="button"
+                onClick={reset}
+                aria-label="Try again"
+                className={recoveryControlClass.primary}
+              >
+                Try again
+              </button>
+              <RecoveryLogoutForm variant="secondary" />
+            </>
+          }
+          secondary={<RecoveryClearHouseholdForm />}
+          footer={<RecoveryLinks showLogin showRecovery />}
+        />
       </body>
     </html>
   );

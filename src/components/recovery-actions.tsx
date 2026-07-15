@@ -1,40 +1,30 @@
 /* eslint-disable @next/next/no-html-link-for-pages -- shell-independent recovery anchors */
 
+import type { ReactNode } from "react";
+import { recoveryControlClass } from "@/components/recovery-screen";
+
 /**
- * Standalone recovery action forms — no shell, ActionForm, or heavy imports.
- * Safe to render from error boundaries and global-error.
- * Neutrally styled for light and dark readability without depending on the app shell.
+ * Standalone recovery actions — safe for error boundaries and global-error.
+ * Uses semantic token classes (globals.css must be available; global-error imports it).
  */
 
-type Style = Record<string, string | number>;
+export function RecoveryLogoutForm({
+  label = "Sign out",
+  variant = "primary",
+}: {
+  label?: string;
+  variant?: "primary" | "secondary" | "ghost";
+}) {
+  const className =
+    variant === "ghost"
+      ? recoveryControlClass.ghost
+      : variant === "secondary"
+        ? recoveryControlClass.secondary
+        : recoveryControlClass.primary;
 
-const buttonStyle: Style = {
-  display: "inline-block",
-  marginTop: "0.5rem",
-  marginRight: "0.5rem",
-  minHeight: "2.75rem",
-  padding: "0.6rem 1rem",
-  borderRadius: "0.375rem",
-  border: "1px solid #6b7280",
-  background: "transparent",
-  color: "inherit",
-  fontSize: "0.875rem",
-  fontWeight: 600,
-  cursor: "pointer",
-  textDecoration: "none",
-};
-
-const primaryStyle: Style = {
-  ...buttonStyle,
-  background: "#1f6f5b",
-  borderColor: "#1f6f5b",
-  color: "#fff",
-};
-
-export function RecoveryLogoutForm({ label = "Sign out" }: { label?: string }) {
   return (
-    <form action="/auth/logout" method="post" style={{ display: "inline" }}>
-      <button type="submit" style={primaryStyle} aria-label={label}>
+    <form action="/auth/logout" method="post" className="inline">
+      <button type="submit" className={className} aria-label={label}>
         {label}
       </button>
     </form>
@@ -42,16 +32,20 @@ export function RecoveryLogoutForm({ label = "Sign out" }: { label?: string }) {
 }
 
 export function RecoveryClearHouseholdForm({
-  label = "Clear selected household",
+  label = "Clear household selection",
   next = "/app",
 }: {
   label?: string;
   next?: string;
 }) {
   return (
-    <form action="/auth/clear-household" method="post" style={{ display: "inline" }}>
+    <form action="/auth/clear-household" method="post" className="inline">
       <input type="hidden" name="next" value={next} />
-      <button type="submit" style={buttonStyle} aria-label={label}>
+      <button
+        type="submit"
+        className={recoveryControlClass.ghost}
+        aria-label={label}
+      >
         {label}
       </button>
     </form>
@@ -60,26 +54,47 @@ export function RecoveryClearHouseholdForm({
 
 export function RecoveryLinks({
   showLogin = false,
+  showRecovery = true,
+  showHome = false,
 }: {
   showLogin?: boolean;
+  showRecovery?: boolean;
+  showHome?: boolean;
 }) {
-  return (
-    <p style={{ marginTop: "1rem", fontSize: "0.875rem" }}>
-      <a href="/recovery" style={{ color: "#1f6f5b" }}>
+  const parts: ReactNode[] = [];
+
+  if (showHome) {
+    parts.push(
+      <a key="home" href="/app" className={recoveryControlClass.link}>
+        Go to app
+      </a>,
+    );
+  }
+  if (showRecovery) {
+    parts.push(
+      <a key="recovery" href="/recovery" className={recoveryControlClass.link}>
         Recovery options
-      </a>
-      {" · "}
-      <a href="/app" style={{ color: "#1f6f5b" }}>
-        Return to HouseholdOS
-      </a>
-      {showLogin ? (
-        <>
-          {" · "}
-          <a href="/login" style={{ color: "#1f6f5b" }}>
-            Sign in
-          </a>
-        </>
-      ) : null}
-    </p>
+      </a>,
+    );
+  }
+  if (showLogin) {
+    parts.push(
+      <a key="login" href="/login" className={recoveryControlClass.link}>
+        Sign in
+      </a>,
+    );
+  }
+
+  if (parts.length === 0) return null;
+
+  return (
+    <>
+      {parts.map((part, index) => (
+        <span key={index}>
+          {index > 0 ? <span className="mx-2 text-text-muted">·</span> : null}
+          {part}
+        </span>
+      ))}
+    </>
   );
 }

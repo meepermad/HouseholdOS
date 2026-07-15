@@ -1,8 +1,9 @@
-/* eslint-disable @next/next/no-html-link-for-pages -- recovery UI must remain shell-independent */
+/* eslint-disable @next/next/no-html-link-for-pages -- recovery stays usable without the app shell */
 import {
   RecoveryClearHouseholdForm,
   RecoveryLogoutForm,
 } from "@/components/recovery-actions";
+import { RecoveryScreen, recoveryControlClass } from "@/components/recovery-screen";
 import {
   classifyRecoveryReason,
   formatErrorReference,
@@ -22,94 +23,28 @@ export default async function RecoveryPage({
   const reference = formatErrorReference(params.ref);
 
   return (
-    <main
-      style={{
-        minHeight: "100dvh",
-        maxWidth: "28rem",
-        margin: "0 auto",
-        padding: "2.5rem 1.25rem",
-        fontFamily: "system-ui, sans-serif",
-        color: "#142033",
-        background: "linear-gradient(180deg, #f7f3ea 0%, #efe6d6 100%)",
-      }}
-    >
-      <p
-        style={{
-          fontSize: "1.5rem",
-          fontWeight: 600,
-          letterSpacing: "-0.02em",
-        }}
-      >
-        HouseholdOS
-      </p>
-      <h1 style={{ marginTop: "1.5rem", fontSize: "1.25rem" }}>{copy.title}</h1>
-      <p style={{ marginTop: "0.5rem", fontSize: "0.875rem", color: "#475569" }}>
-        {copy.body}
-      </p>
-      {reference ? (
-        <p
-          style={{ marginTop: "0.75rem", fontSize: "0.75rem", color: "#64748b" }}
-          data-testid="recovery-reference"
-        >
-          Reference: {reference}
-        </p>
-      ) : null}
-
-      <div
-        style={{
-          marginTop: "1.75rem",
-          display: "flex",
-          flexWrap: "wrap",
-          gap: "0.5rem",
-        }}
-      >
-        <a
-          href="/app"
-          style={{
-            display: "inline-block",
-            padding: "0.6rem 1rem",
-            borderRadius: "0.375rem",
-            background: "#1f6f5b",
-            color: "#fff",
-            fontSize: "0.875rem",
-            fontWeight: 600,
-            textDecoration: "none",
-          }}
-        >
-          Return to HouseholdOS
-        </a>
-        <a
-          href="/recovery"
-          style={{
-            display: "inline-block",
-            padding: "0.6rem 1rem",
-            borderRadius: "0.375rem",
-            border: "1px solid #d9d2c3",
-            background: "#fffdf8",
-            color: "#142033",
-            fontSize: "0.875rem",
-            fontWeight: 600,
-            textDecoration: "none",
-          }}
-        >
-          Try again
-        </a>
-      </div>
-
-      <div style={{ marginTop: "1.25rem" }}>
-        <RecoveryClearHouseholdForm next="/app" />
-        <RecoveryLogoutForm />
-      </div>
-
-      <p style={{ marginTop: "1.5rem", fontSize: "0.875rem" }}>
-        <a href="/login" style={{ color: "#1f6f5b" }}>
-          Go to sign in
-        </a>
-        {" · "}
-        <a href="/onboarding" style={{ color: "#1f6f5b" }}>
-          Onboarding
-        </a>
-      </p>
-    </main>
+    <RecoveryScreen
+      title={copy.title}
+      body={copy.body}
+      reference={reference}
+      testId="recovery-page"
+      primary={
+        <>
+          <a href="/app" className={recoveryControlClass.primary}>
+            Return to HouseholdOS
+          </a>
+          <RecoveryLogoutForm variant="secondary" />
+        </>
+      }
+      secondary={<RecoveryClearHouseholdForm next="/app" />}
+      footer={
+        <>
+          Need a different account?{" "}
+          <a href="/login" className={recoveryControlClass.link}>
+            Sign in
+          </a>
+        </>
+      }
+    />
   );
 }

@@ -42,4 +42,10 @@ describe("permissions", () => {
     expect(can(["member"], "expense.create")).toBe(true);
     expect(can(["financial_coordinator"], "expense.void")).toBe(true);
   });
+
+  it("grants payment capabilities to every active role", () => {
+    expect(can(["member"], "payment.create")).toBe(true);
+    expect(can(["member"], "payment.confirm")).toBe(true);
+    expect(can(["financial_coordinator"], "dispute.resolve")).toBe(true);
+  });
 });

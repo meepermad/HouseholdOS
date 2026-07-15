@@ -73,8 +73,8 @@ export function recoveryCopy(state: RecoveryState): {
       };
     default:
       return {
-        title: "Recoverable problem",
-        body: "HouseholdOS hit a problem while loading the app. You can retry, clear your household selection, or sign out.",
+        title: "Something went wrong",
+        body: "HouseholdOS hit a problem while loading. Retry from here, clear your household selection, or sign out.",
       };
   }
 }

@@ -2,6 +2,11 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { Database } from "@/types/database";
 import { CURRENT_HOUSEHOLD_COOKIE } from "@/lib/navigation";
+import { getAuthedClient } from "../helpers/authed-client";
+import {
+  cleanupTestHouseholdsByRunId,
+  deleteTestAuthUsers,
+} from "../helpers/cleanup-test-households";
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const secretKey =
@@ -18,20 +23,7 @@ const password = "Test-Password-123!";
 type Admin = SupabaseClient<Database>;
 
 function authed(email: string) {
-  return createClient<Database>(url!, publishableKey!, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  })
-    .auth.signInWithPassword({ email, password })
-    .then(async (res) => {
-      if (res.error) throw res.error;
-      const client = createClient<Database>(url!, publishableKey!, {
-        auth: { persistSession: false, autoRefreshToken: false },
-        global: {
-          headers: { Authorization: `Bearer ${res.data.session!.access_token}` },
-        },
-      });
-      return { client, userId: res.data.user!.id, accessToken: res.data.session!.access_token };
-    });
+  return getAuthedClient(email, password);
 }
 
 describe.skipIf(!hasSupabase)("recovery context and logout safety", () => {
@@ -80,30 +72,8 @@ describe.skipIf(!hasSupabase)("recovery context and logout safety", () => {
 
   afterAll(async () => {
     if (!admin) return;
-    if (householdId) {
-      await admin.from("reimbursement_obligations").delete().eq("household_id", householdId);
-      await admin.from("expense_amendments").delete().eq("household_id", householdId);
-      await admin.from("expense_adjustment_allocations").delete().eq("household_id", householdId);
-      await admin.from("expense_item_allocations").delete().eq("household_id", householdId);
-      await admin.from("expense_adjustments").delete().eq("household_id", householdId);
-      await admin.from("expense_items").delete().eq("household_id", householdId);
-      await admin.from("expenses").delete().eq("household_id", householdId);
-      await admin.from("audit_events").delete().eq("household_id", householdId);
-      await admin.from("household_invitations").delete().eq("household_id", householdId);
-      await admin.from("household_settings").delete().eq("household_id", householdId);
-      await admin
-        .from("user_preferences")
-        .update({ current_household_id: null })
-        .eq("current_household_id", householdId);
-      await admin.from("household_membership_roles").delete().eq("membership_id", membershipId);
-      await admin.from("household_memberships").delete().eq("household_id", householdId);
-      await admin.from("households").delete().eq("id", householdId);
-    }
-    for (const userId of createdUserIds) {
-      await admin.from("user_preferences").delete().eq("user_id", userId);
-      await admin.from("profiles").delete().eq("id", userId);
-      await admin.auth.admin.deleteUser(userId);
-    }
+    await cleanupTestHouseholdsByRunId(admin, runId);
+    await deleteTestAuthUsers(admin, createdUserIds);
   }, 120_000);
 
   it("clearing household preference does not delete memberships or expenses", async () => {

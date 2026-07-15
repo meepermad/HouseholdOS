@@ -15,7 +15,13 @@ import { hashInviteToken } from "@/lib/tokens";
 
 export type ActionResult =
   | { ok: true; message?: string; data?: Record<string, string> }
-  | { ok: false; error: string };
+  | {
+      ok: false;
+      error: string;
+      /** Optional recovery link (e.g. blocking submitted payment). */
+      actionHref?: string;
+      actionLabel?: string;
+    };
 
 async function hasPendingInviteForEmail(email: string, token?: string | null) {
   if (!token) return false;

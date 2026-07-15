@@ -3,6 +3,11 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { calculateExpense } from "@/lib/expenses";
 import { generateInviteToken, hashInviteToken } from "@/lib/tokens";
 import type { Database, Json } from "@/types/database";
+import { getAuthedClient } from "../helpers/authed-client";
+import {
+  cleanupTestHouseholdsByRunId,
+  deleteTestAuthUsers,
+} from "../helpers/cleanup-test-households";
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const secretKey =
@@ -18,20 +23,7 @@ const runId = `exp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 type Admin = SupabaseClient<Database>;
 
 function authed(email: string, password: string) {
-  return createClient<Database>(url!, publishableKey!, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  })
-    .auth.signInWithPassword({ email, password })
-    .then(async (res) => {
-      if (res.error) throw res.error;
-      const client = createClient<Database>(url!, publishableKey!, {
-        auth: { persistSession: false, autoRefreshToken: false },
-        global: {
-          headers: { Authorization: `Bearer ${res.data.session!.access_token}` },
-        },
-      });
-      return { client, userId: res.data.user!.id };
-    });
+  return getAuthedClient(email, password);
 }
 
 async function inviteAccept(
@@ -145,44 +137,8 @@ describe.skipIf(!hasSupabase)("expense RLS and confirmation", () => {
 
   afterAll(async () => {
     if (!admin) return;
-    for (const id of [householdA, householdB].filter(Boolean)) {
-      await admin.from("reimbursement_obligations").delete().eq("household_id", id);
-      await admin.from("expense_amendments").delete().eq("household_id", id);
-      await admin.from("expense_adjustment_allocations").delete().eq("household_id", id);
-      await admin.from("expense_item_allocations").delete().eq("household_id", id);
-      await admin.from("expense_adjustments").delete().eq("household_id", id);
-      await admin.from("expense_items").delete().eq("household_id", id);
-      // Clear supersession FKs before delete
-      await admin
-        .from("expenses")
-        .update({
-          superseded_by_expense_id: null,
-          supersedes_expense_id: null,
-        } as never)
-        .eq("household_id", id);
-      await admin.from("expenses").delete().eq("household_id", id);
-      await admin.from("audit_events").delete().eq("household_id", id);
-      await admin.from("household_invitations").delete().eq("household_id", id);
-      await admin.from("household_settings").delete().eq("household_id", id);
-      await admin
-        .from("user_preferences")
-        .update({ current_household_id: null })
-        .eq("current_household_id", id);
-      const { data: mems } = await admin
-        .from("household_memberships")
-        .select("id")
-        .eq("household_id", id);
-      for (const m of mems ?? []) {
-        await admin.from("household_membership_roles").delete().eq("membership_id", m.id);
-      }
-      await admin.from("household_memberships").delete().eq("household_id", id);
-      await admin.from("households").delete().eq("id", id);
-    }
-    for (const userId of createdUserIds) {
-      await admin.from("user_preferences").delete().eq("user_id", userId);
-      await admin.from("profiles").delete().eq("id", userId);
-      await admin.auth.admin.deleteUser(userId);
-    }
+    await cleanupTestHouseholdsByRunId(admin, runId);
+    await deleteTestAuthUsers(admin, createdUserIds);
   }, 180_000);
 
   async function createDraft(

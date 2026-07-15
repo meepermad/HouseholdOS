@@ -21,7 +21,8 @@ export const metadata: Metadata = {
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
-    statusBarStyle: "default",
+    // Pair with viewportFit cover so content draws under the status bar safely.
+    statusBarStyle: "black-translucent",
     title: "HouseholdOS",
   },
 };
@@ -35,6 +36,8 @@ export const viewport: Viewport = {
   initialScale: 1,
   // Allow zoom for accessibility on money inputs and forms.
   maximumScale: 5,
+  // Required for env(safe-area-inset-*) on notched iPhones.
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
@@ -51,7 +54,7 @@ export default function RootLayout({
       <head>
         <ThemeBootstrapScript />
       </head>
-      <body className="min-h-full antialiased text-text-primary">
+      <body className="min-h-full bg-background antialiased text-text-primary">
         <AppProviders>{children}</AppProviders>
       </body>
     </html>

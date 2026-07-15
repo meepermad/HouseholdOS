@@ -24,6 +24,15 @@ export const CAPABILITIES = [
   "expense.confirm",
   "expense.void",
   "expense.amend",
+  "payment.create",
+  "payment.view",
+  "payment.confirm",
+  "payment.reject",
+  "payment.cancel",
+  "payment.reverse",
+  "waiver.create",
+  "dispute.open",
+  "dispute.resolve",
 ] as const;
 
 export type Capability = (typeof CAPABILITIES)[number];
@@ -36,12 +45,26 @@ const EXPENSE_CAPABILITIES = [
   "expense.amend",
 ] as const satisfies readonly Capability[];
 
+/** Financial settlement actions. Party checks are enforced in RPCs. */
+const PAYMENT_CAPABILITIES = [
+  "payment.create",
+  "payment.view",
+  "payment.confirm",
+  "payment.reject",
+  "payment.cancel",
+  "payment.reverse",
+  "waiver.create",
+  "dispute.open",
+  "dispute.resolve",
+] as const satisfies readonly Capability[];
+
 const ROLE_CAPABILITIES: Record<HouseholdResponsibility, readonly Capability[]> = {
   member: [
     "household.view",
     "member.leave",
     "audit.read",
     ...EXPENSE_CAPABILITIES,
+    ...PAYMENT_CAPABILITIES,
   ],
   household_coordinator: [
     "household.view",
@@ -55,6 +78,7 @@ const ROLE_CAPABILITIES: Record<HouseholdResponsibility, readonly Capability[]> 
     "audit.read",
     "settings.update",
     ...EXPENSE_CAPABILITIES,
+    ...PAYMENT_CAPABILITIES,
   ],
   financial_coordinator: [
     "household.view",
@@ -62,6 +86,7 @@ const ROLE_CAPABILITIES: Record<HouseholdResponsibility, readonly Capability[]> 
     "audit.read",
     "member.leave",
     ...EXPENSE_CAPABILITIES,
+    ...PAYMENT_CAPABILITIES,
   ],
 };
 

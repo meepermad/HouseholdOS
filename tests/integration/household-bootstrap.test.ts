@@ -2,6 +2,11 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { generateInviteToken, hashInviteToken } from "@/lib/tokens";
 import type { Database } from "@/types/database";
+import { getAuthedClient } from "../helpers/authed-client";
+import {
+  cleanupTestHouseholdsByRunId,
+  deleteTestAuthUsers,
+} from "../helpers/cleanup-test-households";
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const secretKey =
@@ -23,17 +28,8 @@ type Session = {
 };
 
 async function authed(email: string): Promise<Session> {
-  const res = await createClient<Database>(url!, publishableKey!, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  }).auth.signInWithPassword({ email, password });
-  if (res.error) throw res.error;
-  const client = createClient<Database>(url!, publishableKey!, {
-    auth: { persistSession: false, autoRefreshToken: false },
-    global: {
-      headers: { Authorization: `Bearer ${res.data.session!.access_token}` },
-    },
-  });
-  return { email, client, userId: res.data.user!.id };
+  const session = await getAuthedClient(email, password);
+  return { email, client: session.client, userId: session.userId };
 }
 
 describe.skipIf(!hasSupabase)("Phase 2.2 household bootstrap + invitations", () => {
@@ -76,29 +72,9 @@ describe.skipIf(!hasSupabase)("Phase 2.2 household bootstrap + invitations", () 
   }, 60_000);
 
   afterAll(async () => {
-    for (const id of householdIds) {
-      const { data: mems } = await admin
-        .from("household_memberships")
-        .select("id")
-        .eq("household_id", id);
-      for (const m of mems ?? []) {
-        await admin.from("household_membership_roles").delete().eq("membership_id", m.id);
-      }
-      await admin.from("household_invitations").delete().eq("household_id", id);
-      await admin.from("household_memberships").delete().eq("household_id", id);
-      await admin.from("household_settings").delete().eq("household_id", id);
-      await admin.from("audit_events").delete().eq("household_id", id);
-      await admin
-        .from("user_preferences")
-        .update({ current_household_id: null })
-        .eq("current_household_id", id);
-      await admin.from("households").delete().eq("id", id);
-    }
-    for (const userId of createdUserIds) {
-      await admin.from("user_preferences").delete().eq("user_id", userId);
-      await admin.from("profiles").delete().eq("id", userId);
-      await admin.auth.admin.deleteUser(userId);
-    }
+    void householdIds;
+    await cleanupTestHouseholdsByRunId(admin, runId);
+    await deleteTestAuthUsers(admin, createdUserIds);
   });
 
   it("bootstraps household with settings, roles, preference, and audits", async () => {

@@ -13,7 +13,7 @@ export function Surface({
     <div
       className={`rounded-md border border-border ${
         elevated ? "bg-surface-elevated" : "bg-surface"
-      } p-4 ${className}`}
+      } p-4 sm:p-5 ${className}`}
       {...props}
     >
       {children}

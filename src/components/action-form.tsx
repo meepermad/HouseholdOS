@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState } from "react";
 import type { ActionResult } from "@/app/actions/auth";
 
@@ -28,9 +29,19 @@ export function ActionForm({
         {children}
       </fieldset>
       {state && !state.ok ? (
-        <p className="text-sm text-destructive" role="alert">
-          {state.error}
-        </p>
+        <div className="space-y-1" role="alert">
+          <p className="text-sm text-destructive">{state.error}</p>
+          {state.actionHref ? (
+            <p className="text-sm">
+              <Link
+                href={state.actionHref}
+                className="font-medium text-primary underline underline-offset-2"
+              >
+                {state.actionLabel ?? "Open related item"}
+              </Link>
+            </p>
+          ) : null}
+        </div>
       ) : null}
       {state?.ok && state.message ? (
         <p className="text-sm text-success" role="status">

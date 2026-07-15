@@ -1,8 +1,11 @@
 import Link from "next/link";
+import { Suspense } from "react";
 import { assertActiveMembership } from "@/lib/household-context";
 import { createClient } from "@/lib/supabase/server";
 import { can } from "@/lib/permissions";
 import { formatUsdFromCents, toCents } from "@/lib/money";
+import { MoneyActionCenter } from "@/components/payments/action-center";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export const dynamic = "force-dynamic";
 
@@ -53,6 +56,14 @@ export default async function HouseholdHomePage({
           Your roles: {ctx.roles.join(", ")}
         </p>
       </section>
+
+      <Suspense fallback={<Skeleton className="h-24 w-full" />}>
+        <MoneyActionCenter
+          householdId={householdId}
+          membershipId={ctx.membershipId}
+          userId={ctx.userId}
+        />
+      </Suspense>
 
       <section className="space-y-2">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">

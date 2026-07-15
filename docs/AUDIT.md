@@ -37,6 +37,24 @@
 - `reimbursement.reversed`
 - `reimbursement.waived`
 
+## Event types (Phase 3 payments / settlement)
+
+- `reimbursement.partially_settled`
+- `reimbursement.settled`
+- `reimbursement.reopened`
+- `payment.created`
+- `payment.submitted`
+- `payment.confirmed`
+- `payment.rejected`
+- `payment.cancelled`
+- `payment.reversed`
+- `payment.allocation_created`
+- `waiver.reversed`
+- `dispute.opened`
+- `dispute.resolved`
+- `dispute.withdrawn`
+- `refund_obligation.created`
+
 ## Shape
 
 | Column | Purpose |

@@ -127,7 +127,7 @@ export default async function ExpensesListPage({
                     ? `/app/${householdId}/money/expenses/${e.id}/edit`
                     : `/app/${householdId}/money/expenses/${e.id}`
                 }
-                className="block space-y-1 px-3 py-3 hover:bg-surface-interactive"
+                className="block space-y-1.5 px-4 py-3.5 hover:bg-surface-interactive"
               >
                 <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
                   <span className="font-medium">

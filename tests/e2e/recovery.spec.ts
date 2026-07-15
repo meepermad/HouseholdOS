@@ -5,10 +5,10 @@ test.describe("recovery escape paths", () => {
     page,
   }) => {
     await page.goto("/recovery");
-    await expect(page.getByRole("heading", { name: /recoverable problem|unavailable|signed out/i })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /something went wrong|unavailable|signed out|session expired|membership|out of date|temporarily unavailable/i })).toBeVisible();
     await expect(page.getByRole("button", { name: "Sign out" })).toBeVisible();
     await expect(
-      page.getByRole("button", { name: "Clear selected household" }),
+      page.getByRole("button", { name: "Clear household selection" }),
     ).toBeVisible();
     await expect(page.getByRole("link", { name: /sign in/i })).toBeVisible();
   });

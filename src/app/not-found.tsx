@@ -3,32 +3,31 @@ import {
   RecoveryClearHouseholdForm,
   RecoveryLogoutForm,
 } from "@/components/recovery-actions";
+import { RecoveryScreen, recoveryControlClass } from "@/components/recovery-screen";
 
 export default function NotFound() {
   return (
-    <main
-      className="mx-auto flex min-h-dvh max-w-md flex-col justify-center px-5"
-      data-testid="not-found"
-    >
-      <h1 className="text-xl font-semibold">Not found</h1>
-      <p className="mt-2 text-sm text-slate-600">
-        That page or household does not exist, or you do not have access.
-      </p>
-      <div className="mt-6 flex flex-wrap gap-2">
-        <Link
-          href="/app"
-          className="rounded-md bg-accent px-3 py-2 text-sm font-medium text-white"
-        >
-          Return to household selection
-        </Link>
-        <Link href="/recovery" className="rounded-md border border-line px-3 py-2 text-sm">
-          Recovery
-        </Link>
-      </div>
-      <div className="mt-4">
-        <RecoveryClearHouseholdForm next="/app" />
-        <RecoveryLogoutForm />
-      </div>
-    </main>
+    <RecoveryScreen
+      testId="not-found"
+      title="Not found"
+      body="That page or household does not exist, or you do not have access."
+      primary={
+        <>
+          <Link href="/app" className={recoveryControlClass.primary}>
+            Choose a household
+          </Link>
+          <RecoveryLogoutForm variant="secondary" />
+        </>
+      }
+      secondary={<RecoveryClearHouseholdForm next="/app" />}
+      footer={
+        <>
+          Still stuck?{" "}
+          <Link href="/recovery" className={recoveryControlClass.link}>
+            Recovery options
+          </Link>
+        </>
+      }
+    />
   );
 }

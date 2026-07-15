@@ -5,6 +5,10 @@ import { redirect } from "next/navigation";
 import type { ActionResult } from "@/app/actions/auth";
 import { toPublicErrorMessage } from "@/lib/errors";
 import { assertActiveMembership } from "@/lib/household-context";
+import {
+  extractBlockingPaymentId,
+  mapPaymentError,
+} from "@/lib/payments/errors";
 import { can } from "@/lib/permissions";
 import {
   buildConfirmationSnapshot,
@@ -525,6 +529,17 @@ export async function confirmExpenseAction(
 
     if (error) {
       const msg = error.message.toLowerCase();
+      if (msg.includes("expense correction conflict") || msg.includes("submitted payment")) {
+        const paymentId = extractBlockingPaymentId(error.message);
+        return {
+          ok: false,
+          error: mapPaymentError(error.message).publicMessage,
+          actionHref: paymentId
+            ? `/app/${parsed.data.householdId}/money/payments/${paymentId}`
+            : undefined,
+          actionLabel: paymentId ? "Open blocking payment" : undefined,
+        };
+      }
       if (msg.includes("already confirmed")) {
         return { ok: false, error: "This expense was already confirmed." };
       }
@@ -608,7 +623,17 @@ export async function voidExpenseAction(
       p_expense_id: parsed.data.expenseId,
       p_reason: parsed.data.reason,
     });
-    if (error) return { ok: false, error: "Unable to void expense." };
+    if (error) {
+      const paymentId = extractBlockingPaymentId(error.message);
+      return {
+        ok: false,
+        error: mapPaymentError(error.message).publicMessage,
+        actionHref: paymentId
+          ? `/app/${parsed.data.householdId}/money/payments/${paymentId}`
+          : undefined,
+        actionLabel: paymentId ? "Open blocking payment" : undefined,
+      };
+    }
 
     revalidatePath(moneyPath(parsed.data.householdId));
     redirect(moneyPath(parsed.data.householdId, `/expenses/${parsed.data.expenseId}`));

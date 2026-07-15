@@ -4,7 +4,7 @@ import { forgotPasswordAction } from "@/app/actions/auth";
 
 export default function ForgotPasswordPage() {
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col justify-center px-5 py-10">
+    <main className="safe-pt safe-pb mx-auto flex min-h-dvh w-full max-w-md flex-col justify-center px-5 py-10">
       <p className="font-[family-name:var(--font-display)] text-2xl tracking-tight">
         HouseholdOS
       </p>

@@ -70,7 +70,7 @@ export function ExpenseAdjustmentEditor({
   return (
     <ActionForm
       action={upsertExpenseAdjustmentAction}
-      className="space-y-3 rounded-md border border-line bg-surface p-3"
+      className="space-y-3 rounded-md border border-border bg-surface p-4"
       pendingLabel="Saving adjustment…"
     >
       <input type="hidden" name="householdId" value={householdId} />

@@ -55,7 +55,7 @@ export default async function MembersSettingsPage({
             ).map((r) => r.role);
 
             return (
-              <li key={m.id} className="rounded-md border border-line bg-surface p-3">
+              <li key={m.id} className="rounded-md border border-border bg-surface p-4">
                 <p className="font-medium">
                   {profile?.display_name || profile?.email || m.user_id}
                 </p>
@@ -122,7 +122,7 @@ export default async function MembersSettingsPage({
                 {(invitations ?? []).map((invite) => (
                   <li
                     key={invite.id}
-                    className="flex items-start justify-between gap-3 rounded-md border border-line p-3 text-sm"
+                    className="flex items-start justify-between gap-3 rounded-md border border-border bg-surface p-4 text-sm"
                   >
                     <div>
                       <p>{invite.invited_email}</p>

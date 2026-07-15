@@ -104,7 +104,7 @@ export default async function HouseholdLayout({
         <div className="hidden border-b border-border lg:block">
           <ShellHeader householdName={household.name} />
         </div>
-        <div className="flex-1 px-4 py-6 pb-24 md:px-6 lg:pb-6">{children}</div>
+        <div className="app-main-pad flex-1 px-4 py-6 md:px-6">{children}</div>
         <HouseholdNav householdId={householdId} variant="bottom" />
       </div>
     </div>

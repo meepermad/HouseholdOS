@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import type { MemberOption } from "@/lib/expenses/display";
+import { getSettlementBalancesForMembership } from "@/lib/payments/queries";
 
 export async function listActiveMemberOptions(
   householdId: string,
@@ -22,34 +23,22 @@ export async function listActiveMemberOptions(
   });
 }
 
+/** Official balances from ledger-derived outstanding (not raw current_amount_cents). */
 export async function getBalancesForMembership(
   householdId: string,
   membershipId: string,
 ) {
-  const supabase = await createClient();
-  const [{ data: owed }, { data: owedToYou }] = await Promise.all([
-    supabase
-      .from("reimbursement_obligations")
-      .select("current_amount_cents")
-      .eq("household_id", householdId)
-      .eq("debtor_membership_id", membershipId)
-      .eq("status", "pending"),
-    supabase
-      .from("reimbursement_obligations")
-      .select("current_amount_cents")
-      .eq("household_id", householdId)
-      .eq("creditor_membership_id", membershipId)
-      .eq("status", "pending"),
-  ]);
-
-  const youOwe = (owed ?? []).reduce((s, r) => s + r.current_amount_cents, 0);
-  const youAreOwed = (owedToYou ?? []).reduce(
-    (s, r) => s + r.current_amount_cents,
-    0,
+  const { summary } = await getSettlementBalancesForMembership(
+    householdId,
+    membershipId,
   );
   return {
-    youOwe,
-    youAreOwed,
-    net: youAreOwed - youOwe,
+    youOwe: summary.officialYouOweCents,
+    youAreOwed: summary.officialYouAreOwedCents,
+    net: summary.officialNetCents,
+    pendingOutgoing: summary.pendingOutgoingCents,
+    pendingIncoming: summary.pendingIncomingCents,
+    projectedYouOwe: summary.projectedYouOweCents,
+    projectedYouAreOwed: summary.projectedYouAreOwedCents,
   };
 }

@@ -18,7 +18,10 @@
     "db:migration:new": "npx supabase migration new",
     "db:types": "npx supabase gen types typescript --linked > src/types/database.generated.ts",
     "db:types:local": "npx supabase gen types typescript --local > src/types/database.generated.ts",
-    "db:link": "npx supabase link"
+    "db:link": "npx supabase link",
+    "secret-scan": "node scripts/secret-scan.mjs",
+    "test:integration": "vitest run tests/integration --fileParallelism=false",
+    "test:prepush": "npm run typecheck && npm run lint && npm test && npm run build && npm run test:e2e && npm run secret-scan"
   },
   "dependencies": {
     "@ducanh2912/next-pwa": "^10.2.9",
