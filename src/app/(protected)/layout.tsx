@@ -1,5 +1,9 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
-import { signOutAction } from "@/app/actions/auth";
+import {
+  RecoveryClearHouseholdForm,
+  RecoveryLogoutForm,
+} from "@/components/recovery-actions";
 import { ensureProfileOrRecover } from "@/lib/household-context";
 import { AppError } from "@/lib/errors";
 
@@ -16,15 +20,19 @@ export default async function ProtectedLayout({
         <main className="mx-auto flex min-h-dvh max-w-md flex-col justify-center px-5">
           <h1 className="text-xl font-semibold">Profile recovery needed</h1>
           <p className="mt-2 text-sm text-slate-600">{error.publicMessage}</p>
-          <form action={signOutAction} className="mt-6">
-            <button type="submit" className="underline">
-              Sign out and try again
-            </button>
-          </form>
+          <div className="mt-6 flex flex-wrap gap-2">
+            <Link href="/recovery" className="rounded-md border border-line px-3 py-2 text-sm">
+              Recovery
+            </Link>
+          </div>
+          <div className="mt-4">
+            <RecoveryClearHouseholdForm next="/onboarding" />
+            <RecoveryLogoutForm label="Sign out and try again" />
+          </div>
         </main>
       );
     }
-    redirect("/login");
+    redirect("/login?reason=session_expired");
   }
 
   return <>{children}</>;

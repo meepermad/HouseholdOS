@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { signOutAction } from "@/app/actions/auth";
 
 export function ShellHeader({
   title,
@@ -19,7 +18,7 @@ export function ShellHeader({
         ) : null}
         {title ? <p className="sr-only">{title}</p> : null}
       </div>
-      <form action={signOutAction}>
+      <form action="/auth/logout" method="post">
         <button type="submit" className="text-sm text-slate-600 underline">
           Sign out
         </button>

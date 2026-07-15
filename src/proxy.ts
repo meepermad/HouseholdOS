@@ -9,7 +9,15 @@ const AUTH_PAGES = new Set([
   "/reset-password",
 ]);
 
-const PUBLIC_PREFIXES = ["/auth/callback", "/api/health", "/api/ready", "/join/"];
+const PUBLIC_PREFIXES = [
+  "/auth/callback",
+  "/auth/logout",
+  "/auth/clear-household",
+  "/api/health",
+  "/api/ready",
+  "/join/",
+  "/recovery",
+];
 
 export async function proxy(request: NextRequest) {
   const response = await updateSession(request);
@@ -19,20 +27,25 @@ export async function proxy(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
-  // Let static health and auth callback pass
-  if (PUBLIC_PREFIXES.some((p) => pathname.startsWith(p))) {
+  if (PUBLIC_PREFIXES.some((p) => pathname === p || pathname.startsWith(p))) {
     return response;
   }
 
-  // Session cookie presence is refreshed in updateSession; deeper auth checks
-  // happen in layouts/server components via getUser().
+  // Dev-only error trigger stays reachable without auth in non-production.
+  if (
+    pathname.startsWith("/dev/") &&
+    process.env.NODE_ENV !== "production" &&
+    process.env.APP_ENV !== "production"
+  ) {
+    return response;
+  }
+
   const isAuthPage = AUTH_PAGES.has(pathname);
   const isProtected =
     pathname.startsWith("/app") ||
     pathname.startsWith("/onboarding") ||
     pathname === "/";
 
-  // Soft gate markers via cookie names (supabase auth cookies)
   const hasAuthCookie = request.cookies
     .getAll()
     .some((c) => c.name.includes("auth-token") || c.name.startsWith("sb-"));
@@ -44,7 +57,7 @@ export async function proxy(request: NextRequest) {
   }
 
   if (isAuthPage && hasAuthCookie && pathname !== "/reset-password") {
-    // Do not hard-redirect here without verifying the user; layouts handle that.
+    // Defer to page-level getUser() so expired cookies are not forced into /app.
   }
 
   return response;

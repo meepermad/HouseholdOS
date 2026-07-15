@@ -84,7 +84,14 @@ export async function assertActiveMembership(
     .eq("status", "active")
     .maybeSingle();
 
-  if (error || !membership) {
+  if (error) {
+    throw new AppError(
+      "database_failure",
+      "Unable to verify household membership right now.",
+    );
+  }
+
+  if (!membership) {
     throw new AppError(
       "authorization",
       "You do not have access to this household.",
@@ -118,14 +125,28 @@ export async function persistCurrentHousehold(householdId: string) {
 
 export async function clearCurrentHouseholdCookie() {
   const cookieStore = await cookies();
-  cookieStore.delete(CURRENT_HOUSEHOLD_COOKIE);
+  cookieStore.set(CURRENT_HOUSEHOLD_COOKIE, "", {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge: 0,
+  });
 }
 
 export async function resolvePreferredHouseholdId(
   userId: string,
 ): Promise<string | null> {
   const authorized = await listAuthorizedHouseholdIds(userId);
-  if (authorized.length === 0) return null;
+  if (authorized.length === 0) {
+    // Stale cookie with no memberships — clear so /app ↔ cookie loops stop.
+    try {
+      await clearCurrentHouseholdCookie();
+    } catch {
+      // Cookie store may be read-only in some contexts.
+    }
+    return null;
+  }
 
   const cookieStore = await cookies();
   const fromCookie = cookieStore.get(CURRENT_HOUSEHOLD_COOKIE)?.value;
@@ -135,6 +156,15 @@ export async function resolvePreferredHouseholdId(
     authorizedHouseholdIds: authorized,
   });
   if (cookieValid) return cookieValid;
+
+  // Invalid / unauthorized cookie preference — clear without throwing.
+  if (fromCookie) {
+    try {
+      await clearCurrentHouseholdCookie();
+    } catch {
+      // ignore
+    }
+  }
 
   const supabase = await createClient();
   const { data: prefs } = await supabase
@@ -148,6 +178,15 @@ export async function resolvePreferredHouseholdId(
     authorizedHouseholdIds: authorized,
   });
   if (fromPrefs) return fromPrefs;
+
+  // Persist a valid preference when cookie/prefs were stale.
+  if (authorized[0]) {
+    try {
+      await persistCurrentHousehold(authorized[0]);
+    } catch {
+      // Prefer returning an id even if preference write fails.
+    }
+  }
 
   return authorized[0] ?? null;
 }

@@ -8,7 +8,7 @@ import {
 } from "@/components/recovery-actions";
 import { formatErrorReference } from "@/lib/recovery";
 
-export default function RootErrorBoundary({
+export default function ProtectedAppError({
   error,
   reset,
 }: {
@@ -32,24 +32,28 @@ export default function RootErrorBoundary({
         fontFamily: "system-ui, sans-serif",
         color: "#142033",
       }}
+      data-testid="protected-error-boundary"
     >
       <h1
         ref={headingRef}
         tabIndex={-1}
         style={{ fontSize: "1.25rem", fontWeight: 600, outline: "none" }}
       >
-        Something went wrong
+        Could not load this screen
       </h1>
       <p
         role="status"
         aria-live="polite"
         style={{ marginTop: "0.5rem", fontSize: "0.875rem", color: "#475569" }}
       >
-        HouseholdOS hit a recoverable problem. You can retry, open recovery
-        options, clear your household selection, or sign out.
+        Retry this page, clear your selected household, open recovery options, or
+        sign out. These actions do not delete expenses or reimbursements.
       </p>
       {reference ? (
-        <p style={{ marginTop: "0.75rem", fontSize: "0.75rem", color: "#94a3b8" }}>
+        <p
+          style={{ marginTop: "0.75rem", fontSize: "0.75rem", color: "#94a3b8" }}
+          data-testid="error-reference"
+        >
           Reference: {reference}
         </p>
       ) : null}
@@ -59,6 +63,7 @@ export default function RootErrorBoundary({
           type="button"
           onClick={reset}
           aria-label="Try again"
+          data-testid="error-retry"
           style={{
             marginRight: "0.5rem",
             padding: "0.6rem 1rem",

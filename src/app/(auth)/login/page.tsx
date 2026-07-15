@@ -4,22 +4,30 @@ import { ActionForm } from "@/components/action-form";
 import { signInAction } from "@/app/actions/auth";
 import { createClient } from "@/lib/supabase/server";
 import { safeRedirectPath } from "@/lib/navigation";
+import { classifyRecoveryReason, recoveryCopy, safeRecoveryDestination } from "@/lib/recovery";
 
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ next?: string; error?: string }>;
+  searchParams: Promise<{ next?: string; error?: string; reason?: string }>;
 }) {
   const params = await searchParams;
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (user) {
-    redirect(safeRedirectPath(params.next, "/app"));
+
+  // Authenticated users skip login unless they just signed out (stale cookie race).
+  if (user && params.reason !== "signed_out") {
+    redirect(safeRecoveryDestination(params.next));
   }
 
   const next = safeRedirectPath(params.next, "/app");
+  const reasonState = classifyRecoveryReason(params.reason);
+  const reasonCopy =
+    params.reason && reasonState !== "unexpected"
+      ? recoveryCopy(reasonState)
+      : null;
 
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col justify-center px-5 py-10">
@@ -38,6 +46,17 @@ export default async function LoginPage({
           {params.error}
         </p>
       ) : null}
+      {reasonCopy ? (
+        <p className="mt-4 text-sm text-slate-700" role="status">
+          {reasonCopy.body}
+        </p>
+      ) : null}
+      <p className="mt-2 text-xs text-slate-500">
+        Stuck?{" "}
+        <Link href="/recovery" className="underline">
+          Open recovery options
+        </Link>
+      </p>
       <ActionForm action={signInAction} className="mt-8 space-y-4">
         <input type="hidden" name="next" value={next} />
         <label className="block text-sm">

@@ -1,8 +1,8 @@
-import Link from "next/link";
 import { ShellHeader } from "@/components/shell-header";
 import { HouseholdNav } from "@/components/household-nav";
 import { HouseholdSwitcher } from "@/components/household-switcher";
-import { AppError } from "@/lib/errors";
+import { UnauthorizedHouseholdState } from "@/components/unauthorized-household";
+import { AppError, logServerError } from "@/lib/errors";
 import {
   assertActiveMembership,
   listAuthorizedHouseholdIds,
@@ -26,28 +26,33 @@ export default async function HouseholdLayout({
     ctx = await assertActiveMembership(householdId);
   } catch (error) {
     if (error instanceof AppError && error.code === "authorization") {
-      return (
-        <main className="mx-auto flex min-h-dvh max-w-md flex-col justify-center px-5">
-          <h1 className="text-xl font-semibold">Unauthorized</h1>
-          <p className="mt-2 text-sm text-slate-600">{error.publicMessage}</p>
-          <Link href="/app" className="mt-4 underline">
-            Back to your households
-          </Link>
-        </main>
-      );
+      return <UnauthorizedHouseholdState message={error.publicMessage} />;
     }
     if (error instanceof AppError && error.code === "not_found") {
       notFound();
+    }
+    if (error instanceof AppError && error.code === "database_failure") {
+      logServerError("household_layout", error, { householdId });
+      return (
+        <UnauthorizedHouseholdState message="HouseholdOS could not verify this household right now. Try again or sign out." />
+      );
     }
     throw error;
   }
 
   const supabase = await createClient();
-  const { data: household } = await supabase
+  const { data: household, error: householdError } = await supabase
     .from("households")
     .select("id, name, property_nickname, status")
     .eq("id", householdId)
     .maybeSingle();
+
+  if (householdError) {
+    logServerError("household_layout_query", householdError, { householdId });
+    return (
+      <UnauthorizedHouseholdState message="HouseholdOS could not load this household. Try again or sign out." />
+    );
+  }
 
   if (!household || household.status !== "active") {
     notFound();

@@ -127,9 +127,9 @@ export async function signInAction(
 }
 
 export async function signOutAction(): Promise<void> {
-  const supabase = await createClient();
-  await supabase.auth.signOut();
-  redirect("/login");
+  const { performEmergencyLogout } = await import("@/lib/recovery-actions");
+  await performEmergencyLogout("/actions/signOutAction");
+  redirect("/login?reason=signed_out");
 }
 
 export async function forgotPasswordAction(

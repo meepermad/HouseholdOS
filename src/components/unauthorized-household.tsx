@@ -4,15 +4,21 @@ import {
   RecoveryLogoutForm,
 } from "@/components/recovery-actions";
 
-export default function NotFound() {
+/** Safe unauthorized / stale-household escape UI (no shell dependency). */
+export function UnauthorizedHouseholdState({
+  message,
+}: {
+  message: string;
+}) {
   return (
     <main
       className="mx-auto flex min-h-dvh max-w-md flex-col justify-center px-5"
-      data-testid="not-found"
+      data-testid="unauthorized-household"
     >
-      <h1 className="text-xl font-semibold">Not found</h1>
+      <h1 className="text-xl font-semibold">Household unavailable</h1>
+      <p className="mt-2 text-sm text-slate-600">{message}</p>
       <p className="mt-2 text-sm text-slate-600">
-        That page or household does not exist, or you do not have access.
+        This can happen if your membership changed or the household link is stale.
       </p>
       <div className="mt-6 flex flex-wrap gap-2">
         <Link
