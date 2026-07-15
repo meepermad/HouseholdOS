@@ -88,6 +88,8 @@ export const EVENT_CALENDAR_EVENT_CREATED = "calendar.event_created" as const;
 export const EVENT_CALENDAR_EVENT_UPDATED = "calendar.event_updated" as const;
 export const EVENT_CALENDAR_EVENT_CANCELLED = "calendar.event_cancelled" as const;
 export const EVENT_CALENDAR_REMINDER = "calendar.reminder" as const;
+export const EVENT_CALENDAR_RSVP_CHANGED = "calendar.rsvp_changed" as const;
+export const EVENT_CALENDAR_ATTENDEE_ADDED = "calendar.attendee_added" as const;
 /** @deprecated Prefer EVENT_CALENDAR_EVENT_UPDATED */
 export const EVENT_CALENDAR_UPDATED = EVENT_CALENDAR_EVENT_UPDATED;
 export const EVENT_INVENTORY_LOW = "inventory.low" as const;
@@ -131,6 +133,7 @@ const REIMBURSEMENT_LINK = "/app/{householdId}/money/reimbursements/{entityId}";
 const DISPUTE_LINK = "/app/{householdId}/money/disputes/{entityId}";
 const EXPENSE_LINK = "/app/{householdId}/money/expenses/{entityId}";
 const APP_LINK = "/app/{householdId}";
+const CALENDAR_EVENT_LINK = "/app/{householdId}/calendar/events/{entityId}";
 
 function entry(
   partial: Omit<CatalogEntry, "defaultChannels"> & {
@@ -338,42 +341,64 @@ export const NOTIFICATION_CATALOG: Readonly<Record<string, CatalogEntry>> = {
     category: "calendar",
     defaultUrgency: "normal",
     recipientRule: "involved_parties",
-    deepLinkPattern: `${APP_LINK}/calendar/{entityId}`,
+    deepLinkPattern: CALENDAR_EVENT_LINK,
     digestAllowed: true,
     actionOriented: false,
     privacy: "detailed_ok",
-    active: false,
+    active: true,
   }),
   [EVENT_CALENDAR_EVENT_UPDATED]: entry({
     eventType: EVENT_CALENDAR_EVENT_UPDATED,
     category: "calendar",
     defaultUrgency: "normal",
     recipientRule: "involved_parties",
-    deepLinkPattern: `${APP_LINK}/calendar/{entityId}`,
+    deepLinkPattern: CALENDAR_EVENT_LINK,
     digestAllowed: true,
     actionOriented: false,
     privacy: "detailed_ok",
-    active: false,
+    active: true,
   }),
   [EVENT_CALENDAR_EVENT_CANCELLED]: entry({
     eventType: EVENT_CALENDAR_EVENT_CANCELLED,
     category: "calendar",
     defaultUrgency: "normal",
     recipientRule: "involved_parties",
-    deepLinkPattern: `${APP_LINK}/calendar/{entityId}`,
+    deepLinkPattern: CALENDAR_EVENT_LINK,
     digestAllowed: true,
     actionOriented: false,
     privacy: "detailed_ok",
-    active: false,
+    active: true,
   }),
   [EVENT_CALENDAR_REMINDER]: entry({
     eventType: EVENT_CALENDAR_REMINDER,
     category: "calendar",
     defaultUrgency: "normal",
     recipientRule: "involved_parties",
-    deepLinkPattern: `${APP_LINK}/calendar/{entityId}`,
+    deepLinkPattern: CALENDAR_EVENT_LINK,
     digestAllowed: false,
     actionOriented: true,
+    privacy: "detailed_ok",
+    active: true,
+  }),
+  [EVENT_CALENDAR_RSVP_CHANGED]: entry({
+    eventType: EVENT_CALENDAR_RSVP_CHANGED,
+    category: "calendar",
+    defaultUrgency: "low",
+    recipientRule: "explicit",
+    deepLinkPattern: CALENDAR_EVENT_LINK,
+    digestAllowed: true,
+    actionOriented: false,
+    privacy: "detailed_ok",
+    active: true,
+  }),
+  [EVENT_CALENDAR_ATTENDEE_ADDED]: entry({
+    eventType: EVENT_CALENDAR_ATTENDEE_ADDED,
+    category: "calendar",
+    defaultUrgency: "normal",
+    recipientRule: "explicit",
+    deepLinkPattern: CALENDAR_EVENT_LINK,
+    digestAllowed: true,
+    actionOriented: false,
     privacy: "detailed_ok",
     active: false,
   }),

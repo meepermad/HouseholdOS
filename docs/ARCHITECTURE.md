@@ -97,27 +97,44 @@ Guarantees:
 - Ordinary clients cannot claim deliveries or modify delivery status. The privileged Supabase client may be imported only from `src/lib/supabase/privileged.ts` and `src/lib/notifications/worker.ts`.
 - Lock-screen push content respects `preview_mode` (`generic` default | `detailed`). Amounts and private notes stay off the lock screen.
 - Quiet hours defer push/email `available_at`; in-app rows appear immediately. Daily digest mode is preference-aware.
-- `scheduled_notification_requests` is the foundation for future chore/calendar reminders (no domain emissions yet).
+- `scheduled_notification_requests` backs calendar reminders (and future chore reminders). Calendar RPCs create/cancel rows transactionally; the notification worker also extends the occurrence materialization horizon.
 - Email adapter exists but stays disabled until `EMAIL_NOTIFICATIONS_ENABLED` and provider env are configured.
 
-Event catalog (TypeScript): `src/lib/notifications/catalog.ts` — domain-neutral types for payments today and chores/calendar later.
+Event catalog (TypeScript): `src/lib/notifications/catalog.ts` — payments and active `calendar.*` events; chores remain reserved.
 
 Scheduler choice: **Supabase Cron** calls the Next.js worker (not Vercel Hobby cron). Secrets and worker URL live in Vault / dashboard config — never in source-controlled SQL.
+
+## Shared calendar (Phase 4)
+
+HouseholdOS is the authoritative calendar. One domain model powers the website and installed PWA.
+
+| Concern | Approach |
+|---|---|
+| Tables | `calendar_events`, `calendar_event_attendees`, `calendar_event_reminders`, `calendar_event_exceptions`, `calendar_event_occurrences`, `calendar_feed_tokens` |
+| Visibility | `household` \| `participants` \| `private_busy` — enforced in RLS + query projection (busy blocks strip title/location/notes) |
+| Time | Timed (`timestamptz` + IANA TZ) XOR all-day (`date` + exclusive end). Household default `America/Chicago`. |
+| Recurrence | RFC 5545 RRULE on the master; exception/override rows; bounded occurrence materialization (~90 days past / ~180 future) via `reconcile_calendar_event_occurrences` |
+| Lifecycle | `scheduled` → `cancelled` through RPCs only; direct status updates blocked |
+| Reminders | Reminder offsets on the master; schedules fan out per materialized occurrence into `scheduled_notification_requests` |
+| Feeds | Per-user hashed bearer token; scopes `visible_to_me` / `household_public_only`; `GET /api/calendar/feed/[token]` returns `text/calendar` (`.ics` suffix supported). Read-only; no provider OAuth. |
+| Nav | Primary: Home · Calendar · Money · Settings. Inbox lives under the sidebar/`more` surface. |
+
+External Apple/Google/LifeOS clients may **subscribe** to the personal feed. Changes in those apps do **not** write back to HouseholdOS. Refresh timing is controlled by the client.
 
 ## Roadmap
 
 ```text
 Phase 3 — Payment settlement ledger + payment-related in-app notifications
-Phase 3.1 — Notification delivery: web push, preferences, quiet hours, digests, retries (current)
-Phase 4 — Shared HouseholdOS calendar, recurrence, reminders, secure iCalendar feed
+Phase 3.1 — Notification delivery: web push, preferences, quiet hours, digests, retries
+Phase 4 — Shared HouseholdOS calendar, recurrence, reminders, secure iCalendar feed (current)
 Phase 5 — Chores / responsibility rotations on calendar + notifications
 Phase 6 — Inventory, supplies, shopping lists, pantry
 Phase 6.5 — Recipe requests matched to pantry / constraints
 Later — LifeOS connector; optional Google/Apple calendar sync
 ```
 
-Calendar stages (when Phase 4 starts): internal calendar → revocable iCal feed → LifeOS connector → optional provider sync.
+Calendar stages remaining: LifeOS connector → optional two-way provider sync.
 
 ## Out of scope (current)
 
-Receipt OCR, actual bank/Venmo/Zelle/Plaid transfers, inventory, chores, supplies, grocery/recipes product UI, calendar product UI, full offline sync, SMS, live email delivery (adapter boundary only until a provider is configured).
+Receipt OCR, actual bank/Venmo/Zelle/Plaid transfers, inventory, chores, supplies, grocery/recipes product UI, Google/Apple OAuth calendar sync, two-way calendar writeback, full offline sync, SMS, live email delivery (adapter boundary only until a provider is configured).

@@ -126,6 +126,36 @@ const DETAILED_FALLBACKS: Record<string, (actor: string) => PushContent> = {
     title: "Expense amended",
     body: `${actor} amended a confirmed expense.`,
   }),
+  // Calendar fallbacks stay privacy-safe: never include the event title,
+  // description, location, or guest details in push copy.
+  "calendar.event_created": (actor) => ({
+    title: "New calendar event",
+    body: actor === "Someone"
+      ? "A new event was added to the household calendar."
+      : `${actor} added a household calendar event.`,
+  }),
+  "calendar.event_updated": (actor) => ({
+    title: "Calendar event updated",
+    body: actor === "Someone"
+      ? "A household calendar event was updated."
+      : `${actor} updated a household calendar event.`,
+  }),
+  "calendar.event_cancelled": (actor) => ({
+    title: "Calendar event cancelled",
+    body: actor === "Someone"
+      ? "A household calendar event was cancelled."
+      : `${actor} cancelled a household calendar event.`,
+  }),
+  "calendar.rsvp_changed": (actor) => ({
+    title: "RSVP updated",
+    body: actor === "Someone"
+      ? "An attendee updated their RSVP for a calendar event."
+      : `${actor} updated their RSVP for a calendar event.`,
+  }),
+  "calendar.reminder": () => ({
+    title: "Upcoming household event",
+    body: "Open HouseholdOS to review it.",
+  }),
 };
 
 /** Strip amounts, refs, tokens, and bank-like fragments from display text. */

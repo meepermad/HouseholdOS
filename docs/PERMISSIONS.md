@@ -26,6 +26,11 @@ Enforced in:
 | Confirm / reject / cancel / reverse payments | yes*** | yes*** | yes*** |
 | Create waivers | yes*** | yes*** | yes*** |
 | Open / resolve disputes | yes*** | yes*** | yes*** |
+| View / create calendar events | yes | yes | yes |
+| RSVP / update own guest count | yes | yes | yes |
+| Edit / cancel own events | yes | yes | yes |
+| Coordinator calendar override (household-visible only) | no | yes**** | no |
+| Manage own calendar feed tokens | yes | yes | yes |
 
 \*Last remaining `household_coordinator` must transfer responsibility before leaving.
 
@@ -38,6 +43,18 @@ Enforced in:
 - Only the **confirming recipient** may reverse a confirmed payment through the reverse RPC (senders request reversal via dispute).
 - Only the **creditor** may create a waiver; the debtor cannot waive their own debt.
 - Coordinator status alone does **not** grant silent edits of payment history.
+
+\*\*\*\*`household_coordinator` may cancel or update **household-visible** operational events through an audited `coordinator_override` path. Coordinator override is **refused** for `participants` and `private_busy` events. `financial_coordinator` has no special calendar authority. Organizer identity is always derived from `auth.uid()` membership — callers cannot name another organizer.
+
+## Calendar visibility
+
+| Visibility | Who sees full details | Others see |
+|---|---|---|
+| `household` | All active members | Full details |
+| `participants` | Organizer + invited attendees | Hidden (no row for nonparticipants via participant checks) |
+| `private_busy` | Organizer (+ attendees if invited) | Generic **Busy** block only (no title/location/notes/guests) |
+
+Feed tokens are per-user and per-household. Scope `visible_to_me` exports events the owner may fully view; `household_public_only` exports household-visible events only. Raw tokens are shown once at create/regenerate; only hashes are stored. Feed access ends when membership is no longer active or the token is revoked.
 
 ## Notifications
 

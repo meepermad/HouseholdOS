@@ -1,4 +1,9 @@
 import {
+  EVENT_CALENDAR_EVENT_CANCELLED,
+  EVENT_CALENDAR_EVENT_CREATED,
+  EVENT_CALENDAR_EVENT_UPDATED,
+  EVENT_CALENDAR_REMINDER,
+  EVENT_CALENDAR_RSVP_CHANGED,
   EVENT_DISPUTE_OPENED,
   EVENT_DISPUTE_RESOLVED,
   EVENT_EXPENSE_AMENDED,
@@ -115,6 +120,31 @@ export const PHASE3_RECIPIENT_RULES: readonly RecipientRuleExpectation[] = [
     eventType: EVENT_EXPENSE_AMENDED,
     rule: "other_active_members",
     description: RULE_DESCRIPTIONS.other_active_members,
+  },
+  {
+    eventType: EVENT_CALENDAR_EVENT_CREATED,
+    rule: "involved_parties",
+    description: RULE_DESCRIPTIONS.involved_parties,
+  },
+  {
+    eventType: EVENT_CALENDAR_EVENT_UPDATED,
+    rule: "involved_parties",
+    description: RULE_DESCRIPTIONS.involved_parties,
+  },
+  {
+    eventType: EVENT_CALENDAR_EVENT_CANCELLED,
+    rule: "involved_parties",
+    description: RULE_DESCRIPTIONS.involved_parties,
+  },
+  {
+    eventType: EVENT_CALENDAR_REMINDER,
+    rule: "involved_parties",
+    description: RULE_DESCRIPTIONS.involved_parties,
+  },
+  {
+    eventType: EVENT_CALENDAR_RSVP_CHANGED,
+    rule: "explicit",
+    description: RULE_DESCRIPTIONS.explicit,
   },
 ] as const;
 

@@ -138,7 +138,7 @@ test.describe("Phase 3.1 notification UI", () => {
     ).toBeVisible();
   });
 
-  test("mobile bottom nav exposes inbox with safe-area padding", async ({
+  test("mobile bottom nav exposes calendar with safe-area padding", async ({
     page,
   }, testInfo) => {
     test.skip(testInfo.project.name !== "Mobile Chrome");
@@ -146,16 +146,15 @@ test.describe("Phase 3.1 notification UI", () => {
     await page.goto(`/app/${householdId}`);
     const bottomNav = page.getByTestId("mobile-bottom-nav");
     await expect(bottomNav).toBeVisible({ timeout: 20_000 });
-    await expect(bottomNav.getByRole("link", { name: /inbox/i })).toBeVisible();
+    await expect(
+      bottomNav.getByRole("link", { name: /calendar/i }),
+    ).toBeVisible();
 
     const className = await bottomNav.getAttribute("class");
     expect(className ?? "").toMatch(/safe-pb|safe-area/);
 
-    await bottomNav.getByRole("link", { name: /inbox/i }).click();
-    await expect(page).toHaveURL(
-      new RegExp(`/app/${householdId}/notifications`),
-    );
-    await expect(page.getByTestId("notification-inbox")).toBeVisible();
+    await bottomNav.getByRole("link", { name: /calendar/i }).click();
+    await expect(page).toHaveURL(new RegExp(`/app/${householdId}/calendar`));
   });
 
   test("dark mode notification settings remain readable", async ({

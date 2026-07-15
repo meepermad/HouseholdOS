@@ -18,6 +18,7 @@ import {
 import {
   nextRetryAt,
 } from "@/lib/notifications/retry";
+import { materializeEventOccurrences } from "@/lib/calendar/materialize";
 
 export type DispatchSummary = {
   correlationId: string;
@@ -28,6 +29,7 @@ export type DispatchSummary = {
   deadLetter: number;
   subscriptionsDeactivated: number;
   scheduledProcessed: number;
+  calendarHorizonsExtended: number;
   empty: boolean;
   durationMs: number;
 };
@@ -100,6 +102,7 @@ export async function dispatchNotificationDeliveries(options?: {
       deadLetter: 0,
       subscriptionsDeactivated: 0,
       scheduledProcessed: 0,
+      calendarHorizonsExtended: 0,
       empty: true,
       durationMs: Date.now() - started,
     };
@@ -208,6 +211,14 @@ export async function dispatchNotificationDeliveries(options?: {
   const scheduledProcessed =
     typeof scheduledCount === "number" ? scheduledCount : 0;
 
+  // Extend the materialized occurrence horizon for recurring events that are
+  // close to running out. Errors per event are swallowed so one bad master
+  // does not stall the batch.
+  const calendarHorizonsExtended = await extendCalendarHorizons(
+    client,
+    correlationId,
+  );
+
   // Digest batch claim/send is not wired yet — groupDigestItems / nextDigestAt
   // exist for scheduling math only. Skip digest processing until a claim RPC lands.
 
@@ -220,7 +231,11 @@ export async function dispatchNotificationDeliveries(options?: {
     deadLetter,
     subscriptionsDeactivated,
     scheduledProcessed,
-    empty: claimed.length === 0 && scheduledProcessed === 0,
+    calendarHorizonsExtended,
+    empty:
+      claimed.length === 0 &&
+      scheduledProcessed === 0 &&
+      calendarHorizonsExtended === 0,
     durationMs: Date.now() - started,
   };
 
@@ -233,10 +248,58 @@ export async function dispatchNotificationDeliveries(options?: {
     deadLetter: summary.deadLetter,
     subscriptionsDeactivated: summary.subscriptionsDeactivated,
     scheduledProcessed: summary.scheduledProcessed,
+    calendarHorizonsExtended: summary.calendarHorizonsExtended,
     durationMs: summary.durationMs,
   });
 
   return summary;
+}
+
+/**
+ * Claim recurring events whose materialized horizon is near its end and rebuild
+ * their bounded occurrence window with the privileged client (service role).
+ * Returns the number of events successfully re-materialized.
+ */
+async function extendCalendarHorizons(
+  client: PrivilegedClient,
+  correlationId: string,
+): Promise<number> {
+  const db = workerDb(client);
+  const { data: claimed, error } = await db.rpc(
+    "claim_calendar_horizon_extensions",
+    { p_limit: 25 },
+  );
+
+  if (error) {
+    console.error("[notifications.dispatch]", {
+      correlationId,
+      error: "calendar_horizon_claim_failed",
+      message: error.message.slice(0, 200),
+    });
+    return 0;
+  }
+
+  const rows = (claimed ?? []) as Array<{ event_id: string }>;
+  let extended = 0;
+
+  for (const row of rows) {
+    try {
+      const { data: event } = await db
+        .from("calendar_events")
+        .select(
+          "id, all_day, starts_at, ends_at, start_date, end_date_exclusive, time_zone, rrule, status",
+        )
+        .eq("id", row.event_id)
+        .maybeSingle();
+      if (!event) continue;
+      const result = await materializeEventOccurrences({ supabase: db, event });
+      if (!result.error) extended += 1;
+    } catch {
+      // Swallow per-event failures; the next run retries the claim.
+    }
+  }
+
+  return extended;
 }
 
 async function processSimpleChannel(args: {

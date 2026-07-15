@@ -55,6 +55,23 @@
 - `dispute.withdrawn`
 - `refund_obligation.created`
 
+## Event types (Phase 4 calendar)
+
+- `calendar.event_created`
+- `calendar.event_updated`
+- `calendar.event_cancelled`
+- `calendar.occurrence_updated`
+- `calendar.occurrence_cancelled`
+- `calendar.attendee_added`
+- `calendar.attendee_removed`
+- `calendar.rsvp_changed`
+- `calendar.feed_created`
+- `calendar.feed_revoked`
+- `calendar.feed_regenerated`
+- `calendar.coordinator_override`
+
+Calendar audit payloads must not include raw feed tokens, private descriptions, guest notes, or sensitive locations.
+
 ## Shape
 
 | Column | Purpose |

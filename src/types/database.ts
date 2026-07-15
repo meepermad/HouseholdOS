@@ -82,8 +82,34 @@ export type ObligationStatus =
   | "waived"
   | "settled";
 
+export type CalendarCategory =
+  | "household_meeting"
+  | "social"
+  | "shared_meal"
+  | "guest_visit"
+  | "maintenance"
+  | "cleaning"
+  | "grocery_trip"
+  | "bill_deadline"
+  | "move_in_out"
+  | "personal"
+  | "other";
+
+export type CalendarVisibility = "household" | "participants" | "private_busy";
+export type CalendarEventStatus = "scheduled" | "cancelled";
+export type CalendarRsvpStatus =
+  | "needs_action"
+  | "going"
+  | "maybe"
+  | "not_going";
+export type CalendarFeedScope = "visible_to_me" | "household_public_only";
+
 export type ExpenseRow = import("./database.generated").Database["public"]["Tables"]["expenses"]["Row"];
 export type ExpenseItemRow =
   import("./database.generated").Database["public"]["Tables"]["expense_items"]["Row"];
 export type ReimbursementObligationRow =
   import("./database.generated").Database["public"]["Tables"]["reimbursement_obligations"]["Row"];
+export type CalendarEventRow =
+  import("./database.generated").Database["public"]["Tables"]["calendar_events"]["Row"];
+export type CalendarOccurrenceRow =
+  import("./database.generated").Database["public"]["Tables"]["calendar_event_occurrences"]["Row"];

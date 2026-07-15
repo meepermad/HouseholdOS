@@ -48,6 +48,21 @@ export default async function ProfileSettingsPage({
         </Link>
       </Surface>
 
+      <Surface>
+        <h2 className="text-sm font-semibold text-text-primary">Calendar feed</h2>
+        <p className="mt-1 text-sm text-text-secondary">
+          Subscribe to household events from Apple Calendar, Google Calendar, or
+          another app with a private, revocable link.
+        </p>
+        <Link
+          href={`/app/${householdId}/settings/calendar`}
+          className="mt-3 inline-flex min-h-11 items-center text-sm font-medium text-primary underline underline-offset-2"
+          data-testid="profile-calendar-settings-link"
+        >
+          Manage calendar feed
+        </Link>
+      </Surface>
+
       <ActionForm
         action={updateProfileAction}
         className="space-y-3"

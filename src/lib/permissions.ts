@@ -33,6 +33,11 @@ export const CAPABILITIES = [
   "waiver.create",
   "dispute.open",
   "dispute.resolve",
+  "calendar.view",
+  "calendar.create",
+  "calendar.respond",
+  "calendar.manage_own",
+  "calendar.coordinator_override",
 ] as const;
 
 export type Capability = (typeof CAPABILITIES)[number];
@@ -58,6 +63,14 @@ const PAYMENT_CAPABILITIES = [
   "dispute.resolve",
 ] as const satisfies readonly Capability[];
 
+/** Shared calendar actions available to every active member. */
+const CALENDAR_MEMBER_CAPABILITIES = [
+  "calendar.view",
+  "calendar.create",
+  "calendar.respond",
+  "calendar.manage_own",
+] as const satisfies readonly Capability[];
+
 const ROLE_CAPABILITIES: Record<HouseholdResponsibility, readonly Capability[]> = {
   member: [
     "household.view",
@@ -65,6 +78,7 @@ const ROLE_CAPABILITIES: Record<HouseholdResponsibility, readonly Capability[]> 
     "audit.read",
     ...EXPENSE_CAPABILITIES,
     ...PAYMENT_CAPABILITIES,
+    ...CALENDAR_MEMBER_CAPABILITIES,
   ],
   household_coordinator: [
     "household.view",
@@ -79,6 +93,10 @@ const ROLE_CAPABILITIES: Record<HouseholdResponsibility, readonly Capability[]> 
     "settings.update",
     ...EXPENSE_CAPABILITIES,
     ...PAYMENT_CAPABILITIES,
+    ...CALENDAR_MEMBER_CAPABILITIES,
+    // Only the household coordinator may edit/cancel household-visible events
+    // organized by someone else.
+    "calendar.coordinator_override",
   ],
   financial_coordinator: [
     "household.view",
@@ -87,6 +105,7 @@ const ROLE_CAPABILITIES: Record<HouseholdResponsibility, readonly Capability[]> 
     "member.leave",
     ...EXPENSE_CAPABILITIES,
     ...PAYMENT_CAPABILITIES,
+    ...CALENDAR_MEMBER_CAPABILITIES,
   ],
 };
 

@@ -5,6 +5,20 @@ import { describe, expect, it } from "vitest";
 const ROOT = join(process.cwd(), "src");
 const WORKER = join(ROOT, "lib", "notifications", "worker.ts");
 
+/**
+ * Intentional privileged exceptions. The public iCalendar feed endpoint is
+ * authenticated by an opaque feed token (not a Supabase session), and its
+ * context/event RPCs are service_role-only, so it must use the privileged
+ * client directly — the same trust model as the notification worker.
+ */
+const PRIVILEGED_ALLOWLIST = [
+  join(ROOT, "app", "api", "calendar", "feed", "[token]", "route.ts"),
+];
+
+function isAllowlisted(file: string): boolean {
+  return PRIVILEGED_ALLOWLIST.some((allowed) => file === allowed);
+}
+
 function walk(dir: string, files: string[] = []): string[] {
   if (!existsSync(dir)) return files;
   for (const name of readdirSync(dir)) {
@@ -36,6 +50,7 @@ describe("privileged client containment", () => {
     for (const root of forbiddenRoots) {
       for (const file of walk(root)) {
         if (file.includes(`${join("lib", "supabase", "privileged")}`)) continue;
+        if (isAllowlisted(file)) continue;
         const text = readFileSync(file, "utf8");
         if (importsPrivileged(text)) {
           offenders.push(file.replace(process.cwd(), ""));
@@ -67,6 +82,7 @@ describe("privileged client containment", () => {
     const apiRoot = join(ROOT, "app", "api");
     const offenders: string[] = [];
     for (const file of walk(apiRoot)) {
+      if (isAllowlisted(file)) continue;
       const text = readFileSync(file, "utf8");
       if (importsPrivileged(text)) {
         offenders.push(file.replace(process.cwd(), ""));
