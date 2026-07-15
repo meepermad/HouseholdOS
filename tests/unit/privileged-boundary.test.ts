@@ -1,10 +1,12 @@
-import { readFileSync, readdirSync, statSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 const ROOT = join(process.cwd(), "src");
+const WORKER = join(ROOT, "lib", "notifications", "worker.ts");
 
 function walk(dir: string, files: string[] = []): string[] {
+  if (!existsSync(dir)) return files;
   for (const name of readdirSync(dir)) {
     const full = join(dir, name);
     const st = statSync(full);
@@ -12,6 +14,14 @@ function walk(dir: string, files: string[] = []): string[] {
     else if (/\.(ts|tsx)$/.test(name)) files.push(full);
   }
   return files;
+}
+
+function importsPrivileged(text: string): boolean {
+  return (
+    text.includes("createPrivilegedClient") ||
+    text.includes("createAdminClient") ||
+    text.includes("@/lib/supabase/privileged")
+  );
 }
 
 describe("privileged client containment", () => {
@@ -27,13 +37,39 @@ describe("privileged client containment", () => {
       for (const file of walk(root)) {
         if (file.includes(`${join("lib", "supabase", "privileged")}`)) continue;
         const text = readFileSync(file, "utf8");
-        if (
-          text.includes("createPrivilegedClient") ||
-          text.includes("createAdminClient") ||
-          text.includes("@/lib/supabase/privileged")
-        ) {
+        if (importsPrivileged(text)) {
           offenders.push(file.replace(process.cwd(), ""));
         }
+      }
+    }
+    expect(offenders).toEqual([]);
+  });
+
+  it("allows privileged import only from notification worker among notifications modules", () => {
+    expect(existsSync(WORKER)).toBe(true);
+    const workerText = readFileSync(WORKER, "utf8");
+    expect(importsPrivileged(workerText)).toBe(true);
+    expect(workerText).toContain("@/lib/supabase/privileged");
+
+    const notificationsRoot = join(ROOT, "lib", "notifications");
+    const offenders: string[] = [];
+    for (const file of walk(notificationsRoot)) {
+      if (file === WORKER) continue;
+      const text = readFileSync(file, "utf8");
+      if (importsPrivileged(text)) {
+        offenders.push(file.replace(process.cwd(), ""));
+      }
+    }
+    expect(offenders).toEqual([]);
+  });
+
+  it("api routes must not import privileged directly — only via worker", () => {
+    const apiRoot = join(ROOT, "app", "api");
+    const offenders: string[] = [];
+    for (const file of walk(apiRoot)) {
+      const text = readFileSync(file, "utf8");
+      if (importsPrivileged(text)) {
+        offenders.push(file.replace(process.cwd(), ""));
       }
     }
     expect(offenders).toEqual([]);

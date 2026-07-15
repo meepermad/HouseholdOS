@@ -2,7 +2,7 @@
 
 Private, mobile-first household management PWA for shared expenses, ownership, responsibilities, and commitments.
 
-Auth, households, memberships, invitations, manual expenses, and **external payment settlement recording** (confirm/reject/cancel/reverse, waivers, disputes, in-app notification outbox) are in place. HouseholdOS does not move money or verify payment providers. See `docs/ARCHITECTURE.md` for the roadmap (notifications delivery, calendar, chores, inventory).
+Auth, households, memberships, invitations, manual expenses, **external payment settlement recording**, and **notification delivery** (transactional outbox, Web Push worker, preferences, quiet hours, digests) are in place. HouseholdOS does not move money or verify payment providers. Push delivery stays off until VAPID keys and Supabase Cron are configured (`NOTIFICATION_DELIVERY_ENABLED`). See `docs/ARCHITECTURE.md` for the roadmap (calendar, chores, inventory).
 
 ## Stack
 

@@ -5,6 +5,7 @@ const withPWA = withPWAInit({
   dest: "public",
   disable: process.env.NODE_ENV === "development",
   register: true,
+  customWorkerSrc: "worker",
   // Do not aggressively cache authenticated household navigations.
   workboxOptions: {
     runtimeCaching: [

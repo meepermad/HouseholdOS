@@ -4,15 +4,20 @@ import Link from "next/link";
 import { useState } from "react";
 import { ThemeSelector } from "@/components/theme-selector";
 import { PendingPostButton } from "@/components/pending-post-button";
+import { NotificationBadge } from "@/components/notifications/NotificationBadge";
 
 export function ShellHeader({
   title,
   householdName,
   showUserMenu = true,
+  householdId,
+  unreadCount = 0,
 }: {
   title?: string;
   householdName?: string;
   showUserMenu?: boolean;
+  householdId?: string;
+  unreadCount?: number;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -34,7 +39,7 @@ export function ShellHeader({
         <div className="relative">
           <button
             type="button"
-            className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-md border border-border bg-surface px-3 text-sm font-medium text-text-secondary hover:bg-surface-interactive"
+            className="relative inline-flex min-h-11 min-w-11 items-center justify-center rounded-md border border-border bg-surface px-3 text-sm font-medium text-text-secondary hover:bg-surface-interactive"
             aria-expanded={menuOpen}
             aria-haspopup="menu"
             aria-controls="user-menu"
@@ -42,6 +47,12 @@ export function ShellHeader({
             data-testid="user-menu-button"
           >
             Account
+            {unreadCount > 0 ? (
+              <NotificationBadge
+                count={unreadCount}
+                className="absolute -right-1 -top-1"
+              />
+            ) : null}
           </button>
           {menuOpen ? (
             <div
@@ -51,6 +62,27 @@ export function ShellHeader({
             >
               <ThemeSelector id="header-theme" className="mb-3" />
               <div className="flex flex-col gap-2 border-t border-border pt-3">
+                {householdId ? (
+                  <>
+                    <Link
+                      href={`/app/${householdId}/notifications`}
+                      role="menuitem"
+                      className="flex min-h-11 items-center justify-between rounded-md px-2 py-2 text-sm text-text-secondary hover:bg-surface-interactive"
+                      onClick={() => setMenuOpen(false)}
+                    >
+                      <span>Inbox</span>
+                      <NotificationBadge count={unreadCount} />
+                    </Link>
+                    <Link
+                      href={`/app/${householdId}/settings/notifications`}
+                      role="menuitem"
+                      className="min-h-11 rounded-md px-2 py-2 text-sm text-text-secondary hover:bg-surface-interactive"
+                      onClick={() => setMenuOpen(false)}
+                    >
+                      Notification settings
+                    </Link>
+                  </>
+                ) : null}
                 <Link
                   href="/recovery"
                   role="menuitem"

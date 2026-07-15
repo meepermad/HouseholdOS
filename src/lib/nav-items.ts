@@ -47,6 +47,16 @@ export const HOUSEHOLD_NAV_ITEMS: readonly HouseholdNavItem[] = [
     surface: "primary",
   },
   {
+    key: "inbox",
+    label: "Inbox",
+    shortLabel: "Inbox",
+    mark: "●",
+    href: (id) => `/app/${id}/notifications`,
+    match: (pathname, id) => pathname.startsWith(`/app/${id}/notifications`),
+    enabled: true,
+    surface: "primary",
+  },
+  {
     key: "settings",
     label: "Settings",
     mark: "⚙",

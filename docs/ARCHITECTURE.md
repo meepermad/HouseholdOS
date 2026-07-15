@@ -76,15 +76,39 @@ projected = official − submitted (pending) allocations
 - Private external references / private notes live in `payment_private_details` (RLS: sender ∪ recipient only)
 - Amendments/voids after payment preserve payment history and may create refund obligations (`obligation_kind = refund`)
 
-## Notifications (outbox)
+## Notifications (outbox + delivery)
 
-Domain financial RPCs insert durable `notification_events` transactionally and fan out `user_notifications` for in-app action-center entries. External delivery (web push / email) is reserved for Phase 3.1 — never performed inside the financial transaction. Notification payloads must not include private payment references or secrets.
+Pipeline:
+
+```text
+Domain transaction
+→ durable notification_events (same DB transaction)
+→ user_notifications fan-out + notification_deliveries queue
+→ protected Next.js worker (Supabase Cron → POST /api/internal/notifications/dispatch)
+→ Web Push (VAPID) or optional email adapter
+→ sent | retry | expired | dead_letter
+```
+
+Guarantees:
+
+- Financial RPCs emit `notification_events` inside the same plpgsql transaction as the money mutation. Rolled-back mutations create no events. Delivery failure never rolls back money.
+- Fan-out and delivery rows are idempotent (`idempotency_key`, unique `(event_id, user_id)`, unique `(event_id, user_id, channel)`).
+- Payloads store routing keys only (`source_type`, `source_id`) — never private payment references, secrets, or invite tokens.
+- Ordinary clients cannot claim deliveries or modify delivery status. The privileged Supabase client may be imported only from `src/lib/supabase/privileged.ts` and `src/lib/notifications/worker.ts`.
+- Lock-screen push content respects `preview_mode` (`generic` default | `detailed`). Amounts and private notes stay off the lock screen.
+- Quiet hours defer push/email `available_at`; in-app rows appear immediately. Daily digest mode is preference-aware.
+- `scheduled_notification_requests` is the foundation for future chore/calendar reminders (no domain emissions yet).
+- Email adapter exists but stays disabled until `EMAIL_NOTIFICATIONS_ENABLED` and provider env are configured.
+
+Event catalog (TypeScript): `src/lib/notifications/catalog.ts` — domain-neutral types for payments today and chores/calendar later.
+
+Scheduler choice: **Supabase Cron** calls the Next.js worker (not Vercel Hobby cron). Secrets and worker URL live in Vault / dashboard config — never in source-controlled SQL.
 
 ## Roadmap
 
 ```text
-Phase 3 — Payment settlement ledger + payment-related in-app notifications (current)
-Phase 3.1 — Notification delivery: web push, email, preferences, quiet hours, retries
+Phase 3 — Payment settlement ledger + payment-related in-app notifications
+Phase 3.1 — Notification delivery: web push, preferences, quiet hours, digests, retries (current)
 Phase 4 — Shared HouseholdOS calendar, recurrence, reminders, secure iCalendar feed
 Phase 5 — Chores / responsibility rotations on calendar + notifications
 Phase 6 — Inventory, supplies, shopping lists, pantry
@@ -92,8 +116,8 @@ Phase 6.5 — Recipe requests matched to pantry / constraints
 Later — LifeOS connector; optional Google/Apple calendar sync
 ```
 
-Calendar stages (when Phase 4 starts): internal calendar → revocable iCal feed → LifeOS connector → optional provider sync. No provider OAuth in Phase 3.
+Calendar stages (when Phase 4 starts): internal calendar → revocable iCal feed → LifeOS connector → optional provider sync.
 
 ## Out of scope (current)
 
-Receipt OCR, actual bank/Venmo/Zelle/Plaid transfers, inventory, chores, supplies, grocery/recipes product UI, calendar product UI, full offline sync, SMS, email/push delivery workers.
+Receipt OCR, actual bank/Venmo/Zelle/Plaid transfers, inventory, chores, supplies, grocery/recipes product UI, calendar product UI, full offline sync, SMS, live email delivery (adapter boundary only until a provider is configured).

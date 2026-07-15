@@ -21,6 +21,13 @@ export const publicEnvSchema = z.object({
   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: z
     .string()
     .min(20, "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY is missing or incomplete"),
+  NEXT_PUBLIC_VAPID_PUBLIC_KEY: z.preprocess(
+    (value) =>
+      typeof value === "string" && value.trim().length > 0
+        ? value.trim()
+        : undefined,
+    z.string().min(1).optional(),
+  ),
 });
 
 export type PublicEnv = z.infer<typeof publicEnvSchema>;
@@ -40,6 +47,7 @@ export function parsePublicEnv(
   const result = publicEnvSchema.safeParse({
     NEXT_PUBLIC_SUPABASE_URL: source.NEXT_PUBLIC_SUPABASE_URL,
     NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: source.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+    NEXT_PUBLIC_VAPID_PUBLIC_KEY: source.NEXT_PUBLIC_VAPID_PUBLIC_KEY || undefined,
   });
 
   if (!result.success) {

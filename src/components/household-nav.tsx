@@ -7,11 +7,12 @@ import {
   sidebarNavItems,
   type HouseholdNavItem,
 } from "@/lib/nav-items";
+import { NotificationBadge } from "@/components/notifications/NotificationBadge";
 
 function linkClass(active: boolean, compact: boolean) {
   const base = compact
-    ? "flex min-h-11 flex-1 flex-col items-center justify-center gap-0.5 rounded-md px-1 py-1.5 text-[0.65rem] font-medium leading-tight"
-    : "flex min-h-11 items-center gap-2 rounded-md px-3 py-2 text-sm font-medium";
+    ? "relative flex min-h-11 flex-1 flex-col items-center justify-center gap-0.5 rounded-md px-1 py-1.5 text-[0.65rem] font-medium leading-tight"
+    : "relative flex min-h-11 items-center gap-2 rounded-md px-3 py-2 text-sm font-medium";
   return active
     ? `${base} bg-surface-interactive text-primary`
     : `${base} text-text-secondary hover:bg-surface-interactive hover:text-text-primary`;
@@ -22,17 +23,20 @@ function NavLinks({
   householdId,
   pathname,
   compact,
+  unreadCount = 0,
 }: {
   items: HouseholdNavItem[];
   householdId: string;
   pathname: string;
   compact: boolean;
+  unreadCount?: number;
 }) {
   return (
     <>
       {items.map((item) => {
         const active = item.match(pathname, householdId);
         const label = compact ? (item.shortLabel ?? item.label) : item.label;
+        const showBadge = item.key === "inbox" && unreadCount > 0;
         return (
           <Link
             key={item.key}
@@ -42,8 +46,14 @@ function NavLinks({
           >
             {compact ? (
               <>
-                <span aria-hidden className="text-base leading-none">
+                <span aria-hidden className="relative text-base leading-none">
                   {item.mark}
+                  {showBadge ? (
+                    <NotificationBadge
+                      count={unreadCount}
+                      className="absolute -right-3 -top-2"
+                    />
+                  ) : null}
                 </span>
                 <span>{label}</span>
               </>
@@ -52,7 +62,8 @@ function NavLinks({
                 <span aria-hidden className="w-4 text-center text-text-muted">
                   {item.mark}
                 </span>
-                <span>{label}</span>
+                <span className="flex-1">{label}</span>
+                {showBadge ? <NotificationBadge count={unreadCount} /> : null}
               </>
             )}
           </Link>
@@ -65,9 +76,11 @@ function NavLinks({
 export function HouseholdNav({
   householdId,
   variant = "top",
+  unreadCount = 0,
 }: {
   householdId: string;
   variant?: "top" | "bottom" | "sidebar";
+  unreadCount?: number;
 }) {
   const pathname = usePathname() ?? "";
 
@@ -85,6 +98,7 @@ export function HouseholdNav({
             householdId={householdId}
             pathname={pathname}
             compact
+            unreadCount={unreadCount}
           />
         </div>
       </nav>
@@ -107,6 +121,7 @@ export function HouseholdNav({
           householdId={householdId}
           pathname={pathname}
           compact={false}
+          unreadCount={unreadCount}
         />
       </nav>
     );
@@ -123,6 +138,7 @@ export function HouseholdNav({
         householdId={householdId}
         pathname={pathname}
         compact={false}
+        unreadCount={unreadCount}
       />
     </nav>
   );

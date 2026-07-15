@@ -69,3 +69,13 @@
 | `created_at` | Immutable |
 
 Helpers: `src/lib/audit.ts`, `buildAuditRow` in `src/lib/tokens.ts`.
+
+## Notification delivery auditability (Phase 3.1)
+
+Separate from `audit_events`:
+
+- `notification_events` — durable outbox (routing payload only)
+- `notification_deliveries` — channel attempts (`queued` → `claimed` → `sent` | `retry` | `dead_letter` | `expired`)
+- Delivery `last_error` is sanitized; never store raw push endpoints or keys
+- Dead-letter does not alter financial audit rows
+- Retention: keep events as operational history; do not auto-delete unread inbox rows or audit events

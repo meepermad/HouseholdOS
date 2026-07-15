@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { ActionForm } from "@/components/action-form";
 import { ThemeSelector } from "@/components/theme-selector";
 import { SubmitButton } from "@/components/ui/submit-button";
@@ -31,6 +32,20 @@ export default async function ProfileSettingsPage({
 
       <Surface>
         <ThemeSelector id="settings-theme" />
+      </Surface>
+
+      <Surface>
+        <h2 className="text-sm font-semibold text-text-primary">Notifications</h2>
+        <p className="mt-1 text-sm text-text-secondary">
+          Push devices, quiet hours, and delivery preferences.
+        </p>
+        <Link
+          href={`/app/${householdId}/settings/notifications`}
+          className="mt-3 inline-flex min-h-11 items-center text-sm font-medium text-primary underline underline-offset-2"
+          data-testid="profile-notification-settings-link"
+        >
+          Open notification settings
+        </Link>
       </Surface>
 
       <ActionForm

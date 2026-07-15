@@ -1,12 +1,14 @@
 import { ShellHeader } from "@/components/shell-header";
 import { HouseholdNav } from "@/components/household-nav";
 import { HouseholdSwitcher } from "@/components/household-switcher";
+import { AppBadgeSync } from "@/components/notifications/app-badge-sync";
 import { UnauthorizedHouseholdState } from "@/components/unauthorized-household";
 import { AppError, logServerError } from "@/lib/errors";
 import {
   assertActiveMembership,
   listAuthorizedHouseholdIds,
 } from "@/lib/household-context";
+import { countUnreadNotifications } from "@/lib/notifications/queries";
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 
@@ -73,8 +75,16 @@ export default async function HouseholdLayout({
   const householdOptions =
     households ?? [{ id: household.id, name: household.name }];
 
+  let unreadCount = 0;
+  try {
+    unreadCount = await countUnreadNotifications(ctx.userId);
+  } catch (error) {
+    logServerError("household_layout_unread_count", error, { householdId });
+  }
+
   return (
     <div className="safe-px mx-auto flex min-h-dvh w-full max-w-5xl flex-col lg:flex-row">
+      <AppBadgeSync count={unreadCount} />
       <aside className="hidden w-64 shrink-0 border-r border-border bg-navigation lg:flex lg:flex-col">
         <div className="border-b border-border p-4">
           <p className="font-[family-name:var(--font-display)] text-lg text-text-primary">
@@ -89,23 +99,43 @@ export default async function HouseholdLayout({
             compact
           />
         </div>
-        <HouseholdNav householdId={householdId} variant="sidebar" />
+        <HouseholdNav
+          householdId={householdId}
+          variant="sidebar"
+          unreadCount={unreadCount}
+        />
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
         <div className="lg:hidden">
-          <ShellHeader householdName={household.name} />
+          <ShellHeader
+            householdName={household.name}
+            householdId={householdId}
+            unreadCount={unreadCount}
+          />
           <HouseholdSwitcher
             householdId={householdId}
             households={householdOptions}
           />
-          <HouseholdNav householdId={householdId} variant="top" />
+          <HouseholdNav
+            householdId={householdId}
+            variant="top"
+            unreadCount={unreadCount}
+          />
         </div>
         <div className="hidden border-b border-border lg:block">
-          <ShellHeader householdName={household.name} />
+          <ShellHeader
+            householdName={household.name}
+            householdId={householdId}
+            unreadCount={unreadCount}
+          />
         </div>
         <div className="app-main-pad flex-1 px-4 py-6 md:px-6">{children}</div>
-        <HouseholdNav householdId={householdId} variant="bottom" />
+        <HouseholdNav
+          householdId={householdId}
+          variant="bottom"
+          unreadCount={unreadCount}
+        />
       </div>
     </div>
   );

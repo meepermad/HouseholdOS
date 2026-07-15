@@ -39,6 +39,23 @@ Enforced in:
 - Only the **creditor** may create a waiver; the debtor cannot waive their own debt.
 - Coordinator status alone does **not** grant silent edits of payment history.
 
+## Notifications
+
+| Capability | Rule |
+|---|---|
+| Read own `user_notifications` | Owner only (`user_id = auth.uid()`) |
+| Mark read / unread / all read | Owner only via RPCs |
+| List own devices | Safe view `push_subscription_devices` (no endpoint/keys) |
+| Subscribe / unsubscribe push | Owner only; RPCs bind `auth.uid()` |
+| Read another member’s push endpoint | Denied |
+| Edit notification preferences / quiet hours / preview mode | Owner only |
+| Read `notification_events` | Active household members (routing metadata only) |
+| Read own delivery status rows | Owner SELECT; no claim/update |
+| Claim / complete / fail deliveries | `service_role` worker RPCs only |
+| Enqueue test notification | Authenticated owner; rate-limited |
+
+Push endpoints are capability URLs — never placed in notification payloads or audit details.
+
 ## Payment visibility
 
 Active household members may see public payment fields (parties, amount, method category, status, claimed date, public note, allocations, related expenses).

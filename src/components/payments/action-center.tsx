@@ -2,7 +2,7 @@ import Link from "next/link";
 import { formatMoney } from "@/lib/expenses/display";
 import { listActionCenterItems } from "@/lib/payments/queries";
 import { ActionForm } from "@/components/action-form";
-import { markNotificationReadAction } from "@/app/actions/payments";
+import { markNotificationReadAction } from "@/app/actions/notifications";
 
 export async function MoneyActionCenter({
   householdId,

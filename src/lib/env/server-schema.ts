@@ -8,6 +8,31 @@ export function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
 }
 
+function optionalNonEmptyString(min = 1) {
+  return z.preprocess(
+    (value) =>
+      typeof value === "string" && value.trim().length > 0
+        ? value.trim()
+        : undefined,
+    z.string().min(min).optional(),
+  );
+}
+
+function coerceBool(defaultValue: boolean) {
+  return z.preprocess((value) => {
+    if (value === undefined || value === null || value === "") {
+      return defaultValue;
+    }
+    if (typeof value === "boolean") return value;
+    if (typeof value === "string") {
+      const normalized = value.trim().toLowerCase();
+      if (["1", "true", "yes", "on"].includes(normalized)) return true;
+      if (["0", "false", "no", "off"].includes(normalized)) return false;
+    }
+    return defaultValue;
+  }, z.boolean());
+}
+
 export const serverEnvSchema = publicEnvSchema
   .extend({
     SUPABASE_SECRET_KEY: z.string().min(20).optional(),
@@ -41,6 +66,28 @@ export const serverEnvSchema = publicEnvSchema
       .string()
       .regex(/^[A-Z]{3}$/, "DEFAULT_CURRENCY must be a three-letter uppercase code")
       .default("USD"),
+    NOTIFICATION_WORKER_SECRET: optionalNonEmptyString(16),
+    VAPID_PRIVATE_KEY: optionalNonEmptyString(),
+    VAPID_SUBJECT: z.preprocess(
+      (value) =>
+        typeof value === "string" && value.trim().length > 0
+          ? value.trim()
+          : undefined,
+      z
+        .string()
+        .refine(
+          (v) => v.startsWith("mailto:") || /^https:\/\//i.test(v),
+          {
+            message: "VAPID_SUBJECT must be a mailto: address or https URL",
+          },
+        )
+        .optional(),
+    ),
+    NOTIFICATION_DELIVERY_ENABLED: coerceBool(false),
+    EMAIL_NOTIFICATIONS_ENABLED: coerceBool(false),
+    EMAIL_PROVIDER: optionalNonEmptyString(),
+    EMAIL_API_KEY: optionalNonEmptyString(),
+    EMAIL_FROM: optionalNonEmptyString(),
   })
   .superRefine((data, ctx) => {
     if (data.REGISTRATION_MODE === "bootstrap_only" && !data.BOOTSTRAP_EMAIL) {
@@ -69,6 +116,7 @@ export function parseServerEnv(
   const result = serverEnvSchema.safeParse({
     NEXT_PUBLIC_SUPABASE_URL: source.NEXT_PUBLIC_SUPABASE_URL,
     NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: source.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+    NEXT_PUBLIC_VAPID_PUBLIC_KEY: source.NEXT_PUBLIC_VAPID_PUBLIC_KEY || undefined,
     SUPABASE_SECRET_KEY: source.SUPABASE_SECRET_KEY || undefined,
     APP_URL: source.APP_URL ?? "http://localhost:3000",
     APP_ENV: source.APP_ENV ?? "development",
@@ -77,6 +125,14 @@ export function parseServerEnv(
     INVITATION_TTL_HOURS: source.INVITATION_TTL_HOURS ?? "168",
     DEFAULT_TIMEZONE: source.DEFAULT_TIMEZONE ?? "America/Chicago",
     DEFAULT_CURRENCY: source.DEFAULT_CURRENCY ?? "USD",
+    NOTIFICATION_WORKER_SECRET: source.NOTIFICATION_WORKER_SECRET || undefined,
+    VAPID_PRIVATE_KEY: source.VAPID_PRIVATE_KEY || undefined,
+    VAPID_SUBJECT: source.VAPID_SUBJECT || undefined,
+    NOTIFICATION_DELIVERY_ENABLED: source.NOTIFICATION_DELIVERY_ENABLED,
+    EMAIL_NOTIFICATIONS_ENABLED: source.EMAIL_NOTIFICATIONS_ENABLED,
+    EMAIL_PROVIDER: source.EMAIL_PROVIDER || undefined,
+    EMAIL_API_KEY: source.EMAIL_API_KEY || undefined,
+    EMAIL_FROM: source.EMAIL_FROM || undefined,
   });
 
   if (!result.success) {

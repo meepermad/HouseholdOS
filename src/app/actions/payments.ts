@@ -18,7 +18,6 @@ import {
   submitPaymentSchema,
   withdrawDisputeSchema,
 } from "@/lib/validations/payments";
-import { z } from "zod";
 import type { Json } from "@/types/database.generated";
 
 function moneyPath(householdId: string, suffix = "") {
@@ -403,29 +402,4 @@ export async function withdrawDisputeAction(
     if (e && typeof e === "object" && "digest" in e) throw e;
     return { ok: false, error: "Dispute could not be withdrawn." };
   }
-}
-
-export async function markNotificationReadAction(
-  _prev: ActionResult | null,
-  formData: FormData,
-): Promise<ActionResult> {
-  const parsed = z
-    .object({
-      householdId: z.string().uuid(),
-      notificationId: z.string().uuid(),
-    })
-    .safeParse({
-      householdId: formData.get("householdId"),
-      notificationId: formData.get("notificationId"),
-    });
-  if (!parsed.success) return { ok: false, error: "Invalid notification." };
-  await assertActiveMembership(parsed.data.householdId);
-  const { createClient } = await import("@/lib/supabase/server");
-  const supabase = await createClient();
-  const { error } = await supabase.rpc("mark_notification_read", {
-    p_notification_id: parsed.data.notificationId,
-  });
-  if (error) return { ok: false, error: "Could not update notification." };
-  revalidatePath(`/app/${parsed.data.householdId}`);
-  return { ok: true };
 }

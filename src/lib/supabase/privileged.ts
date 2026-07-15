@@ -1,16 +1,17 @@
-import "server-only";
-
 /**
  * Privileged Supabase client (secret key).
  *
  * Permitted uses:
  * - Integration tests that need to seed multi-user fixtures
  * - Narrow operational recovery (e.g. admin tooling) documented at call sites
+ * - Notification delivery worker (`src/lib/notifications/worker.ts`) only
  *
  * Never use this client for ordinary authenticated household queries.
  * Never import this module from Client Components.
  * Authorization must still be enforced in application logic when used.
  */
+
+import "server-only";
 
 import { createClient } from "@supabase/supabase-js";
 import { getServerEnv } from "@/lib/env/server";

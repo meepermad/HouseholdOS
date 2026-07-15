@@ -881,45 +881,99 @@ export type Database = {
           },
         ]
       }
-      notification_deliveries: {
+      notification_channel_preferences: {
         Row: {
-          attempt_count: number
+          category: string
           channel: string
-          created_at: string
-          event_id: string
-          id: string
-          last_error: string | null
-          next_attempt_at: string | null
-          sent_at: string | null
-          status: string
+          delivery_mode: string
           updated_at: string
           user_id: string
         }
         Insert: {
-          attempt_count?: number
+          category: string
           channel: string
-          created_at?: string
-          event_id: string
-          id?: string
-          last_error?: string | null
-          next_attempt_at?: string | null
-          sent_at?: string | null
-          status?: string
+          delivery_mode: string
           updated_at?: string
           user_id: string
         }
         Update: {
-          attempt_count?: number
+          category?: string
           channel?: string
-          created_at?: string
-          event_id?: string
-          id?: string
-          last_error?: string | null
-          next_attempt_at?: string | null
-          sent_at?: string | null
-          status?: string
+          delivery_mode?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      notification_deliveries: {
+        Row: {
+          attempt_count: number
+          available_at: string
+          channel: string
+          claim_expires_at: string | null
+          claim_token: string | null
+          claimed_at: string | null
+          created_at: string
+          event_id: string
+          failure_category: string | null
+          failure_code: string | null
+          id: string
+          idempotency_key: string | null
+          last_error: string | null
+          next_attempt_at: string | null
+          provider_message_id: string | null
+          sent_at: string | null
+          status: string
+          subscription_id: string | null
+          updated_at: string
+          user_id: string
+          user_notification_id: string | null
+        }
+        Insert: {
+          attempt_count?: number
+          available_at?: string
+          channel: string
+          claim_expires_at?: string | null
+          claim_token?: string | null
+          claimed_at?: string | null
+          created_at?: string
+          event_id: string
+          failure_category?: string | null
+          failure_code?: string | null
+          id?: string
+          idempotency_key?: string | null
+          last_error?: string | null
+          next_attempt_at?: string | null
+          provider_message_id?: string | null
+          sent_at?: string | null
+          status?: string
+          subscription_id?: string | null
+          updated_at?: string
+          user_id: string
+          user_notification_id?: string | null
+        }
+        Update: {
+          attempt_count?: number
+          available_at?: string
+          channel?: string
+          claim_expires_at?: string | null
+          claim_token?: string | null
+          claimed_at?: string | null
+          created_at?: string
+          event_id?: string
+          failure_category?: string | null
+          failure_code?: string | null
+          id?: string
+          idempotency_key?: string | null
+          last_error?: string | null
+          next_attempt_at?: string | null
+          provider_message_id?: string | null
+          sent_at?: string | null
+          status?: string
+          subscription_id?: string | null
+          updated_at?: string
+          user_id?: string
+          user_notification_id?: string | null
         }
         Relationships: [
           {
@@ -927,6 +981,112 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "notification_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notification_deliveries_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "push_subscription_devices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notification_deliveries_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "push_subscriptions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notification_deliveries_user_notification_id_fkey"
+            columns: ["user_notification_id"]
+            isOneToOne: false
+            referencedRelation: "user_notifications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notification_digest_batches: {
+        Row: {
+          claim_expires_at: string | null
+          claim_token: string | null
+          created_at: string
+          id: string
+          idempotency_key: string
+          period_end: string
+          period_start: string
+          sent_at: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          claim_expires_at?: string | null
+          claim_token?: string | null
+          created_at?: string
+          id?: string
+          idempotency_key: string
+          period_end: string
+          period_start: string
+          sent_at?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          claim_expires_at?: string | null
+          claim_token?: string | null
+          created_at?: string
+          id?: string
+          idempotency_key?: string
+          period_end?: string
+          period_start?: string
+          sent_at?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      notification_digest_items: {
+        Row: {
+          batch_id: string
+          created_at: string
+          delivery_id: string | null
+          id: string
+          user_notification_id: string
+        }
+        Insert: {
+          batch_id: string
+          created_at?: string
+          delivery_id?: string | null
+          id?: string
+          user_notification_id: string
+        }
+        Update: {
+          batch_id?: string
+          created_at?: string
+          delivery_id?: string | null
+          id?: string
+          user_notification_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_digest_items_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "notification_digest_batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notification_digest_items_delivery_id_fkey"
+            columns: ["delivery_id"]
+            isOneToOne: false
+            referencedRelation: "notification_deliveries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notification_digest_items_user_notification_id_fkey"
+            columns: ["user_notification_id"]
+            isOneToOne: false
+            referencedRelation: "user_notifications"
             referencedColumns: ["id"]
           },
         ]
@@ -981,6 +1141,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      notification_quiet_hours: {
+        Row: {
+          allow_urgent_override: boolean
+          enabled: boolean
+          end_local: string
+          preview_mode: string
+          start_local: string
+          time_zone: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          allow_urgent_override?: boolean
+          enabled?: boolean
+          end_local?: string
+          preview_mode?: string
+          start_local?: string
+          time_zone?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          allow_urgent_override?: boolean
+          enabled?: boolean
+          end_local?: string
+          preview_mode?: string
+          start_local?: string
+          time_zone?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       payment_allocations: {
         Row: {
@@ -1299,6 +1492,69 @@ export type Database = {
           preferred_locale?: string
           preferred_timezone?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      push_subscriptions: {
+        Row: {
+          active: boolean
+          auth: string
+          created_at: string
+          device_label: string | null
+          disabled_reason: string | null
+          endpoint: string
+          endpoint_hash: string
+          expiration_time: string | null
+          failure_count: number
+          id: string
+          installation_id: string | null
+          last_failure_at: string | null
+          last_success_at: string | null
+          p256dh: string
+          platform_category: string | null
+          updated_at: string
+          user_agent_summary: string | null
+          user_id: string
+        }
+        Insert: {
+          active?: boolean
+          auth: string
+          created_at?: string
+          device_label?: string | null
+          disabled_reason?: string | null
+          endpoint: string
+          endpoint_hash: string
+          expiration_time?: string | null
+          failure_count?: number
+          id?: string
+          installation_id?: string | null
+          last_failure_at?: string | null
+          last_success_at?: string | null
+          p256dh: string
+          platform_category?: string | null
+          updated_at?: string
+          user_agent_summary?: string | null
+          user_id: string
+        }
+        Update: {
+          active?: boolean
+          auth?: string
+          created_at?: string
+          device_label?: string | null
+          disabled_reason?: string | null
+          endpoint?: string
+          endpoint_hash?: string
+          expiration_time?: string | null
+          failure_count?: number
+          id?: string
+          installation_id?: string | null
+          last_failure_at?: string | null
+          last_success_at?: string | null
+          p256dh?: string
+          platform_category?: string | null
+          updated_at?: string
+          user_agent_summary?: string | null
+          user_id?: string
         }
         Relationships: []
       }
@@ -1644,38 +1900,109 @@ export type Database = {
           },
         ]
       }
+      scheduled_notification_requests: {
+        Row: {
+          cancelled_at: string | null
+          created_at: string
+          event_type: string
+          id: string
+          idempotency_key: string
+          notification_event_id: string | null
+          payload: Json
+          processed_at: string | null
+          recipient_user_id: string
+          scheduled_at: string
+          source_id: string
+          source_type: string
+          time_zone: string
+          updated_at: string
+        }
+        Insert: {
+          cancelled_at?: string | null
+          created_at?: string
+          event_type: string
+          id?: string
+          idempotency_key: string
+          notification_event_id?: string | null
+          payload?: Json
+          processed_at?: string | null
+          recipient_user_id: string
+          scheduled_at: string
+          source_id: string
+          source_type: string
+          time_zone?: string
+          updated_at?: string
+        }
+        Update: {
+          cancelled_at?: string | null
+          created_at?: string
+          event_type?: string
+          id?: string
+          idempotency_key?: string
+          notification_event_id?: string | null
+          payload?: Json
+          processed_at?: string | null
+          recipient_user_id?: string
+          scheduled_at?: string
+          source_id?: string
+          source_type?: string
+          time_zone?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scheduled_notification_requests_notification_event_id_fkey"
+            columns: ["notification_event_id"]
+            isOneToOne: false
+            referencedRelation: "notification_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_notifications: {
         Row: {
           action_href: string | null
+          action_oriented: boolean
           body: string
+          category: string | null
           created_at: string
           event_id: string
           household_id: string | null
           id: string
+          privacy_class: string
           read_at: string | null
           title: string
+          urgency: string
           user_id: string
         }
         Insert: {
           action_href?: string | null
+          action_oriented?: boolean
           body?: string
+          category?: string | null
           created_at?: string
           event_id: string
           household_id?: string | null
           id?: string
+          privacy_class?: string
           read_at?: string | null
           title: string
+          urgency?: string
           user_id: string
         }
         Update: {
           action_href?: string | null
+          action_oriented?: boolean
           body?: string
+          category?: string | null
           created_at?: string
           event_id?: string
           household_id?: string | null
           id?: string
+          privacy_class?: string
           read_at?: string | null
           title?: string
+          urgency?: string
           user_id?: string
         }
         Relationships: [
@@ -1784,12 +2111,61 @@ export type Database = {
           },
         ]
       }
+      push_subscription_devices: {
+        Row: {
+          active: boolean | null
+          created_at: string | null
+          device_label: string | null
+          disabled_reason: string | null
+          failure_count: number | null
+          id: string | null
+          installation_id: string | null
+          last_success_at: string | null
+          platform_category: string | null
+          updated_at: string | null
+          user_agent_summary: string | null
+          user_id: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          created_at?: string | null
+          device_label?: string | null
+          disabled_reason?: string | null
+          failure_count?: number | null
+          id?: string | null
+          installation_id?: string | null
+          last_success_at?: string | null
+          platform_category?: string | null
+          updated_at?: string | null
+          user_agent_summary?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          created_at?: string | null
+          device_label?: string | null
+          disabled_reason?: string | null
+          failure_count?: number | null
+          id?: string | null
+          installation_id?: string | null
+          last_success_at?: string | null
+          platform_category?: string | null
+          updated_at?: string | null
+          user_agent_summary?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       _allow_privileged_mutation: { Args: never; Returns: boolean }
       _blocking_submitted_payment_id: {
         Args: { p_expense_id: string }
         Returns: string
+      }
+      _cancel_scheduled_notification_request: {
+        Args: { p_idempotency_key: string }
+        Returns: boolean
       }
       _create_refund_obligation: {
         Args: {
@@ -1801,6 +2177,19 @@ export type Database = {
           p_original_creditor: string
           p_original_debtor: string
           p_source_obligation_id: string
+        }
+        Returns: string
+      }
+      _create_scheduled_notification_request: {
+        Args: {
+          p_event_type: string
+          p_idempotency_key: string
+          p_payload?: Json
+          p_recipient_user_id: string
+          p_scheduled_at: string
+          p_source_id: string
+          p_source_type: string
+          p_time_zone: string
         }
         Returns: string
       }
@@ -1837,6 +2226,14 @@ export type Database = {
         Args: { p_membership_id: string }
         Returns: string
       }
+      _notification_meta_for_event_type: {
+        Args: { p_event_type: string }
+        Returns: {
+          action_oriented: boolean
+          category: string
+          urgency: string
+        }[]
+      }
       _official_outstanding_cents: {
         Args: { p_obligation_id: string }
         Returns: number
@@ -1854,10 +2251,15 @@ export type Database = {
         }
         Returns: undefined
       }
+      _quiet_hours_available_at: {
+        Args: { p_now?: string; p_urgency: string; p_user_id: string }
+        Returns: string
+      }
       _raise_if_submitted_payments: {
         Args: { p_expense_id: string }
         Returns: undefined
       }
+      _sanitize_delivery_error: { Args: { p_error: string }; Returns: string }
       _sync_obligation_settlement_status: {
         Args: { p_obligation_id: string }
         Returns: undefined
@@ -1921,9 +2323,54 @@ export type Database = {
         }
         Returns: undefined
       }
+      claim_notification_deliveries: {
+        Args: {
+          p_batch_size?: number
+          p_claim_ttl_seconds?: number
+          p_worker_id?: string
+        }
+        Returns: {
+          attempt_count: number
+          available_at: string
+          channel: string
+          claim_expires_at: string | null
+          claim_token: string | null
+          claimed_at: string | null
+          created_at: string
+          event_id: string
+          failure_category: string | null
+          failure_code: string | null
+          id: string
+          idempotency_key: string | null
+          last_error: string | null
+          next_attempt_at: string | null
+          provider_message_id: string | null
+          sent_at: string | null
+          status: string
+          subscription_id: string | null
+          updated_at: string
+          user_id: string
+          user_notification_id: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "notification_deliveries"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       cleanup_test_household_data: {
         Args: { p_test_run_id: string }
         Returns: number
+      }
+      complete_notification_delivery: {
+        Args: {
+          p_claim_token: string
+          p_delivery_id: string
+          p_provider_message_id?: string
+          p_subscription_id?: string
+        }
+        Returns: boolean
       }
       confirm_expense: {
         Args: {
@@ -2135,10 +2582,15 @@ export type Database = {
         Args: { p_household_id: string }
         Returns: string
       }
+      deactivate_push_subscription: {
+        Args: { p_endpoint_hash?: string; p_subscription_id?: string }
+        Returns: boolean
+      }
       decline_household_invitation: {
         Args: { p_token_hash: string }
         Returns: undefined
       }
+      enqueue_test_notification: { Args: never; Returns: string }
       ensure_profile: {
         Args: never
         Returns: {
@@ -2162,6 +2614,19 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      fail_notification_delivery: {
+        Args: {
+          p_claim_token: string
+          p_delivery_id: string
+          p_failure_category?: string
+          p_failure_code: string
+          p_last_error?: string
+          p_retry?: boolean
+          p_retry_delay_seconds?: number
+          p_subscription_id?: string
+        }
+        Returns: boolean
+      }
       get_invitation_preview: {
         Args: { p_token_hash: string }
         Returns: {
@@ -2171,6 +2636,10 @@ export type Database = {
           property_nickname: string
           status: string
         }[]
+      }
+      get_notification_delivery_mode: {
+        Args: { p_category: string; p_channel: string; p_user_id: string }
+        Returns: string
       }
       has_responsibility: {
         Args: { p_household_id: string; p_roles: string[] }
@@ -2182,7 +2651,15 @@ export type Database = {
         Args: { p_household_id: string; p_reason?: string }
         Returns: undefined
       }
+      mark_all_notifications_read: {
+        Args: { p_household_id?: string }
+        Returns: number
+      }
       mark_notification_read: {
+        Args: { p_notification_id: string }
+        Returns: undefined
+      }
+      mark_notification_unread: {
         Args: { p_notification_id: string }
         Returns: undefined
       }
@@ -2232,6 +2709,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      process_due_scheduled_notifications: {
+        Args: { p_limit?: number }
+        Returns: number
       }
       reject_payment: {
         Args: { p_payment_id: string; p_reason: string }
@@ -2415,6 +2896,23 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      upsert_notification_preference: {
+        Args: { p_category: string; p_channel: string; p_delivery_mode: string }
+        Returns: undefined
+      }
+      upsert_push_subscription: {
+        Args: {
+          p_auth: string
+          p_device_label?: string
+          p_endpoint: string
+          p_expiration_time?: string
+          p_installation_id?: string
+          p_p256dh: string
+          p_platform_category?: string
+          p_user_agent_summary?: string
+        }
+        Returns: string
       }
       void_expense: {
         Args: { p_expense_id: string; p_reason: string }
