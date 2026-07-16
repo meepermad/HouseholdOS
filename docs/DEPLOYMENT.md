@@ -34,7 +34,7 @@ Never set the secret key, worker secret, VAPID private key, or email API key as 
 
 Personal iCalendar feeds are served at `/api/calendar/feed/{token}.ics` using the privileged Supabase client. Ensure `APP_URL` matches the public origin so feed URLs shown at create/regenerate are correct. Treat feed URLs like passwords; revoking a token stops future access (clients may keep a cached copy briefly).
 
-The notification dispatch worker also extends recurring-event occurrence horizons (`claim_calendar_horizon_extensions`). Keep the existing cron → dispatch route schedule running so reminders and horizons stay fresh.
+The notification dispatch worker also extends recurring-event occurrence horizons (`claim_calendar_horizon_extensions`) and chore horizons (`claim_chore_horizon_extensions`), and records a safe heartbeat for coordinator health under **Settings → Operations**. Keep the existing cron → dispatch route schedule running so reminders and horizons stay fresh.
 
 ## Build
 

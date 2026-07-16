@@ -82,6 +82,14 @@ export const EVENT_CHORE_DUE_SOON = "chore.due_soon" as const;
 export const EVENT_CHORE_OVERDUE = "chore.overdue" as const;
 export const EVENT_CHORE_COMPLETED = "chore.completed" as const;
 export const EVENT_CHORE_REASSIGNED = "chore.reassigned" as const;
+export const EVENT_CHORE_AWAITING_VERIFICATION = "chore.awaiting_verification" as const;
+export const EVENT_CHORE_REMINDER = "chore.reminder" as const;
+export const EVENT_CHORE_REASSIGNMENT_REQUESTED = "chore.reassignment_requested" as const;
+export const EVENT_CHORE_ROTATION_CREATED = "chore.rotation_created" as const;
+export const EVENT_CHORE_ROTATION_UPDATED = "chore.rotation_updated" as const;
+export const EVENT_RESPONSIBILITY_TRANSFER_REQUESTED = "responsibility.transfer_requested" as const;
+export const EVENT_RESPONSIBILITY_TRANSFER_ACCEPTED = "responsibility.transfer_accepted" as const;
+export const EVENT_RESPONSIBILITY_TRANSFER_DECLINED = "responsibility.transfer_declined" as const;
 /** @deprecated Prefer EVENT_CHORE_DUE_SOON */
 export const EVENT_CHORE_DUE = EVENT_CHORE_DUE_SOON;
 export const EVENT_CALENDAR_EVENT_CREATED = "calendar.event_created" as const;
@@ -290,7 +298,7 @@ export const NOTIFICATION_CATALOG: Readonly<Record<string, CatalogEntry>> = {
     digestAllowed: true,
     actionOriented: true,
     privacy: "detailed_ok",
-    active: false,
+    active: true,
   }),
   [EVENT_CHORE_COMPLETED]: entry({
     eventType: EVENT_CHORE_COMPLETED,
@@ -301,7 +309,7 @@ export const NOTIFICATION_CATALOG: Readonly<Record<string, CatalogEntry>> = {
     digestAllowed: true,
     actionOriented: false,
     privacy: "detailed_ok",
-    active: false,
+    active: true,
   }),
   [EVENT_CHORE_DUE_SOON]: entry({
     eventType: EVENT_CHORE_DUE_SOON,
@@ -312,7 +320,7 @@ export const NOTIFICATION_CATALOG: Readonly<Record<string, CatalogEntry>> = {
     digestAllowed: false,
     actionOriented: true,
     privacy: "detailed_ok",
-    active: false,
+    active: true,
   }),
   [EVENT_CHORE_OVERDUE]: entry({
     eventType: EVENT_CHORE_OVERDUE,
@@ -323,7 +331,7 @@ export const NOTIFICATION_CATALOG: Readonly<Record<string, CatalogEntry>> = {
     digestAllowed: false,
     actionOriented: true,
     privacy: "detailed_ok",
-    active: false,
+    active: true,
   }),
   [EVENT_CHORE_REASSIGNED]: entry({
     eventType: EVENT_CHORE_REASSIGNED,
@@ -334,7 +342,95 @@ export const NOTIFICATION_CATALOG: Readonly<Record<string, CatalogEntry>> = {
     digestAllowed: true,
     actionOriented: true,
     privacy: "detailed_ok",
-    active: false,
+    active: true,
+  }),
+  [EVENT_CHORE_AWAITING_VERIFICATION]: entry({
+    eventType: EVENT_CHORE_AWAITING_VERIFICATION,
+    category: "chores",
+    defaultUrgency: "high",
+    recipientRule: "explicit",
+    deepLinkPattern: `${APP_LINK}/chores/{entityId}`,
+    digestAllowed: false,
+    actionOriented: true,
+    privacy: "detailed_ok",
+    active: true,
+  }),
+  [EVENT_CHORE_REMINDER]: entry({
+    eventType: EVENT_CHORE_REMINDER,
+    category: "chores",
+    defaultUrgency: "normal",
+    recipientRule: "explicit",
+    deepLinkPattern: `${APP_LINK}/chores/{entityId}`,
+    digestAllowed: false,
+    actionOriented: true,
+    privacy: "detailed_ok",
+    active: true,
+  }),
+  [EVENT_CHORE_REASSIGNMENT_REQUESTED]: entry({
+    eventType: EVENT_CHORE_REASSIGNMENT_REQUESTED,
+    category: "chores",
+    defaultUrgency: "high",
+    recipientRule: "explicit",
+    deepLinkPattern: `${APP_LINK}/chores/{entityId}`,
+    digestAllowed: false,
+    actionOriented: true,
+    privacy: "detailed_ok",
+    active: true,
+  }),
+  [EVENT_CHORE_ROTATION_CREATED]: entry({
+    eventType: EVENT_CHORE_ROTATION_CREATED,
+    category: "chores",
+    defaultUrgency: "low",
+    recipientRule: "explicit",
+    deepLinkPattern: `${APP_LINK}/chores/rotations/{entityId}`,
+    digestAllowed: true,
+    actionOriented: false,
+    privacy: "detailed_ok",
+    active: true,
+  }),
+  [EVENT_CHORE_ROTATION_UPDATED]: entry({
+    eventType: EVENT_CHORE_ROTATION_UPDATED,
+    category: "chores",
+    defaultUrgency: "normal",
+    recipientRule: "explicit",
+    deepLinkPattern: `${APP_LINK}/chores/rotations/{entityId}`,
+    digestAllowed: true,
+    actionOriented: false,
+    privacy: "detailed_ok",
+    active: true,
+  }),
+  [EVENT_RESPONSIBILITY_TRANSFER_REQUESTED]: entry({
+    eventType: EVENT_RESPONSIBILITY_TRANSFER_REQUESTED,
+    category: "chores",
+    defaultUrgency: "high",
+    recipientRule: "explicit",
+    deepLinkPattern: `${APP_LINK}/responsibilities`,
+    digestAllowed: false,
+    actionOriented: true,
+    privacy: "detailed_ok",
+    active: true,
+  }),
+  [EVENT_RESPONSIBILITY_TRANSFER_ACCEPTED]: entry({
+    eventType: EVENT_RESPONSIBILITY_TRANSFER_ACCEPTED,
+    category: "chores",
+    defaultUrgency: "normal",
+    recipientRule: "explicit",
+    deepLinkPattern: `${APP_LINK}/responsibilities`,
+    digestAllowed: true,
+    actionOriented: false,
+    privacy: "detailed_ok",
+    active: true,
+  }),
+  [EVENT_RESPONSIBILITY_TRANSFER_DECLINED]: entry({
+    eventType: EVENT_RESPONSIBILITY_TRANSFER_DECLINED,
+    category: "chores",
+    defaultUrgency: "normal",
+    recipientRule: "explicit",
+    deepLinkPattern: `${APP_LINK}/responsibilities`,
+    digestAllowed: true,
+    actionOriented: false,
+    privacy: "detailed_ok",
+    active: true,
   }),
   [EVENT_CALENDAR_EVENT_CREATED]: entry({
     eventType: EVENT_CALENDAR_EVENT_CREATED,

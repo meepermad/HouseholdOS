@@ -8,17 +8,16 @@ import {
 } from "@/lib/nav-items";
 
 describe("nav items growth rules", () => {
-  it("exposes Home, Calendar, Money, Settings, and Inbox while other domains stay disabled", () => {
+  it("exposes the Phase 5 household destinations", () => {
     expect(enabledNavItems().map((i) => i.key)).toEqual([
       "home",
       "calendar",
+      "chores",
       "money",
       "settings",
       "inbox",
     ]);
-    expect(HOUSEHOLD_NAV_ITEMS.some((i) => i.key === "tasks" && !i.enabled)).toBe(
-      true,
-    );
+    expect(HOUSEHOLD_NAV_ITEMS.some((i) => i.key === "chores" && i.enabled)).toBe(true);
   });
 
   it("keeps the bottom bar at or under the primary cap", () => {
@@ -27,15 +26,16 @@ describe("nav items growth rules", () => {
     expect(primaryNavItems().map((i) => i.key)).toEqual([
       "home",
       "calendar",
+      "chores",
       "money",
-      "settings",
     ]);
   });
 
-  it("lists home, calendar, money, settings, then inbox (more) in the sidebar", () => {
+  it("lists primary items before settings and inbox", () => {
     expect(sidebarNavItems().map((i) => i.key)).toEqual([
       "home",
       "calendar",
+      "chores",
       "money",
       "settings",
       "inbox",

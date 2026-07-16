@@ -3,6 +3,7 @@ import {
   BUSY_BLOCK_TITLE,
   CALENDAR_VISIBILITIES,
   projectEventForViewer,
+  projectOccurrenceForViewer,
   resolveEventProjection,
 } from "@/lib/calendar/visibility";
 
@@ -100,6 +101,50 @@ describe("projectEventForViewer", () => {
     });
     expect(projected?.id).toBe("evt-1");
     expect(BUSY_BLOCK_TITLE).toBe("Busy");
+  });
+});
+
+describe("projectOccurrenceForViewer", () => {
+  const occurrence = {
+    occurrenceId: "occ-1",
+    title: "Private appointment",
+    description: "Sensitive details",
+    location: "Private clinic",
+    guestLabel: "Companions",
+    eventGuestCount: 1,
+    reminderOffsets: [15],
+    attendeeMembershipIds: ["member-1"],
+  };
+
+  it("preserves metadata for a full projection", () => {
+    expect(
+      projectOccurrenceForViewer({ occurrence, mode: "full" }),
+    ).toEqual({ ...occurrence, isBusyProjection: false });
+  });
+
+  it("strips effective occurrence metadata from a busy projection", () => {
+    const projected = projectOccurrenceForViewer({
+      occurrence,
+      mode: "busy",
+    });
+    expect(projected).toMatchObject({
+      occurrenceId: "occ-1",
+      title: BUSY_BLOCK_TITLE,
+      description: null,
+      location: null,
+      guestLabel: null,
+      eventGuestCount: null,
+      reminderOffsets: [],
+      attendeeMembershipIds: [],
+      isBusyProjection: true,
+    });
+    expect(projected?.title).not.toContain("appointment");
+  });
+
+  it("returns null for hidden occurrences", () => {
+    expect(
+      projectOccurrenceForViewer({ occurrence, mode: "hidden" }),
+    ).toBeNull();
   });
 });
 

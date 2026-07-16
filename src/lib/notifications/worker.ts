@@ -19,6 +19,7 @@ import {
   nextRetryAt,
 } from "@/lib/notifications/retry";
 import { materializeEventOccurrences } from "@/lib/calendar/materialize";
+import { materializeChoreOccurrences } from "@/lib/chores/materialize";
 
 export type DispatchSummary = {
   correlationId: string;
@@ -30,6 +31,7 @@ export type DispatchSummary = {
   subscriptionsDeactivated: number;
   scheduledProcessed: number;
   calendarHorizonsExtended: number;
+  choreHorizonsExtended: number;
   empty: boolean;
   durationMs: number;
 };
@@ -83,6 +85,7 @@ export async function dispatchNotificationDeliveries(options?: {
   const started = Date.now();
   const correlationId = crypto.randomUUID();
   const env = getServerEnv();
+  const client = createPrivilegedClient();
 
   const deliveryEnabled =
     options?.deliveryEnabled ?? env.NOTIFICATION_DELIVERY_ENABLED === true;
@@ -93,7 +96,7 @@ export async function dispatchNotificationDeliveries(options?: {
       enabled: false,
       claimed: 0,
     });
-    return {
+    const summary: DispatchSummary = {
       correlationId,
       claimed: 0,
       sent: 0,
@@ -103,13 +106,15 @@ export async function dispatchNotificationDeliveries(options?: {
       subscriptionsDeactivated: 0,
       scheduledProcessed: 0,
       calendarHorizonsExtended: 0,
+      choreHorizonsExtended: 0,
       empty: true,
       durationMs: Date.now() - started,
     };
+    await recordWorkerHeartbeat(client, summary, false);
+    return summary;
   }
 
   const batchSize = Math.min(Math.max(options?.batchSize ?? 50, 1), 100);
-  const client = createPrivilegedClient();
 
   const publicEnv = getPublicEnv();
   const webPushAdapter =
@@ -218,6 +223,7 @@ export async function dispatchNotificationDeliveries(options?: {
     client,
     correlationId,
   );
+  const choreHorizonsExtended = await extendChoreHorizons(client, correlationId);
 
   // Digest batch claim/send is not wired yet — groupDigestItems / nextDigestAt
   // exist for scheduling math only. Skip digest processing until a claim RPC lands.
@@ -232,10 +238,12 @@ export async function dispatchNotificationDeliveries(options?: {
     subscriptionsDeactivated,
     scheduledProcessed,
     calendarHorizonsExtended,
+    choreHorizonsExtended,
     empty:
       claimed.length === 0 &&
       scheduledProcessed === 0 &&
-      calendarHorizonsExtended === 0,
+      calendarHorizonsExtended === 0 &&
+      choreHorizonsExtended === 0,
     durationMs: Date.now() - started,
   };
 
@@ -249,10 +257,43 @@ export async function dispatchNotificationDeliveries(options?: {
     subscriptionsDeactivated: summary.subscriptionsDeactivated,
     scheduledProcessed: summary.scheduledProcessed,
     calendarHorizonsExtended: summary.calendarHorizonsExtended,
+    choreHorizonsExtended: summary.choreHorizonsExtended,
     durationMs: summary.durationMs,
   });
 
+  await recordWorkerHeartbeat(client, summary, true);
   return summary;
+}
+
+async function recordWorkerHeartbeat(
+  client: PrivilegedClient,
+  summary: DispatchSummary,
+  deliveryEnabled: boolean,
+): Promise<void> {
+  const { error } = await workerDb(client).rpc(
+    "record_notification_worker_heartbeat",
+    {
+      p_delivery_enabled: deliveryEnabled,
+      p_claimed: summary.claimed,
+      p_sent: summary.sent,
+      p_retried: summary.retried,
+      p_dead_letter: summary.deadLetter,
+      p_scheduled_processed: summary.scheduledProcessed,
+      p_calendar_horizons_extended: summary.calendarHorizonsExtended,
+      p_empty: summary.empty,
+      p_duration_ms: summary.durationMs,
+      p_successful: deliveryEnabled,
+      p_horizon_extension_current: true,
+    },
+  );
+  if (error) {
+    // Heartbeat failure must not cause already-completed deliveries to retry.
+    console.error("[notifications.dispatch]", {
+      correlationId: summary.correlationId,
+      error: "heartbeat_failed",
+      message: error.message.slice(0, 200),
+    });
+  }
 }
 
 /**
@@ -299,6 +340,40 @@ async function extendCalendarHorizons(
     }
   }
 
+  return extended;
+}
+
+async function extendChoreHorizons(
+  client: PrivilegedClient,
+  correlationId: string,
+): Promise<number> {
+  const db = workerDb(client);
+  const { data: claimed, error } = await db.rpc("claim_chore_horizon_extensions", {
+    p_limit: 25,
+  });
+  if (error) {
+    console.error("[notifications.dispatch]", {
+      correlationId,
+      error: "chore_horizon_claim_failed",
+      message: error.message.slice(0, 200),
+    });
+    return 0;
+  }
+  let extended = 0;
+  for (const row of (claimed ?? []) as Array<{ definition_id: string }>) {
+    try {
+      const { data: definition } = await db
+        .from("chore_definitions")
+        .select("id,status,rrule,start_date,end_date,recurrence_count,time_zone,all_day,due_time_minutes,rotation_id")
+        .eq("id", row.definition_id)
+        .maybeSingle();
+      if (!definition) continue;
+      const result = await materializeChoreOccurrences({ supabase: db, definition });
+      if (!result.error) extended += 1;
+    } catch {
+      // One malformed definition must not stall the worker batch.
+    }
+  }
   return extended;
 }
 

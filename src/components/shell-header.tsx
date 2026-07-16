@@ -81,6 +81,14 @@ export function ShellHeader({
                     >
                       Notification settings
                     </Link>
+                    <Link
+                      href={`/app/${householdId}/settings/profile`}
+                      role="menuitem"
+                      className="min-h-11 rounded-md px-2 py-2 text-sm text-text-secondary hover:bg-surface-interactive"
+                      onClick={() => setMenuOpen(false)}
+                    >
+                      Settings
+                    </Link>
                   </>
                 ) : null}
                 <Link

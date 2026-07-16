@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { can } from "@/lib/permissions";
 import { formatUsdFromCents, toCents } from "@/lib/money";
 import { MoneyActionCenter } from "@/components/payments/action-center";
+import { ChoreActionCenter } from "@/components/chores/ChoreActionCenter";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export const dynamic = "force-dynamic";
@@ -62,6 +63,13 @@ export default async function HouseholdHomePage({
           householdId={householdId}
           membershipId={ctx.membershipId}
           userId={ctx.userId}
+        />
+      </Suspense>
+
+      <Suspense fallback={<Skeleton className="h-24 w-full" />}>
+        <ChoreActionCenter
+          householdId={householdId}
+          membershipId={ctx.membershipId}
         />
       </Suspense>
 

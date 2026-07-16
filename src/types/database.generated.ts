@@ -194,6 +194,140 @@ export type Database = {
           },
         ]
       }
+      calendar_event_exception_attendees: {
+        Row: {
+          created_at: string
+          event_id: string
+          exception_id: string
+          guest_count: number
+          guest_note: string | null
+          household_id: string
+          id: string
+          membership_id: string
+          participation_role: string
+          rsvp_status: string
+        }
+        Insert: {
+          created_at?: string
+          event_id: string
+          exception_id: string
+          guest_count?: number
+          guest_note?: string | null
+          household_id: string
+          id?: string
+          membership_id: string
+          participation_role?: string
+          rsvp_status?: string
+        }
+        Update: {
+          created_at?: string
+          event_id?: string
+          exception_id?: string
+          guest_count?: number
+          guest_note?: string | null
+          household_id?: string
+          id?: string
+          membership_id?: string
+          participation_role?: string
+          rsvp_status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calendar_event_exception_attendees_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "calendar_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_event_exception_attendees_event_id_household_id_fkey"
+            columns: ["event_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "calendar_events"
+            referencedColumns: ["id", "household_id"]
+          },
+          {
+            foreignKeyName: "calendar_event_exception_attendees_exception_id_fkey"
+            columns: ["exception_id"]
+            isOneToOne: false
+            referencedRelation: "calendar_event_exceptions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_event_exception_attendees_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_event_exception_attendees_membership_id_fkey"
+            columns: ["membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      calendar_event_exception_reminders: {
+        Row: {
+          created_at: string
+          event_id: string
+          exception_id: string
+          household_id: string
+          id: string
+          offset_minutes: number
+          recipient_groups: string[]
+        }
+        Insert: {
+          created_at?: string
+          event_id: string
+          exception_id: string
+          household_id: string
+          id?: string
+          offset_minutes: number
+          recipient_groups?: string[]
+        }
+        Update: {
+          created_at?: string
+          event_id?: string
+          exception_id?: string
+          household_id?: string
+          id?: string
+          offset_minutes?: number
+          recipient_groups?: string[]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calendar_event_exception_reminders_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "calendar_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_event_exception_reminders_event_id_household_id_fkey"
+            columns: ["event_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "calendar_events"
+            referencedColumns: ["id", "household_id"]
+          },
+          {
+            foreignKeyName: "calendar_event_exception_reminders_exception_id_fkey"
+            columns: ["exception_id"]
+            isOneToOne: false
+            referencedRelation: "calendar_event_exceptions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_event_exception_reminders_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       calendar_event_exceptions: {
         Row: {
           all_day: boolean | null
@@ -210,6 +344,8 @@ export type Database = {
           kind: string
           location: string | null
           original_starts_at: string
+          overrides_attendees: boolean
+          overrides_reminders: boolean
           start_date: string | null
           starts_at: string | null
           title: string | null
@@ -230,6 +366,8 @@ export type Database = {
           kind: string
           location?: string | null
           original_starts_at: string
+          overrides_attendees?: boolean
+          overrides_reminders?: boolean
           start_date?: string | null
           starts_at?: string | null
           title?: string | null
@@ -250,6 +388,8 @@ export type Database = {
           kind?: string
           location?: string | null
           original_starts_at?: string
+          overrides_attendees?: boolean
+          overrides_reminders?: boolean
           start_date?: string | null
           starts_at?: string | null
           title?: string | null
@@ -585,6 +725,564 @@ export type Database = {
             columns: ["household_id"]
             isOneToOne: false
             referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chore_assignments: {
+        Row: {
+          accepted_at: string | null
+          assigned_at: string
+          created_at: string
+          household_id: string
+          id: string
+          membership_id: string
+          occurrence_id: string
+          role: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          assigned_at?: string
+          created_at?: string
+          household_id: string
+          id?: string
+          membership_id: string
+          occurrence_id: string
+          role?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          assigned_at?: string
+          created_at?: string
+          household_id?: string
+          id?: string
+          membership_id?: string
+          occurrence_id?: string
+          role?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chore_assignments_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chore_assignments_membership_id_fkey"
+            columns: ["membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chore_assignments_occurrence_id_household_id_fkey"
+            columns: ["occurrence_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "chore_occurrences"
+            referencedColumns: ["id", "household_id"]
+          },
+        ]
+      }
+      chore_completion_records: {
+        Row: {
+          completed_by_membership_id: string
+          completion_note: string | null
+          created_at: string
+          household_id: string
+          id: string
+          occurrence_id: string
+          reopen_reason: string | null
+          status: string
+          submitted_at: string
+          verified_at: string | null
+          verified_by_membership_id: string | null
+          version: number
+        }
+        Insert: {
+          completed_by_membership_id: string
+          completion_note?: string | null
+          created_at?: string
+          household_id: string
+          id?: string
+          occurrence_id: string
+          reopen_reason?: string | null
+          status?: string
+          submitted_at?: string
+          verified_at?: string | null
+          verified_by_membership_id?: string | null
+          version?: number
+        }
+        Update: {
+          completed_by_membership_id?: string
+          completion_note?: string | null
+          created_at?: string
+          household_id?: string
+          id?: string
+          occurrence_id?: string
+          reopen_reason?: string | null
+          status?: string
+          submitted_at?: string
+          verified_at?: string | null
+          verified_by_membership_id?: string | null
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chore_completion_records_completed_by_membership_id_fkey"
+            columns: ["completed_by_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chore_completion_records_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chore_completion_records_occurrence_id_household_id_fkey"
+            columns: ["occurrence_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "chore_occurrences"
+            referencedColumns: ["id", "household_id"]
+          },
+          {
+            foreignKeyName: "chore_completion_records_verified_by_membership_id_fkey"
+            columns: ["verified_by_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chore_definitions: {
+        Row: {
+          all_day: boolean
+          calendar_category: string
+          category: string
+          created_at: string
+          created_by_membership_id: string
+          description: string | null
+          due_time_minutes: number | null
+          end_date: string | null
+          ended_at: string | null
+          escalation_coordinator: boolean
+          grace_period_minutes: number
+          household_id: string
+          id: string
+          materialized_through: string | null
+          paused_at: string | null
+          recurrence_count: number | null
+          reminder_offsets: number[]
+          requires_verification: boolean
+          responsibility_area_id: string | null
+          rotation_id: string | null
+          rrule: string | null
+          show_on_calendar: boolean
+          start_date: string
+          status: string
+          time_zone: string
+          title: string
+          updated_at: string
+          verifier_membership_id: string | null
+          visibility: string
+        }
+        Insert: {
+          all_day?: boolean
+          calendar_category?: string
+          category: string
+          created_at?: string
+          created_by_membership_id: string
+          description?: string | null
+          due_time_minutes?: number | null
+          end_date?: string | null
+          ended_at?: string | null
+          escalation_coordinator?: boolean
+          grace_period_minutes?: number
+          household_id: string
+          id?: string
+          materialized_through?: string | null
+          paused_at?: string | null
+          recurrence_count?: number | null
+          reminder_offsets?: number[]
+          requires_verification?: boolean
+          responsibility_area_id?: string | null
+          rotation_id?: string | null
+          rrule?: string | null
+          show_on_calendar?: boolean
+          start_date: string
+          status?: string
+          time_zone?: string
+          title: string
+          updated_at?: string
+          verifier_membership_id?: string | null
+          visibility?: string
+        }
+        Update: {
+          all_day?: boolean
+          calendar_category?: string
+          category?: string
+          created_at?: string
+          created_by_membership_id?: string
+          description?: string | null
+          due_time_minutes?: number | null
+          end_date?: string | null
+          ended_at?: string | null
+          escalation_coordinator?: boolean
+          grace_period_minutes?: number
+          household_id?: string
+          id?: string
+          materialized_through?: string | null
+          paused_at?: string | null
+          recurrence_count?: number | null
+          reminder_offsets?: number[]
+          requires_verification?: boolean
+          responsibility_area_id?: string | null
+          rotation_id?: string | null
+          rrule?: string | null
+          show_on_calendar?: boolean
+          start_date?: string
+          status?: string
+          time_zone?: string
+          title?: string
+          updated_at?: string
+          verifier_membership_id?: string | null
+          visibility?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chore_definitions_created_by_membership_id_fkey"
+            columns: ["created_by_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chore_definitions_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chore_definitions_responsibility_area_id_household_id_fkey"
+            columns: ["responsibility_area_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "responsibility_areas"
+            referencedColumns: ["id", "household_id"]
+          },
+          {
+            foreignKeyName: "chore_definitions_rotation_id_household_id_fkey"
+            columns: ["rotation_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "chore_rotations"
+            referencedColumns: ["id", "household_id"]
+          },
+          {
+            foreignKeyName: "chore_definitions_verifier_membership_id_fkey"
+            columns: ["verifier_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chore_occurrences: {
+        Row: {
+          all_day: boolean
+          assignment_version: number
+          blocked_note: string | null
+          blocked_reason: string | null
+          calendar_event_id: string | null
+          cancelled_at: string | null
+          completed_at: string | null
+          created_at: string
+          definition_id: string
+          due_at: string
+          due_date: string | null
+          grace_ends_at: string | null
+          household_id: string
+          id: string
+          occurrence_index: number
+          original_due_at: string
+          reopen_reason: string | null
+          skip_reason: string | null
+          started_at: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          all_day?: boolean
+          assignment_version?: number
+          blocked_note?: string | null
+          blocked_reason?: string | null
+          calendar_event_id?: string | null
+          cancelled_at?: string | null
+          completed_at?: string | null
+          created_at?: string
+          definition_id: string
+          due_at: string
+          due_date?: string | null
+          grace_ends_at?: string | null
+          household_id: string
+          id?: string
+          occurrence_index: number
+          original_due_at: string
+          reopen_reason?: string | null
+          skip_reason?: string | null
+          started_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          all_day?: boolean
+          assignment_version?: number
+          blocked_note?: string | null
+          blocked_reason?: string | null
+          calendar_event_id?: string | null
+          cancelled_at?: string | null
+          completed_at?: string | null
+          created_at?: string
+          definition_id?: string
+          due_at?: string
+          due_date?: string | null
+          grace_ends_at?: string | null
+          household_id?: string
+          id?: string
+          occurrence_index?: number
+          original_due_at?: string
+          reopen_reason?: string | null
+          skip_reason?: string | null
+          started_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chore_occurrences_calendar_event_id_fkey"
+            columns: ["calendar_event_id"]
+            isOneToOne: false
+            referencedRelation: "calendar_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chore_occurrences_definition_id_household_id_fkey"
+            columns: ["definition_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "chore_definitions"
+            referencedColumns: ["id", "household_id"]
+          },
+          {
+            foreignKeyName: "chore_occurrences_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chore_reassignment_requests: {
+        Row: {
+          created_at: string
+          household_id: string
+          id: string
+          occurrence_id: string
+          reason: string
+          requested_by_membership_id: string
+          requested_effective_at: string | null
+          resolution_note: string | null
+          resolved_at: string | null
+          resolved_by_membership_id: string | null
+          status: string
+          suggested_membership_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          household_id: string
+          id?: string
+          occurrence_id: string
+          reason: string
+          requested_by_membership_id: string
+          requested_effective_at?: string | null
+          resolution_note?: string | null
+          resolved_at?: string | null
+          resolved_by_membership_id?: string | null
+          status?: string
+          suggested_membership_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          household_id?: string
+          id?: string
+          occurrence_id?: string
+          reason?: string
+          requested_by_membership_id?: string
+          requested_effective_at?: string | null
+          resolution_note?: string | null
+          resolved_at?: string | null
+          resolved_by_membership_id?: string | null
+          status?: string
+          suggested_membership_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chore_reassignment_requests_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chore_reassignment_requests_occurrence_id_household_id_fkey"
+            columns: ["occurrence_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "chore_occurrences"
+            referencedColumns: ["id", "household_id"]
+          },
+          {
+            foreignKeyName: "chore_reassignment_requests_requested_by_membership_id_fkey"
+            columns: ["requested_by_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chore_reassignment_requests_resolved_by_membership_id_fkey"
+            columns: ["resolved_by_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chore_reassignment_requests_suggested_membership_id_fkey"
+            columns: ["suggested_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chore_rotation_members: {
+        Row: {
+          created_at: string
+          excluded_until: string | null
+          household_id: string
+          id: string
+          membership_id: string
+          rotation_id: string
+          sort_order: number
+        }
+        Insert: {
+          created_at?: string
+          excluded_until?: string | null
+          household_id: string
+          id?: string
+          membership_id: string
+          rotation_id: string
+          sort_order: number
+        }
+        Update: {
+          created_at?: string
+          excluded_until?: string | null
+          household_id?: string
+          id?: string
+          membership_id?: string
+          rotation_id?: string
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chore_rotation_members_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chore_rotation_members_membership_id_fkey"
+            columns: ["membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chore_rotation_members_rotation_id_household_id_fkey"
+            columns: ["rotation_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "chore_rotations"
+            referencedColumns: ["id", "household_id"]
+          },
+        ]
+      }
+      chore_rotations: {
+        Row: {
+          created_at: string
+          created_by_membership_id: string
+          ended_at: string | null
+          household_id: string
+          id: string
+          name: string
+          paused_at: string | null
+          start_membership_id: string | null
+          strategy: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by_membership_id: string
+          ended_at?: string | null
+          household_id: string
+          id?: string
+          name: string
+          paused_at?: string | null
+          start_membership_id?: string | null
+          strategy: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by_membership_id?: string
+          ended_at?: string | null
+          household_id?: string
+          id?: string
+          name?: string
+          paused_at?: string | null
+          start_membership_id?: string | null
+          strategy?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chore_rotations_created_by_membership_id_fkey"
+            columns: ["created_by_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chore_rotations_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chore_rotations_start_membership_id_fkey"
+            columns: ["start_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
             referencedColumns: ["id"]
           },
         ]
@@ -1641,6 +2339,63 @@ export type Database = {
         }
         Relationships: []
       }
+      notification_worker_heartbeats: {
+        Row: {
+          calendar_horizons_extended: number
+          claimed: number
+          created_at: string
+          dead_letter: number
+          delivery_enabled: boolean
+          duration_ms: number
+          empty: boolean
+          horizon_extension_current: boolean
+          id: string
+          last_attempted_at: string
+          last_horizon_extension_at: string | null
+          last_successful_at: string | null
+          retried: number
+          scheduled_processed: number
+          sent: number
+          updated_at: string
+        }
+        Insert: {
+          calendar_horizons_extended?: number
+          claimed?: number
+          created_at?: string
+          dead_letter?: number
+          delivery_enabled: boolean
+          duration_ms?: number
+          empty?: boolean
+          horizon_extension_current?: boolean
+          id?: string
+          last_attempted_at: string
+          last_horizon_extension_at?: string | null
+          last_successful_at?: string | null
+          retried?: number
+          scheduled_processed?: number
+          sent?: number
+          updated_at?: string
+        }
+        Update: {
+          calendar_horizons_extended?: number
+          claimed?: number
+          created_at?: string
+          dead_letter?: number
+          delivery_enabled?: boolean
+          duration_ms?: number
+          empty?: boolean
+          horizon_extension_current?: boolean
+          id?: string
+          last_attempted_at?: string
+          last_horizon_extension_at?: string | null
+          last_successful_at?: string | null
+          retried?: number
+          scheduled_processed?: number
+          sent?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       payment_allocations: {
         Row: {
           amount_cents: number
@@ -2366,6 +3121,195 @@ export type Database = {
           },
         ]
       }
+      responsibility_areas: {
+        Row: {
+          category: string
+          created_at: string
+          created_by_membership_id: string
+          description: string | null
+          end_date: string | null
+          handoff_expectations: string | null
+          household_id: string
+          id: string
+          name: string
+          start_date: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          created_by_membership_id: string
+          description?: string | null
+          end_date?: string | null
+          handoff_expectations?: string | null
+          household_id: string
+          id?: string
+          name: string
+          start_date: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          created_by_membership_id?: string
+          description?: string | null
+          end_date?: string | null
+          handoff_expectations?: string | null
+          household_id?: string
+          id?: string
+          name?: string
+          start_date?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "responsibility_areas_created_by_membership_id_fkey"
+            columns: ["created_by_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "responsibility_areas_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      responsibility_assignments: {
+        Row: {
+          area_id: string
+          created_at: string
+          ended_at: string | null
+          household_id: string
+          id: string
+          membership_id: string
+          role: string
+          started_at: string
+          status: string
+        }
+        Insert: {
+          area_id: string
+          created_at?: string
+          ended_at?: string | null
+          household_id: string
+          id?: string
+          membership_id: string
+          role: string
+          started_at?: string
+          status?: string
+        }
+        Update: {
+          area_id?: string
+          created_at?: string
+          ended_at?: string | null
+          household_id?: string
+          id?: string
+          membership_id?: string
+          role?: string
+          started_at?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "responsibility_assignments_area_id_household_id_fkey"
+            columns: ["area_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "responsibility_areas"
+            referencedColumns: ["id", "household_id"]
+          },
+          {
+            foreignKeyName: "responsibility_assignments_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "responsibility_assignments_membership_id_fkey"
+            columns: ["membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      responsibility_transfers: {
+        Row: {
+          area_id: string
+          created_at: string
+          from_membership_id: string
+          household_id: string
+          id: string
+          note: string | null
+          requested_at: string
+          resolved_at: string | null
+          status: string
+          to_membership_id: string
+          updated_at: string
+        }
+        Insert: {
+          area_id: string
+          created_at?: string
+          from_membership_id: string
+          household_id: string
+          id?: string
+          note?: string | null
+          requested_at?: string
+          resolved_at?: string | null
+          status?: string
+          to_membership_id: string
+          updated_at?: string
+        }
+        Update: {
+          area_id?: string
+          created_at?: string
+          from_membership_id?: string
+          household_id?: string
+          id?: string
+          note?: string | null
+          requested_at?: string
+          resolved_at?: string | null
+          status?: string
+          to_membership_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "responsibility_transfers_area_id_household_id_fkey"
+            columns: ["area_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "responsibility_areas"
+            referencedColumns: ["id", "household_id"]
+          },
+          {
+            foreignKeyName: "responsibility_transfers_from_membership_id_fkey"
+            columns: ["from_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "responsibility_transfers_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "responsibility_transfers_to_membership_id_fkey"
+            columns: ["to_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       scheduled_notification_requests: {
         Row: {
           cancelled_at: string | null
@@ -2650,6 +3594,17 @@ export type Database = {
         }
         Returns: undefined
       }
+      _calendar_exception_has_time_override: {
+        Args: {
+          p_all_day: boolean
+          p_end_date_exclusive: string
+          p_ends_at: string
+          p_kind: string
+          p_start_date: string
+          p_starts_at: string
+        }
+        Returns: boolean
+      }
       _calendar_user_id_for_membership: {
         Args: { p_membership_id: string }
         Returns: string
@@ -2657,6 +3612,37 @@ export type Database = {
       _cancel_scheduled_notification_request: {
         Args: { p_idempotency_key: string }
         Returns: boolean
+      }
+      _chore_active_membership: {
+        Args: { p_household_id: string }
+        Returns: string
+      }
+      _chore_assert_member: {
+        Args: { p_household_id: string; p_membership_id: string }
+        Returns: undefined
+      }
+      _chore_audit: {
+        Args: {
+          p_after?: Json
+          p_before?: Json
+          p_entity_id: string
+          p_entity_type: string
+          p_event_type: string
+          p_household_id: string
+          p_reason?: string
+        }
+        Returns: undefined
+      }
+      _chore_notify: {
+        Args: {
+          p_actor: string
+          p_entity_id: string
+          p_entity_type: string
+          p_event_type: string
+          p_household_id: string
+          p_memberships: string[]
+        }
+        Returns: undefined
       }
       _create_refund_obligation: {
         Args: {
@@ -2713,6 +3699,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      _link_chore_occurrence_calendar: {
+        Args: { p_occurrence_id: string }
+        Returns: string
+      }
       _membership_user_id: {
         Args: { p_membership_id: string }
         Returns: string
@@ -2754,18 +3744,71 @@ export type Database = {
         Args: { p_event_id: string }
         Returns: number
       }
+      _reconcile_chore_reminders: {
+        Args: { p_occurrence_id: string }
+        Returns: number
+      }
+      _resolve_chore_reassignment: {
+        Args: {
+          p_request_id: string
+          p_resolution_note?: string
+          p_status: string
+        }
+        Returns: string
+      }
+      _resolve_responsibility_transfer: {
+        Args: { p_status: string; p_transfer_id: string }
+        Returns: string
+      }
       _sanitize_delivery_error: { Args: { p_error: string }; Returns: string }
+      _set_chore_definition_status: {
+        Args: { p_definition_id: string; p_status: string }
+        Returns: string
+      }
       _sync_obligation_settlement_status: {
         Args: { p_obligation_id: string }
         Returns: undefined
+      }
+      _transition_chore_occurrence: {
+        Args: {
+          p_action: string
+          p_note?: string
+          p_occurrence_id: string
+          p_reason?: string
+        }
+        Returns: string
+      }
+      _valid_chore_reminder_offsets: {
+        Args: { p_offsets: number[] }
+        Returns: boolean
       }
       accept_household_invitation: {
         Args: { p_token_hash: string }
         Returns: string
       }
+      accept_responsibility_transfer: {
+        Args: { p_transfer_id: string }
+        Returns: string
+      }
+      approve_chore_reassignment: {
+        Args: { p_request_id: string; p_resolution_note?: string }
+        Returns: string
+      }
       archive_household: {
         Args: { p_household_id: string }
         Returns: undefined
+      }
+      assign_chore_occurrence: {
+        Args: {
+          p_membership_id: string
+          p_occurrence_id: string
+          p_role?: string
+        }
+        Returns: string
+      }
+      assign_responsibility_area: {
+        Args: { p_area_id: string; p_membership_id: string; p_role?: string }
+        Returns: string
       }
       can_confirm_or_void_expense: {
         Args: { p_expense_id: string }
@@ -2773,6 +3816,14 @@ export type Database = {
       }
       can_edit_expense_draft: {
         Args: { p_expense_id: string }
+        Returns: boolean
+      }
+      can_view_chore_definition: {
+        Args: { p_definition_id: string }
+        Returns: boolean
+      }
+      can_view_chore_occurrence: {
+        Args: { p_occurrence_id: string }
         Returns: boolean
       }
       can_view_expense: { Args: { p_expense_id: string }; Returns: boolean }
@@ -2790,6 +3841,10 @@ export type Database = {
           p_original_starts_at: string
           p_reason?: string
         }
+        Returns: string
+      }
+      cancel_chore_occurrence: {
+        Args: { p_occurrence_id: string; p_reason?: string }
         Returns: string
       }
       cancel_payment: {
@@ -2840,6 +3895,16 @@ export type Database = {
           event_id: string
         }[]
       }
+      claim_chore_horizon_extensions: {
+        Args: { p_limit?: number }
+        Returns: {
+          definition_id: string
+        }[]
+      }
+      claim_chore_occurrence: {
+        Args: { p_occurrence_id: string }
+        Returns: string
+      }
       claim_notification_deliveries: {
         Args: {
           p_batch_size?: number
@@ -2879,6 +3944,10 @@ export type Database = {
       cleanup_test_household_data: {
         Args: { p_test_run_id: string }
         Returns: number
+      }
+      complete_chore_occurrence: {
+        Args: { p_completion_note?: string; p_occurrence_id: string }
+        Returns: string
       }
       complete_notification_delivery: {
         Args: {
@@ -3031,6 +4100,42 @@ export type Database = {
         }
         Returns: string
       }
+      create_chore_definition: {
+        Args: {
+          p_all_day?: boolean
+          p_calendar_category?: string
+          p_category: string
+          p_description?: string
+          p_due_time_minutes?: number
+          p_end_date?: string
+          p_escalation_coordinator?: boolean
+          p_grace_period_minutes?: number
+          p_household_id: string
+          p_recurrence_count?: number
+          p_reminder_offsets?: number[]
+          p_requires_verification?: boolean
+          p_responsibility_area_id?: string
+          p_rotation_id?: string
+          p_rrule: string
+          p_show_on_calendar?: boolean
+          p_start_date: string
+          p_time_zone?: string
+          p_title: string
+          p_verifier_membership_id?: string
+          p_visibility?: string
+        }
+        Returns: string
+      }
+      create_chore_rotation: {
+        Args: {
+          p_household_id: string
+          p_membership_ids?: string[]
+          p_name: string
+          p_start_membership_id?: string
+          p_strategy: string
+        }
+        Returns: string
+      }
       create_expense_amendment: {
         Args: { p_expense_id: string; p_reason: string }
         Returns: {
@@ -3105,6 +4210,26 @@ export type Database = {
         }
         Returns: string
       }
+      create_one_time_chore: {
+        Args: {
+          p_all_day?: boolean
+          p_assignee_membership_ids?: string[]
+          p_category: string
+          p_description?: string
+          p_due_at: string
+          p_due_date?: string
+          p_grace_period_minutes?: number
+          p_household_id: string
+          p_reminder_offsets?: number[]
+          p_requires_verification?: boolean
+          p_responsibility_area_id?: string
+          p_show_on_calendar?: boolean
+          p_title: string
+          p_verifier_membership_id?: string
+          p_visibility?: string
+        }
+        Returns: string
+      }
       create_reimbursement_waiver: {
         Args: {
           p_amount_cents: number
@@ -3129,6 +4254,17 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      create_responsibility_area: {
+        Args: {
+          p_category: string
+          p_description?: string
+          p_handoff_expectations?: string
+          p_household_id: string
+          p_name: string
+          p_start_date: string
+        }
+        Returns: string
+      }
       current_membership_id: {
         Args: { p_household_id: string }
         Returns: string
@@ -3137,9 +4273,34 @@ export type Database = {
         Args: { p_endpoint_hash?: string; p_subscription_id?: string }
         Returns: boolean
       }
+      decline_chore_reassignment: {
+        Args: { p_request_id: string; p_resolution_note?: string }
+        Returns: string
+      }
       decline_household_invitation: {
         Args: { p_token_hash: string }
         Returns: undefined
+      }
+      decline_responsibility_transfer: {
+        Args: { p_transfer_id: string }
+        Returns: string
+      }
+      effective_calendar_occurrence_fields: {
+        Args: { p_event_id: string; p_original_starts_at: string }
+        Returns: {
+          description: string
+          event_guest_count: number
+          exception_id: string
+          guest_label: string
+          location: string
+          overrides_attendees: boolean
+          overrides_reminders: boolean
+          title: string
+        }[]
+      }
+      end_chore_definition: {
+        Args: { p_definition_id: string }
+        Returns: string
       }
       enqueue_test_notification: { Args: never; Returns: string }
       ensure_profile: {
@@ -3204,6 +4365,10 @@ export type Database = {
         Args: { p_category: string; p_channel: string; p_user_id: string }
         Returns: string
       }
+      get_notification_worker_health: {
+        Args: { p_household_id: string }
+        Returns: Json
+      }
       has_responsibility: {
         Args: { p_household_id: string; p_roles: string[] }
         Returns: boolean
@@ -3212,6 +4377,11 @@ export type Database = {
       is_active_member: { Args: { p_household_id: string }; Returns: boolean }
       is_calendar_event_participant: {
         Args: { p_event_id: string }
+        Returns: boolean
+      }
+      is_chore_assignee: { Args: { p_occurrence_id: string }; Returns: boolean }
+      is_household_coordinator: {
+        Args: { p_household_id: string }
         Returns: boolean
       }
       leave_household: {
@@ -3246,6 +4416,10 @@ export type Database = {
         Args: { p_household_id?: string }
         Returns: number
       }
+      mark_chore_blocked: {
+        Args: { p_note?: string; p_occurrence_id: string; p_reason: string }
+        Returns: string
+      }
       mark_notification_read: {
         Args: { p_notification_id: string }
         Returns: undefined
@@ -3253,6 +4427,10 @@ export type Database = {
       mark_notification_unread: {
         Args: { p_notification_id: string }
         Returns: undefined
+      }
+      materialize_chore_occurrences: {
+        Args: { p_definition_id: string; p_occurrences: Json }
+        Returns: number
       }
       membership_belongs_to_household: {
         Args: { p_household_id: string; p_membership_id: string }
@@ -3301,6 +4479,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      pause_chore_definition: {
+        Args: { p_definition_id: string }
+        Returns: string
+      }
       process_due_scheduled_notifications: {
         Args: { p_limit?: number }
         Returns: number
@@ -3308,6 +4490,22 @@ export type Database = {
       reconcile_calendar_event_occurrences: {
         Args: { p_event_id: string; p_occurrences: Json }
         Returns: number
+      }
+      record_notification_worker_heartbeat: {
+        Args: {
+          p_calendar_horizons_extended?: number
+          p_claimed?: number
+          p_dead_letter?: number
+          p_delivery_enabled: boolean
+          p_duration_ms?: number
+          p_empty?: boolean
+          p_horizon_extension_current?: boolean
+          p_retried?: number
+          p_scheduled_processed?: number
+          p_sent?: number
+          p_successful?: boolean
+        }
+        Returns: undefined
       }
       regenerate_calendar_feed: {
         Args: { p_feed_id: string; p_new_token_hash: string }
@@ -3355,6 +4553,23 @@ export type Database = {
         }
         Returns: undefined
       }
+      reopen_chore_occurrence: {
+        Args: { p_occurrence_id: string; p_reason: string }
+        Returns: string
+      }
+      request_chore_reassignment: {
+        Args: {
+          p_occurrence_id: string
+          p_reason: string
+          p_requested_effective_at?: string
+          p_suggested_membership_id?: string
+        }
+        Returns: string
+      }
+      request_responsibility_transfer: {
+        Args: { p_area_id: string; p_note?: string; p_to_membership_id: string }
+        Returns: string
+      }
       resolve_dispute: {
         Args: {
           p_dispute_id: string
@@ -3396,6 +4611,10 @@ export type Database = {
           p_guest_note?: string
           p_rsvp_status: string
         }
+        Returns: string
+      }
+      resume_chore_definition: {
+        Args: { p_definition_id: string }
         Returns: string
       }
       reverse_payment: {
@@ -3460,6 +4679,14 @@ export type Database = {
       set_current_household: {
         Args: { p_household_id: string }
         Returns: undefined
+      }
+      skip_chore_occurrence: {
+        Args: { p_occurrence_id: string; p_reason: string }
+        Returns: string
+      }
+      start_chore_occurrence: {
+        Args: { p_occurrence_id: string }
+        Returns: string
       }
       submit_payment: {
         Args: {
@@ -3534,6 +4761,11 @@ export type Database = {
       update_calendar_occurrence: {
         Args: {
           p_all_day?: boolean
+          p_attendee_membership_ids?: string[]
+          p_clear_description?: boolean
+          p_clear_guest_label?: boolean
+          p_clear_location?: boolean
+          p_clear_title?: boolean
           p_description?: string
           p_end_date_exclusive?: string
           p_ends_at?: string
@@ -3542,10 +4774,30 @@ export type Database = {
           p_guest_label?: string
           p_location?: string
           p_original_starts_at: string
+          p_reminder_offsets?: number[]
           p_start_date?: string
           p_starts_at?: string
           p_title?: string
         }
+        Returns: string
+      }
+      update_chore_definition: {
+        Args: { p_changes: Json; p_definition_id: string }
+        Returns: string
+      }
+      update_chore_rotation: {
+        Args: {
+          p_ended?: boolean
+          p_name?: string
+          p_paused?: boolean
+          p_rotation_id: string
+          p_start_membership_id?: string
+          p_strategy?: string
+        }
+        Returns: string
+      }
+      update_chore_rotation_members: {
+        Args: { p_membership_ids: string[]; p_rotation_id: string }
         Returns: string
       }
       upsert_notification_preference: {
@@ -3563,6 +4815,10 @@ export type Database = {
           p_platform_category?: string
           p_user_agent_summary?: string
         }
+        Returns: string
+      }
+      verify_chore_completion: {
+        Args: { p_occurrence_id: string }
         Returns: string
       }
       void_expense: {

@@ -130,6 +130,14 @@ export type ExceptionOverlay = {
   startDate?: string | null;
   endDateExclusive?: string | null;
   allDay?: boolean | null;
+  /** Metadata overrides — null/undefined means inherit from master */
+  title?: string | null;
+  description?: string | null;
+  location?: string | null;
+  eventGuestCount?: number | null;
+  guestLabel?: string | null;
+  overridesAttendees?: boolean;
+  overridesReminders?: boolean;
 };
 
 function addDaysIso(dateIso: string, days: number): string {

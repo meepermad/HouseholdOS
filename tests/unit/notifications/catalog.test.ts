@@ -33,10 +33,10 @@ describe("notification catalog", () => {
     }
   });
 
-  it("marks reserved future events as inactive", () => {
-    expect(getCatalogEntry(EVENT_CHORE_ASSIGNED)?.active).toBe(false);
-    expect(isActiveEventType(EVENT_CHORE_ASSIGNED)).toBe(false);
-    expect(ACTIVE_EVENT_TYPES).not.toContain(EVENT_CHORE_ASSIGNED);
+  it("marks Phase 5 chore events as active", () => {
+    expect(getCatalogEntry(EVENT_CHORE_ASSIGNED)?.active).toBe(true);
+    expect(isActiveEventType(EVENT_CHORE_ASSIGNED)).toBe(true);
+    expect(ACTIVE_EVENT_TYPES).toContain(EVENT_CHORE_ASSIGNED);
   });
 
   it("returns catalog entries with expected Phase 3 payment mapping", () => {

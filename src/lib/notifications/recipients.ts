@@ -16,6 +16,7 @@ import {
   EVENT_REFUND_OBLIGATION_CREATED,
   EVENT_WAIVER_CREATED,
   EVENT_WAIVER_REVERSED,
+  NOTIFICATION_CATALOG,
   getCatalogEntry,
   type RecipientRule,
 } from "@/lib/notifications/catalog";
@@ -60,7 +61,7 @@ export function describeRecipientRule(eventType: string): string {
 }
 
 /** Expected Phase 3 active-event recipient rules for unit tests. */
-export const PHASE3_RECIPIENT_RULES: readonly RecipientRuleExpectation[] = [
+const BASE_RECIPIENT_RULES: readonly RecipientRuleExpectation[] = [
   {
     eventType: EVENT_PAYMENT_AWAITING_CONFIRMATION,
     rule: "payment_recipient",
@@ -147,6 +148,22 @@ export const PHASE3_RECIPIENT_RULES: readonly RecipientRuleExpectation[] = [
     description: RULE_DESCRIPTIONS.explicit,
   },
 ] as const;
+
+/** Active recipient contracts, including later domain phases. */
+export const PHASE3_RECIPIENT_RULES: readonly RecipientRuleExpectation[] = [
+  ...BASE_RECIPIENT_RULES,
+  ...Object.values(NOTIFICATION_CATALOG)
+    .filter(
+      (entry) =>
+        entry.active &&
+        !BASE_RECIPIENT_RULES.some((rule) => rule.eventType === entry.eventType),
+    )
+    .map((entry) => ({
+      eventType: entry.eventType,
+      rule: entry.recipientRule,
+      description: RULE_DESCRIPTIONS[entry.recipientRule],
+    })),
+];
 
 export function expectedRecipientRule(
   eventType: string,

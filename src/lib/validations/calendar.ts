@@ -171,6 +171,21 @@ export const updateOccurrenceSchema = z.object({
   location: z.string().trim().max(500).optional().nullable(),
   eventGuestCount: z.number().int().min(0).max(MAX_GUEST_COUNT).optional(),
   guestLabel: z.string().trim().max(120).optional().nullable(),
+  reminderOffsets: z
+    .array(
+      z
+        .number()
+        .int()
+        .min(MIN_REMINDER_OFFSET_MINUTES)
+        .max(MAX_REMINDER_OFFSET_MINUTES),
+    )
+    .max(MAX_REMINDERS_PER_EVENT)
+    .optional(),
+  attendeeMembershipIds: z.array(uuid).max(20).optional(),
+  clearTitle: z.boolean().optional(),
+  clearDescription: z.boolean().optional(),
+  clearLocation: z.boolean().optional(),
+  clearGuestLabel: z.boolean().optional(),
 });
 
 export const cancelOccurrenceSchema = z.object({

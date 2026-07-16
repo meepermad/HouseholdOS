@@ -1,6 +1,7 @@
 import "server-only";
 
 import { createClient } from "@/lib/supabase/server";
+import { coalesceExceptionScalars } from "@/lib/calendar/effective-occurrence";
 import {
   BUSY_BLOCK_TITLE,
   resolveEventProjection,
@@ -143,7 +144,7 @@ export async function listOccurrencesInRange(
     .from("calendar_event_occurrences")
     .select(
       `id, event_id, original_starts_at, starts_at, ends_at, all_day,
-       start_date, end_date_exclusive, is_cancelled,
+       start_date, end_date_exclusive, is_cancelled, exception_id,
        event:calendar_events!inner(
          id, title, description, location, category, visibility, status,
          time_zone, organizer_membership_id, event_guest_count, guest_label
@@ -167,6 +168,38 @@ export async function listOccurrencesInRange(
   );
 
   const attendeesByEvent = await loadAttendeeIndex(supabase, eventIds);
+
+  // Load exception metadata for occurrences that have overrides (RLS hides
+  // private_busy exceptions from non-participants — safe).
+  const exceptionIds = rows
+    .map((r) => r.exception_id as string | null)
+    .filter((id): id is string => Boolean(id));
+  const exceptionById = new Map<
+    string,
+    {
+      title: string | null;
+      description: string | null;
+      location: string | null;
+      event_guest_count: number | null;
+      guest_label: string | null;
+    }
+  >();
+  if (exceptionIds.length > 0) {
+    const { data: exRows } = await supabase
+      .from("calendar_event_exceptions")
+      .select("id, title, description, location, event_guest_count, guest_label")
+      .in("id", exceptionIds)
+      .eq("kind", "override");
+    for (const ex of (exRows ?? []) as Array<Record<string, unknown>>) {
+      exceptionById.set(ex.id as string, {
+        title: (ex.title as string | null) ?? null,
+        description: (ex.description as string | null) ?? null,
+        location: (ex.location as string | null) ?? null,
+        event_guest_count: (ex.event_guest_count as number | null) ?? null,
+        guest_label: (ex.guest_label as string | null) ?? null,
+      });
+    }
+  }
 
   const result: CalendarOccurrence[] = [];
   for (const r of rows) {
@@ -195,6 +228,19 @@ export async function listOccurrencesInRange(
     });
     if (mode === "hidden") continue;
 
+    const merged = coalesceExceptionScalars(
+      {
+        title: event.title,
+        description: event.description,
+        location: event.location,
+        eventGuestCount: event.event_guest_count,
+        guestLabel: event.guest_label,
+      },
+      r.exception_id
+        ? (exceptionById.get(r.exception_id as string) ?? null)
+        : null,
+    );
+
     const busy = mode === "busy";
     result.push({
       occurrenceId: r.id as string,
@@ -205,16 +251,16 @@ export async function listOccurrencesInRange(
       allDay: Boolean(r.all_day),
       startDate: (r.start_date as string | null) ?? null,
       endDateExclusive: (r.end_date_exclusive as string | null) ?? null,
-      title: busy ? BUSY_BLOCK_TITLE : event.title,
-      description: busy ? null : event.description,
-      location: busy ? null : event.location,
+      title: busy ? BUSY_BLOCK_TITLE : merged.title,
+      description: busy ? null : merged.description,
+      location: busy ? null : merged.location,
       category: event.category,
       visibility: event.visibility,
       status: event.status,
       timeZone: event.time_zone,
       organizerMembershipId: event.organizer_membership_id,
-      eventGuestCount: busy ? null : event.event_guest_count,
-      guestLabel: busy ? null : event.guest_label,
+      eventGuestCount: busy ? null : merged.eventGuestCount,
+      guestLabel: busy ? null : merged.guestLabel,
       isBusyProjection: busy,
       cancelled: event.status === "cancelled",
       viewerRsvp: index?.viewerRsvp ?? null,

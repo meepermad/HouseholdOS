@@ -16,6 +16,7 @@ import {
 import { CALENDAR_VISIBILITY_LABELS } from "@/lib/calendar/visibility";
 import { summarizeRrule } from "@/lib/calendar/recurrence";
 import { formatEventDateTime } from "@/lib/calendar/display";
+import { OccurrenceEditForm } from "@/components/calendar/OccurrenceEditForm";
 
 export const dynamic = "force-dynamic";
 
@@ -37,10 +38,13 @@ function reminderText(minutes: number): string {
 
 export default async function CalendarEventDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ householdId: string; eventId: string }>;
+  searchParams: Promise<{ originalStartsAt?: string }>;
 }) {
   const { householdId, eventId } = await params;
+  const occurrenceParams = await searchParams;
   const ctx = await assertActiveMembership(householdId);
 
   const event = await getEventDetail(householdId, eventId, ctx.membershipId);
@@ -67,6 +71,9 @@ export default async function CalendarEventDetailPage({
   const isAttendee = event.attendees.some(
     (a) => a.membershipId === ctx.membershipId,
   );
+  const originalStartsAt =
+    occurrenceParams.originalStartsAt ??
+    (!event.allDay ? event.startsAt : null);
 
   return (
     <main className="mx-auto max-w-2xl space-y-6">
@@ -208,6 +215,25 @@ export default async function CalendarEventDetailPage({
                   Edit event
                 </Link>
               </div>
+
+              {event.viewerIsOrganizer && originalStartsAt ? (
+                <details className="rounded-md border border-border bg-surface p-4">
+                  <summary className="cursor-pointer text-sm font-medium text-text-primary">
+                    Edit one occurrence
+                  </summary>
+                  <p className="mt-2 text-xs text-text-muted">
+                    Changes here apply only to the selected occurrence.
+                  </p>
+                  <OccurrenceEditForm
+                    householdId={householdId}
+                    eventId={eventId}
+                    originalStartsAt={originalStartsAt}
+                    location={event.location}
+                    eventGuestCount={event.eventGuestCount}
+                    reminderOffsets={event.reminderOffsets}
+                  />
+                </details>
+              ) : null}
 
               <details className="rounded-md border border-border bg-surface p-4">
                 <summary className="cursor-pointer text-sm font-medium text-destructive">

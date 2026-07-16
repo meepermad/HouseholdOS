@@ -5,6 +5,7 @@ import {
   safeEventDeepLink,
   stripFeedTokenSuffix,
 } from "@/lib/calendar/feed-token";
+import { feedCacheControlHeaders } from "@/lib/calendar/feed-security";
 import {
   buildIcalendar,
   type IcsEventInput,
@@ -18,13 +19,16 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 // Uniform 404 body — never reveal whether a token exists, is revoked, or is
-// tied to an inactive membership.
+// tied to an inactive membership. Never include the raw token.
 const NOT_FOUND = "Not found";
 
 function notFound(): Response {
   return new Response(NOT_FOUND, {
     status: 404,
-    headers: { "content-type": "text/plain; charset=utf-8" },
+    headers: {
+      "content-type": "text/plain; charset=utf-8",
+      ...feedCacheControlHeaders(),
+    },
   });
 }
 
@@ -174,7 +178,9 @@ export async function GET(
     status: 200,
     headers: {
       "content-type": "text/calendar; charset=utf-8",
-      "cache-control": "private, no-cache",
+      // Password-equivalent bearer credential — never shared CDN / public reuse.
+      "cache-control": "private, no-store",
+      pragma: "no-cache",
       "content-disposition": 'inline; filename="householdos.ics"',
     },
   });

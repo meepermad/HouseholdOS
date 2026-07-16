@@ -528,7 +528,7 @@ describe.skipIf(!hasSupabase).sequential("Phase 3.1 notification delivery", () =
     expect(delErr).toBeNull();
 
     const reclaimed = await loose(admin).rpc("claim_notification_deliveries", {
-      p_batch_size: 10,
+      p_batch_size: 100,
       p_worker_id: crypto.randomUUID(),
       p_claim_ttl_seconds: 120,
     });

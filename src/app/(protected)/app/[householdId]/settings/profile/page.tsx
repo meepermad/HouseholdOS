@@ -6,6 +6,7 @@ import { updateProfileAction } from "@/app/actions/household";
 import { assertActiveMembership, requireUser } from "@/lib/household-context";
 import { createClient } from "@/lib/supabase/server";
 import { Surface } from "@/components/ui/surface";
+import { isHouseholdCoordinator } from "@/lib/permissions";
 
 export const dynamic = "force-dynamic";
 
@@ -15,7 +16,7 @@ export default async function ProfileSettingsPage({
   params: Promise<{ householdId: string }>;
 }) {
   const { householdId } = await params;
-  await assertActiveMembership(householdId);
+  const ctx = await assertActiveMembership(householdId);
   const { user } = await requireUser();
   const supabase = await createClient();
   const { data: profile } = await supabase
@@ -62,6 +63,22 @@ export default async function ProfileSettingsPage({
           Manage calendar feed
         </Link>
       </Surface>
+
+      {isHouseholdCoordinator(ctx.roles) ? (
+        <Surface>
+          <h2 className="text-sm font-semibold text-text-primary">Operations</h2>
+          <p className="mt-1 text-sm text-text-secondary">
+            Review notification worker, reminder queue, and calendar horizon
+            health.
+          </p>
+          <Link
+            href={`/app/${householdId}/settings/operations`}
+            className="mt-3 inline-flex min-h-11 items-center text-sm font-medium text-primary underline underline-offset-2"
+          >
+            Open operations health
+          </Link>
+        </Surface>
+      ) : null}
 
       <ActionForm
         action={updateProfileAction}

@@ -72,6 +72,36 @@
 
 Calendar audit payloads must not include raw feed tokens, private descriptions, guest notes, or sensitive locations.
 
+## Event types (Phase 5 chores / responsibilities)
+
+- `chore.definition_created`
+- `chore.definition_updated`
+- `chore.definition_paused`
+- `chore.definition_resumed`
+- `chore.definition_ended`
+- `chore.occurrence_created`
+- `chore.assigned`
+- `chore.claimed`
+- `chore.reassigned`
+- `chore.started`
+- `chore.completed`
+- `chore.blocked`
+- `chore.skipped`
+- `chore.cancelled`
+- `chore.awaiting_verification`
+- `chore.verified`
+- `chore.reopened`
+- `chore.rotation_created`
+- `chore.rotation_updated`
+- `responsibility.created`
+- `responsibility.assigned`
+- `responsibility.transfer_requested`
+- `responsibility.transfer_accepted`
+- `responsibility.transfer_declined`
+- `responsibility.ended`
+
+Chore audit payloads must not include private evidence URLs, sensitive completion notes, or push subscription data.
+
 ## Shape
 
 | Column | Purpose |

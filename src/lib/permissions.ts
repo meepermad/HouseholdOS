@@ -38,6 +38,13 @@ export const CAPABILITIES = [
   "calendar.respond",
   "calendar.manage_own",
   "calendar.coordinator_override",
+  "chore.view",
+  "chore.create",
+  "chore.complete",
+  "chore.manage_own",
+  "chore.manage_rotation",
+  "chore.coordinator_override",
+  "responsibility.manage",
 ] as const;
 
 export type Capability = (typeof CAPABILITIES)[number];
@@ -71,6 +78,14 @@ const CALENDAR_MEMBER_CAPABILITIES = [
   "calendar.manage_own",
 ] as const satisfies readonly Capability[];
 
+/** Chore actions available to every active household member. */
+const CHORE_MEMBER_CAPABILITIES = [
+  "chore.view",
+  "chore.create",
+  "chore.complete",
+  "chore.manage_own",
+] as const satisfies readonly Capability[];
+
 const ROLE_CAPABILITIES: Record<HouseholdResponsibility, readonly Capability[]> = {
   member: [
     "household.view",
@@ -79,6 +94,7 @@ const ROLE_CAPABILITIES: Record<HouseholdResponsibility, readonly Capability[]> 
     ...EXPENSE_CAPABILITIES,
     ...PAYMENT_CAPABILITIES,
     ...CALENDAR_MEMBER_CAPABILITIES,
+    ...CHORE_MEMBER_CAPABILITIES,
   ],
   household_coordinator: [
     "household.view",
@@ -94,9 +110,13 @@ const ROLE_CAPABILITIES: Record<HouseholdResponsibility, readonly Capability[]> 
     ...EXPENSE_CAPABILITIES,
     ...PAYMENT_CAPABILITIES,
     ...CALENDAR_MEMBER_CAPABILITIES,
+    ...CHORE_MEMBER_CAPABILITIES,
     // Only the household coordinator may edit/cancel household-visible events
     // organized by someone else.
     "calendar.coordinator_override",
+    "chore.manage_rotation",
+    "chore.coordinator_override",
+    "responsibility.manage",
   ],
   financial_coordinator: [
     "household.view",
@@ -106,6 +126,7 @@ const ROLE_CAPABILITIES: Record<HouseholdResponsibility, readonly Capability[]> 
     ...EXPENSE_CAPABILITIES,
     ...PAYMENT_CAPABILITIES,
     ...CALENDAR_MEMBER_CAPABILITIES,
+    ...CHORE_MEMBER_CAPABILITIES,
   ],
 };
 

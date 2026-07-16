@@ -448,6 +448,18 @@ export async function updateOccurrenceAction(
       location: str(formData.get("location")),
       eventGuestCount: optionalInt(formData.get("eventGuestCount")) ?? undefined,
       guestLabel: str(formData.get("guestLabel")),
+      reminderOffsets:
+        formData.has("remindersJson") ||
+        formData.getAll("reminderOffset").length > 0
+          ? parseReminderOffsets(formData)
+          : undefined,
+      attendeeMembershipIds: formData.has("attendeesJson")
+        ? parseAttendees(formData)
+        : undefined,
+      clearTitle: boolFromForm(formData.get("clearTitle")),
+      clearDescription: boolFromForm(formData.get("clearDescription")),
+      clearLocation: boolFromForm(formData.get("clearLocation")),
+      clearGuestLabel: boolFromForm(formData.get("clearGuestLabel")),
     });
     if (!parsed.success) {
       return {
@@ -477,6 +489,13 @@ export async function updateOccurrenceAction(
       p_location: parsed.data.location ?? null,
       p_event_guest_count: parsed.data.eventGuestCount ?? null,
       p_guest_label: parsed.data.guestLabel ?? null,
+      p_clear_title: parsed.data.clearTitle ?? false,
+      p_clear_description: parsed.data.clearDescription ?? false,
+      p_clear_location: parsed.data.clearLocation ?? false,
+      p_clear_guest_label: parsed.data.clearGuestLabel ?? false,
+      p_attendee_membership_ids:
+        parsed.data.attendeeMembershipIds ?? null,
+      p_reminder_offsets: parsed.data.reminderOffsets ?? null,
     });
 
     if (error) {

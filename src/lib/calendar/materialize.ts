@@ -24,6 +24,13 @@ export type ExceptionRow = {
   start_date: string | null;
   end_date_exclusive: string | null;
   all_day: boolean | null;
+  title?: string | null;
+  description?: string | null;
+  location?: string | null;
+  event_guest_count?: number | null;
+  guest_label?: string | null;
+  overrides_attendees?: boolean;
+  overrides_reminders?: boolean;
 };
 
 /**
@@ -60,7 +67,7 @@ export async function materializeEventOccurrences(params: {
   const { data: exceptionRows, error: exErr } = await params.supabase
     .from("calendar_event_exceptions")
     .select(
-      "original_starts_at, kind, starts_at, ends_at, start_date, end_date_exclusive, all_day",
+      "original_starts_at, kind, starts_at, ends_at, start_date, end_date_exclusive, all_day, title, description, location, event_guest_count, guest_label, overrides_attendees, overrides_reminders",
     )
     .eq("event_id", params.event.id);
 
@@ -75,6 +82,13 @@ export async function materializeEventOccurrences(params: {
       startDate: row.start_date,
       endDateExclusive: row.end_date_exclusive,
       allDay: row.all_day,
+      title: row.title,
+      description: row.description,
+      location: row.location,
+      eventGuestCount: row.event_guest_count,
+      guestLabel: row.guest_label,
+      overridesAttendees: row.overrides_attendees,
+      overridesReminders: row.overrides_reminders,
     }),
   );
 

@@ -31,6 +31,12 @@ Enforced in:
 | Edit / cancel own events | yes | yes | yes |
 | Coordinator calendar override (household-visible only) | no | yes**** | no |
 | Manage own calendar feed tokens | yes | yes | yes |
+| View / create chores | yes | yes | yes |
+| Complete / claim assigned chores | yes | yes | yes |
+| Manage rotations / household recurring systems | no***** | yes***** | no |
+| Coordinator chore override | no***** | yes***** | no |
+| Manage responsibility areas / transfers | limited****** | yes | no |
+| View notification worker health (Settings → Operations) | no | yes | no |
 
 \*Last remaining `household_coordinator` must transfer responsibility before leaving.
 
@@ -46,15 +52,28 @@ Enforced in:
 
 \*\*\*\*`household_coordinator` may cancel or update **household-visible** operational events through an audited `coordinator_override` path. Coordinator override is **refused** for `participants` and `private_busy` events. `financial_coordinator` has no special calendar authority. Organizer identity is always derived from `auth.uid()` membership — callers cannot name another organizer.
 
+\*\*\*\*\*`financial_coordinator` gains **no** chore authority beyond ordinary member capabilities. Assignees may update their own progress and complete assigned work. Only organizers/coordinators may change recurrence or rotation. All coordinator overrides are audited. Completion history cannot be silently rewritten.
+
+\*\*\*\*\*\*Any active member may create a responsibility area they will own; transfers require the current owner (or coordinator) to request and the new owner to accept unless a coordinator assigns explicitly through an audited path.
+
 ## Calendar visibility
 
 | Visibility | Who sees full details | Others see |
 |---|---|---|
 | `household` | All active members | Full details |
 | `participants` | Organizer + invited attendees | Hidden (no row for nonparticipants via participant checks) |
-| `private_busy` | Organizer (+ attendees if invited) | Generic **Busy** block only (no title/location/notes/guests) |
+| `private_busy` | Organizer (+ attendees if invited) | Generic **Busy** block only (no title/location/notes/guests/reminder details). Occurrence overrides cannot bypass master privacy. |
 
-Feed tokens are per-user and per-household. Scope `visible_to_me` exports events the owner may fully view; `household_public_only` exports household-visible events only. Raw tokens are shown once at create/regenerate; only hashes are stored. Feed access ends when membership is no longer active or the token is revoked.
+## Chore visibility
+
+| Visibility | Who sees full details | Others see |
+|---|---|---|
+| `household` | All active members | Full chore + status |
+| `assignees` | Creator, assignees, relevant coordinators | Generic workload indicator only when necessary |
+
+Sensitive completion notes follow the same visibility as the chore. Photo evidence is not shipped in Phase 5.
+
+Feed tokens are per-user and per-household. Scope `visible_to_me` exports events the owner may fully view; `household_public_only` exports household-visible events only. Raw tokens are shown once at create/regenerate; only hashes are stored. Feed responses use `Cache-Control: private, no-store`. Feed access ends when membership is no longer active or the token is revoked.
 
 ## Notifications
 

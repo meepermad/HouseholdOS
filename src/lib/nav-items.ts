@@ -47,6 +47,17 @@ export const HOUSEHOLD_NAV_ITEMS: readonly HouseholdNavItem[] = [
     surface: "primary",
   },
   {
+    key: "chores",
+    label: "Chores",
+    mark: "✓",
+    href: (id) => `/app/${id}/chores`,
+    match: (pathname, id) =>
+      pathname.startsWith(`/app/${id}/chores`) ||
+      pathname.startsWith(`/app/${id}/responsibilities`),
+    enabled: true,
+    surface: "primary",
+  },
+  {
     key: "money",
     label: "Money",
     mark: "$",
@@ -62,7 +73,7 @@ export const HOUSEHOLD_NAV_ITEMS: readonly HouseholdNavItem[] = [
     href: (id) => `/app/${id}/settings/profile`,
     match: (pathname, id) => pathname.startsWith(`/app/${id}/settings`),
     enabled: true,
-    surface: "primary",
+    surface: "more",
   },
   {
     key: "inbox",
@@ -76,15 +87,6 @@ export const HOUSEHOLD_NAV_ITEMS: readonly HouseholdNavItem[] = [
   },
   // Future domains — keep disabled until shipped. Prefer surface: "more"
   // once primary slots are full so the bottom bar stays uncrowded.
-  {
-    key: "tasks",
-    label: "Tasks",
-    mark: "✓",
-    href: (id) => `/app/${id}/tasks`,
-    match: (pathname, id) => pathname.startsWith(`/app/${id}/tasks`),
-    enabled: false,
-    surface: "more",
-  },
   {
     key: "house",
     label: "House",

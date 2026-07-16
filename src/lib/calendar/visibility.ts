@@ -57,6 +57,42 @@ export function projectEventForViewer<T extends Record<string, unknown>>(params:
     location: null,
     guest_label: null,
     event_guest_count: null,
+    // Strip recurrence / reminder / attendee context that could leak private detail
+    rrule: null,
+    reminder_offsets: [],
+    attendees: [],
     is_busy_projection: true,
+  };
+}
+
+/**
+ * Apply busy projection to an already-merged effective occurrence.
+ * Occurrence overrides must never bypass the master's private_busy rule.
+ */
+export function projectOccurrenceForViewer<T extends Record<string, unknown>>(params: {
+  occurrence: T & {
+    title: string;
+    description: string | null;
+    location: string | null;
+    guestLabel: string | null;
+    eventGuestCount: number | null;
+  };
+  mode: EventProjectionMode;
+}): (T & { isBusyProjection: boolean }) | null {
+  const { occurrence, mode } = params;
+  if (mode === "hidden") return null;
+  if (mode === "full") {
+    return { ...occurrence, isBusyProjection: false };
+  }
+  return {
+    ...occurrence,
+    title: BUSY_BLOCK_TITLE,
+    description: null,
+    location: null,
+    guestLabel: null,
+    eventGuestCount: null,
+    reminderOffsets: [],
+    attendeeMembershipIds: [],
+    isBusyProjection: true,
   };
 }
