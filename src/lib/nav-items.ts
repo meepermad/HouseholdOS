@@ -118,6 +118,11 @@ export function primaryNavItems(): HouseholdNavItem[] {
     .slice(0, MAX_PRIMARY_NAV);
 }
 
+/** Destinations that live outside the primary bottom bar. */
+export function moreNavItems(): HouseholdNavItem[] {
+  return enabledNavItems().filter((item) => item.surface === "more");
+}
+
 /** Sidebar / "More": everything enabled, primary first then more. */
 export function sidebarNavItems(): HouseholdNavItem[] {
   const items = enabledNavItems();

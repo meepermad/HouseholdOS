@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useId, useState } from "react";
 import {
+  moreNavItems,
   primaryNavItems,
   sidebarNavItems,
   type HouseholdNavItem,
@@ -24,12 +26,14 @@ function NavLinks({
   pathname,
   compact,
   unreadCount = 0,
+  onNavigate,
 }: {
   items: HouseholdNavItem[];
   householdId: string;
   pathname: string;
   compact: boolean;
   unreadCount?: number;
+  onNavigate?: () => void;
 }) {
   return (
     <>
@@ -43,6 +47,7 @@ function NavLinks({
             href={item.href(householdId)}
             className={linkClass(active, compact)}
             aria-current={active ? "page" : undefined}
+            onClick={onNavigate}
           >
             {compact ? (
               <>
@@ -73,6 +78,66 @@ function NavLinks({
   );
 }
 
+function MoreSheet({
+  open,
+  onClose,
+  householdId,
+  pathname,
+  unreadCount,
+  titleId,
+}: {
+  open: boolean;
+  onClose: () => void;
+  householdId: string;
+  pathname: string;
+  unreadCount: number;
+  titleId: string;
+}) {
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open, onClose]);
+
+  if (!open) return null;
+
+  const items = moreNavItems();
+  return (
+    <div className="fixed inset-0 z-40 lg:hidden" role="presentation">
+      <button
+        type="button"
+        className="absolute inset-0 bg-black/40"
+        aria-label="Close more navigation"
+        onClick={onClose}
+      />
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        className="absolute inset-x-0 bottom-0 rounded-t-lg border border-border bg-surface-elevated p-4 shadow-lg safe-pb"
+      >
+        <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-border-strong" aria-hidden />
+        <h2 id={titleId} className="mb-3 text-sm font-semibold text-text-primary">
+          More
+        </h2>
+        <nav aria-label="More" className="flex flex-col gap-1">
+          <NavLinks
+            items={items}
+            householdId={householdId}
+            pathname={pathname}
+            compact={false}
+            unreadCount={unreadCount}
+            onNavigate={onClose}
+          />
+        </nav>
+      </div>
+    </div>
+  );
+}
+
 export function HouseholdNav({
   householdId,
   variant = "top",
@@ -83,25 +148,58 @@ export function HouseholdNav({
   unreadCount?: number;
 }) {
   const pathname = usePathname() ?? "";
+  const [moreOpen, setMoreOpen] = useState(false);
+  const moreTitleId = useId();
+
+  useEffect(() => {
+    setMoreOpen(false);
+  }, [pathname]);
 
   if (variant === "bottom") {
     const items = primaryNavItems();
+    const moreItems = moreNavItems();
+    const moreActive = moreItems.some((item) => item.match(pathname, householdId));
     return (
-      <nav
-        aria-label="Primary"
-        className="app-bottom-nav safe-pb fixed inset-x-0 bottom-0 z-20 border-t border-border bg-navigation lg:hidden"
-        data-testid="mobile-bottom-nav"
-      >
-        <div className="mx-auto flex max-w-lg items-stretch justify-around gap-0.5 px-1 pt-1">
-          <NavLinks
-            items={items}
+      <>
+        <nav
+          aria-label="Primary"
+          className="app-bottom-nav safe-pb fixed inset-x-0 bottom-0 z-20 border-t border-border bg-navigation lg:hidden"
+          data-testid="mobile-bottom-nav"
+        >
+          <div className="mx-auto flex max-w-lg items-stretch justify-around gap-0.5 px-1 pt-1">
+            <NavLinks
+              items={items}
+              householdId={householdId}
+              pathname={pathname}
+              compact
+              unreadCount={unreadCount}
+            />
+            <button
+              type="button"
+              className={linkClass(moreActive || moreOpen, true)}
+              aria-expanded={moreOpen}
+              aria-controls="more-nav-sheet"
+              data-testid="mobile-more-nav"
+              onClick={() => setMoreOpen((open) => !open)}
+            >
+              <span aria-hidden className="text-base leading-none">
+                ···
+              </span>
+              <span>More</span>
+            </button>
+          </div>
+        </nav>
+        <div id="more-nav-sheet">
+          <MoreSheet
+            open={moreOpen}
+            onClose={() => setMoreOpen(false)}
             householdId={householdId}
             pathname={pathname}
-            compact
             unreadCount={unreadCount}
+            titleId={moreTitleId}
           />
         </div>
-      </nav>
+      </>
     );
   }
 

@@ -151,6 +151,12 @@ export default async function HouseholdHomePage({
       </section>
 
       <section className="flex flex-wrap gap-3 text-sm">
+        <Link href={`/app/${householdId}/house`} className="underline">
+          House
+        </Link>
+        <Link href={`/app/${householdId}/house/inventory`} className="underline">
+          Inventory
+        </Link>
         <Link href={`/app/${householdId}/settings/profile`} className="underline">
           Profile
         </Link>

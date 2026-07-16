@@ -65,6 +65,14 @@ export function ShellHeader({
                 {householdId ? (
                   <>
                     <Link
+                      href={`/app/${householdId}/house`}
+                      role="menuitem"
+                      className="min-h-11 rounded-md px-2 py-2 text-sm text-text-secondary hover:bg-surface-interactive"
+                      onClick={() => setMenuOpen(false)}
+                    >
+                      House
+                    </Link>
+                    <Link
                       href={`/app/${householdId}/notifications`}
                       role="menuitem"
                       className="flex min-h-11 items-center justify-between rounded-md px-2 py-2 text-sm text-text-secondary hover:bg-surface-interactive"

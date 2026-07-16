@@ -3,6 +3,7 @@ import {
   HOUSEHOLD_NAV_ITEMS,
   MAX_PRIMARY_NAV,
   enabledNavItems,
+  moreNavItems,
   primaryNavItems,
   sidebarNavItems,
 } from "@/lib/nav-items";
@@ -43,4 +44,13 @@ describe("nav items growth rules", () => {
       "house",
     ]);
   });
+
+  it("exposes house under more for mobile overflow", () => {
+    expect(moreNavItems().map((i) => i.key)).toEqual([
+      "settings",
+      "inbox",
+      "house",
+    ]);
+  });
 });
+
