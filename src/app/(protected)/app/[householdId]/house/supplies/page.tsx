@@ -1,10 +1,11 @@
 import { AppBackButton } from "@/components/app-back-button";
 import { HouseHubTabs } from "@/components/house/HouseHubTabs";
-import { SupplyForm } from "@/components/house/HouseForms";
-import { SupplyCard } from "@/components/house/StockAndShoppingControls";
+import { SupplyCard } from "@/components/house/SupplyCard";
+import { SupplyForm } from "@/components/house/SupplyForm";
 import { assertActiveMembership } from "@/lib/household-context";
+import { listActiveMemberOptions } from "@/lib/expenses/queries";
 import { can } from "@/lib/permissions";
-import { listSupplyItems } from "@/lib/house/queries";
+import { listLocations, listSupplyItems } from "@/lib/house/queries";
 
 export const dynamic = "force-dynamic";
 
@@ -15,8 +16,12 @@ export default async function SuppliesPage({
 }) {
   const { householdId } = await params;
   const ctx = await assertActiveMembership(householdId);
-  const items = await listSupplyItems(householdId);
   const create = can(ctx.roles, "resource.create");
+  const [items, members, locations] = await Promise.all([
+    listSupplyItems(householdId),
+    create ? listActiveMemberOptions(householdId) : Promise.resolve([]),
+    create ? listLocations(householdId) : Promise.resolve([]),
+  ]);
 
   return (
     <main className="space-y-5">
@@ -32,7 +37,7 @@ export default async function SuppliesPage({
         <details className="rounded-md border border-border p-4">
           <summary className="min-h-11 cursor-pointer font-medium">Add supply</summary>
           <div className="mt-4">
-            <SupplyForm householdId={householdId} />
+            <SupplyForm householdId={householdId} members={members} locations={locations} />
           </div>
         </details>
       ) : null}

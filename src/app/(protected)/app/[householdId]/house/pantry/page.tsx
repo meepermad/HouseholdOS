@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { AppBackButton } from "@/components/app-back-button";
 import { HouseHubTabs } from "@/components/house/HouseHubTabs";
-import { PantryForm } from "@/components/house/HouseForms";
+import { PantryForm } from "@/components/house/PantryForm";
 import { assertActiveMembership } from "@/lib/household-context";
+import { listActiveMemberOptions } from "@/lib/expenses/queries";
 import { can } from "@/lib/permissions";
-import { listPantryItems } from "@/lib/house/queries";
+import { listLocations, listPantryItems } from "@/lib/house/queries";
 import { PANTRY_STATE_LABELS, OWNERSHIP_LABELS } from "@/lib/house/display";
 import { classifyPantryDateState } from "@/lib/house/pantry-dates";
 
@@ -17,8 +18,12 @@ export default async function PantryPage({
 }) {
   const { householdId } = await params;
   const ctx = await assertActiveMembership(householdId);
-  const items = await listPantryItems(householdId);
   const create = can(ctx.roles, "resource.create");
+  const [items, members, locations] = await Promise.all([
+    listPantryItems(householdId),
+    create ? listActiveMemberOptions(householdId) : Promise.resolve([]),
+    create ? listLocations(householdId) : Promise.resolve([]),
+  ]);
 
   return (
     <main className="space-y-5">
@@ -34,7 +39,7 @@ export default async function PantryPage({
         <details className="rounded-md border border-border p-4">
           <summary className="min-h-11 cursor-pointer font-medium">Add pantry item</summary>
           <div className="mt-4">
-            <PantryForm householdId={householdId} membershipId={ctx.membershipId} />
+            <PantryForm householdId={householdId} members={members} locations={locations} />
           </div>
         </details>
       ) : null}
