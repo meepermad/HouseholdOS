@@ -102,6 +102,32 @@ Calendar audit payloads must not include raw feed tokens, private descriptions, 
 
 Chore audit payloads must not include private evidence URLs, sensitive completion notes, or push subscription data.
 
+## Event types (Phase 6 house resources)
+
+- `inventory.item_created`
+- `inventory.item_updated`
+- `inventory.ownership_changed`
+- `inventory.condition_changed`
+- `inventory.location_changed`
+- `inventory.item_disposed`
+- `inventory.item_transferred`
+- `supply.item_created`
+- `supply.stock_updated`
+- `supply.restocked`
+- `pantry.item_created`
+- `pantry.stock_updated`
+- `pantry.discarded`
+- `shopping.list_created`
+- `shopping.item_requested`
+- `shopping.item_updated`
+- `shopping.item_assigned`
+- `shopping.item_purchased`
+- `shopping.item_cancelled`
+- `resource.expense_linked`
+- `resource.expense_unlinked`
+
+House-resource audit and notification payloads must not include private purchase notes, personal pantry quantities/dietary notes, or receipt secrets. Domain RPCs insert via `_resource_audit` (actor from `auth.uid()`).
+
 ## Shape
 
 | Column | Purpose |

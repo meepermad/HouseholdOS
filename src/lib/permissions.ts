@@ -45,6 +45,13 @@ export const CAPABILITIES = [
   "chore.manage_rotation",
   "chore.coordinator_override",
   "responsibility.manage",
+  "resource.view",
+  "resource.create",
+  "resource.manage_own",
+  "resource.update_stock",
+  "resource.shop",
+  "resource.link_expense",
+  "resource.coordinator_override",
 ] as const;
 
 export type Capability = (typeof CAPABILITIES)[number];
@@ -86,6 +93,16 @@ const CHORE_MEMBER_CAPABILITIES = [
   "chore.manage_own",
 ] as const satisfies readonly Capability[];
 
+/** House resources (inventory, supplies, pantry, shopping) — member baseline. */
+const RESOURCE_MEMBER_CAPABILITIES = [
+  "resource.view",
+  "resource.create",
+  "resource.manage_own",
+  "resource.update_stock",
+  "resource.shop",
+  "resource.link_expense",
+] as const satisfies readonly Capability[];
+
 const ROLE_CAPABILITIES: Record<HouseholdResponsibility, readonly Capability[]> = {
   member: [
     "household.view",
@@ -95,6 +112,7 @@ const ROLE_CAPABILITIES: Record<HouseholdResponsibility, readonly Capability[]> 
     ...PAYMENT_CAPABILITIES,
     ...CALENDAR_MEMBER_CAPABILITIES,
     ...CHORE_MEMBER_CAPABILITIES,
+    ...RESOURCE_MEMBER_CAPABILITIES,
   ],
   household_coordinator: [
     "household.view",
@@ -111,12 +129,14 @@ const ROLE_CAPABILITIES: Record<HouseholdResponsibility, readonly Capability[]> 
     ...PAYMENT_CAPABILITIES,
     ...CALENDAR_MEMBER_CAPABILITIES,
     ...CHORE_MEMBER_CAPABILITIES,
+    ...RESOURCE_MEMBER_CAPABILITIES,
     // Only the household coordinator may edit/cancel household-visible events
     // organized by someone else.
     "calendar.coordinator_override",
     "chore.manage_rotation",
     "chore.coordinator_override",
     "responsibility.manage",
+    "resource.coordinator_override",
   ],
   financial_coordinator: [
     "household.view",
@@ -127,6 +147,7 @@ const ROLE_CAPABILITIES: Record<HouseholdResponsibility, readonly Capability[]> 
     ...PAYMENT_CAPABILITIES,
     ...CALENDAR_MEMBER_CAPABILITIES,
     ...CHORE_MEMBER_CAPABILITIES,
+    ...RESOURCE_MEMBER_CAPABILITIES,
   ],
 };
 

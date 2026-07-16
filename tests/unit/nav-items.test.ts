@@ -8,7 +8,7 @@ import {
 } from "@/lib/nav-items";
 
 describe("nav items growth rules", () => {
-  it("exposes the Phase 5 household destinations", () => {
+  it("exposes the Phase 6 household destinations", () => {
     expect(enabledNavItems().map((i) => i.key)).toEqual([
       "home",
       "calendar",
@@ -16,8 +16,9 @@ describe("nav items growth rules", () => {
       "money",
       "settings",
       "inbox",
+      "house",
     ]);
-    expect(HOUSEHOLD_NAV_ITEMS.some((i) => i.key === "chores" && i.enabled)).toBe(true);
+    expect(HOUSEHOLD_NAV_ITEMS.some((i) => i.key === "house" && i.enabled)).toBe(true);
   });
 
   it("keeps the bottom bar at or under the primary cap", () => {
@@ -31,7 +32,7 @@ describe("nav items growth rules", () => {
     ]);
   });
 
-  it("lists primary items before settings and inbox", () => {
+  it("lists primary items before settings, inbox, and house", () => {
     expect(sidebarNavItems().map((i) => i.key)).toEqual([
       "home",
       "calendar",
@@ -39,6 +40,7 @@ describe("nav items growth rules", () => {
       "money",
       "settings",
       "inbox",
+      "house",
     ]);
   });
 });

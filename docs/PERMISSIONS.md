@@ -36,6 +36,9 @@ Enforced in:
 | Manage rotations / household recurring systems | no***** | yes***** | no |
 | Coordinator chore override | no***** | yes***** | no |
 | Manage responsibility areas / transfers | limited****** | yes | no |
+| View / create house resources (inventory, supplies, pantry, shopping) | yes******* | yes | yes |
+| Update stock / claim shopping / link expense items | yes******* | yes | yes******* |
+| Coordinator resource override (communal + ownership transfer) | no******* | yes | no |
 | View notification worker health (Settings → Operations) | no | yes | no |
 
 \*Last remaining `household_coordinator` must transfer responsibility before leaving.
@@ -55,6 +58,8 @@ Enforced in:
 \*\*\*\*\*`financial_coordinator` gains **no** chore authority beyond ordinary member capabilities. Assignees may update their own progress and complete assigned work. Only organizers/coordinators may change recurrence or rotation. All coordinator overrides are audited. Completion history cannot be silently rewritten.
 
 \*\*\*\*\*\*Any active member may create a responsibility area they will own; transfers require the current owner (or coordinator) to request and the new owner to accept unless a coordinator assigns explicitly through an audited path.
+
+\*\*\*\*\*\*\*`financial_coordinator` gains **no** physical inventory override. Personal `owner_only` pantry/inventory is **not** bypassed by coordinator status. Expense linkage requires same-household expense visibility plus `resource.link_expense`. Ownership transfers for personal items require the owner or an audited `resource.coordinator_override`.
 
 ## Calendar visibility
 

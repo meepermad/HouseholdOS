@@ -1864,6 +1864,61 @@ export type Database = {
           },
         ]
       }
+      household_locations: {
+        Row: {
+          archived_at: string | null
+          created_at: string
+          created_by_membership_id: string
+          household_id: string
+          id: string
+          name: string
+          parent_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          archived_at?: string | null
+          created_at?: string
+          created_by_membership_id: string
+          household_id: string
+          id?: string
+          name: string
+          parent_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          archived_at?: string | null
+          created_at?: string
+          created_by_membership_id?: string
+          household_id?: string
+          id?: string
+          name?: string
+          parent_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "household_locations_created_by_membership_id_fkey"
+            columns: ["created_by_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "household_locations_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "household_locations_parent_id_household_id_fkey"
+            columns: ["parent_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "household_locations"
+            referencedColumns: ["id", "household_id"]
+          },
+        ]
+      }
       household_membership_roles: {
         Row: {
           granted_at: string
@@ -2041,6 +2096,263 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inventory_condition_events: {
+        Row: {
+          changed_by_membership_id: string
+          created_at: string
+          household_id: string
+          id: string
+          inventory_item_id: string
+          new_condition: string
+          note: string | null
+          previous_condition: string
+          reason: string | null
+        }
+        Insert: {
+          changed_by_membership_id: string
+          created_at?: string
+          household_id: string
+          id?: string
+          inventory_item_id: string
+          new_condition: string
+          note?: string | null
+          previous_condition: string
+          reason?: string | null
+        }
+        Update: {
+          changed_by_membership_id?: string
+          created_at?: string
+          household_id?: string
+          id?: string
+          inventory_item_id?: string
+          new_condition?: string
+          note?: string | null
+          previous_condition?: string
+          reason?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_condition_events_changed_by_membership_id_fkey"
+            columns: ["changed_by_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_condition_events_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_condition_events_inventory_item_id_household_id_fkey"
+            columns: ["inventory_item_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id", "household_id"]
+          },
+        ]
+      }
+      inventory_items: {
+        Row: {
+          acquired_by_membership_id: string | null
+          brand: string | null
+          category: string
+          condition: string
+          created_at: string
+          created_by_membership_id: string
+          description: string | null
+          household_id: string
+          id: string
+          loan_return_at: string | null
+          location_id: string | null
+          model: string | null
+          move_out_disposition: string | null
+          name: string
+          owner_membership_id: string | null
+          ownership_mode: string
+          purchase_date: string | null
+          purchase_price_cents: number | null
+          quantity: number
+          quantity_is_approximate: boolean
+          quantity_unit: string
+          related_chore_definition_id: string | null
+          responsibility_area_id: string | null
+          responsible_membership_id: string | null
+          serial_number: string | null
+          status: string
+          updated_at: string
+          visibility: string
+          warranty_expires_at: string | null
+        }
+        Insert: {
+          acquired_by_membership_id?: string | null
+          brand?: string | null
+          category: string
+          condition?: string
+          created_at?: string
+          created_by_membership_id: string
+          description?: string | null
+          household_id: string
+          id?: string
+          loan_return_at?: string | null
+          location_id?: string | null
+          model?: string | null
+          move_out_disposition?: string | null
+          name: string
+          owner_membership_id?: string | null
+          ownership_mode?: string
+          purchase_date?: string | null
+          purchase_price_cents?: number | null
+          quantity?: number
+          quantity_is_approximate?: boolean
+          quantity_unit?: string
+          related_chore_definition_id?: string | null
+          responsibility_area_id?: string | null
+          responsible_membership_id?: string | null
+          serial_number?: string | null
+          status?: string
+          updated_at?: string
+          visibility?: string
+          warranty_expires_at?: string | null
+        }
+        Update: {
+          acquired_by_membership_id?: string | null
+          brand?: string | null
+          category?: string
+          condition?: string
+          created_at?: string
+          created_by_membership_id?: string
+          description?: string | null
+          household_id?: string
+          id?: string
+          loan_return_at?: string | null
+          location_id?: string | null
+          model?: string | null
+          move_out_disposition?: string | null
+          name?: string
+          owner_membership_id?: string | null
+          ownership_mode?: string
+          purchase_date?: string | null
+          purchase_price_cents?: number | null
+          quantity?: number
+          quantity_is_approximate?: boolean
+          quantity_unit?: string
+          related_chore_definition_id?: string | null
+          responsibility_area_id?: string | null
+          responsible_membership_id?: string | null
+          serial_number?: string | null
+          status?: string
+          updated_at?: string
+          visibility?: string
+          warranty_expires_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_items_acquired_by_membership_id_fkey"
+            columns: ["acquired_by_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_items_created_by_membership_id_fkey"
+            columns: ["created_by_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_items_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_items_location_id_household_id_fkey"
+            columns: ["location_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "household_locations"
+            referencedColumns: ["id", "household_id"]
+          },
+          {
+            foreignKeyName: "inventory_items_owner_membership_id_fkey"
+            columns: ["owner_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_items_related_chore_definition_id_household_id_fkey"
+            columns: ["related_chore_definition_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "chore_definitions"
+            referencedColumns: ["id", "household_id"]
+          },
+          {
+            foreignKeyName: "inventory_items_responsibility_area_id_household_id_fkey"
+            columns: ["responsibility_area_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "responsibility_areas"
+            referencedColumns: ["id", "household_id"]
+          },
+          {
+            foreignKeyName: "inventory_items_responsible_membership_id_fkey"
+            columns: ["responsible_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inventory_ownership_members: {
+        Row: {
+          created_at: string
+          household_id: string
+          id: string
+          inventory_item_id: string
+          membership_id: string
+        }
+        Insert: {
+          created_at?: string
+          household_id: string
+          id?: string
+          inventory_item_id: string
+          membership_id: string
+        }
+        Update: {
+          created_at?: string
+          household_id?: string
+          id?: string
+          inventory_item_id?: string
+          membership_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_ownership_members_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_ownership_members_inventory_item_id_household_id_fkey"
+            columns: ["inventory_item_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id", "household_id"]
+          },
+          {
+            foreignKeyName: "inventory_ownership_members_membership_id_fkey"
+            columns: ["membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
             referencedColumns: ["id"]
           },
         ]
@@ -2395,6 +2707,238 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      pantry_items: {
+        Row: {
+          best_by: string | null
+          category: string
+          communal_available: boolean
+          created_at: string
+          created_by_membership_id: string
+          household_id: string
+          id: string
+          location_id: string | null
+          name: string
+          name_aliases: string[]
+          normalized_name: string | null
+          notes: string | null
+          opened_at: string | null
+          owner_membership_id: string | null
+          ownership_mode: string
+          prepared_at: string | null
+          purchased_at: string | null
+          quantity: number | null
+          quantity_is_approximate: boolean
+          quantity_unit: string
+          remaining_state: string | null
+          state: string
+          updated_at: string
+          use_by: string | null
+          use_soon_at: string | null
+          visibility: string
+        }
+        Insert: {
+          best_by?: string | null
+          category: string
+          communal_available?: boolean
+          created_at?: string
+          created_by_membership_id: string
+          household_id: string
+          id?: string
+          location_id?: string | null
+          name: string
+          name_aliases?: string[]
+          normalized_name?: string | null
+          notes?: string | null
+          opened_at?: string | null
+          owner_membership_id?: string | null
+          ownership_mode?: string
+          prepared_at?: string | null
+          purchased_at?: string | null
+          quantity?: number | null
+          quantity_is_approximate?: boolean
+          quantity_unit?: string
+          remaining_state?: string | null
+          state?: string
+          updated_at?: string
+          use_by?: string | null
+          use_soon_at?: string | null
+          visibility?: string
+        }
+        Update: {
+          best_by?: string | null
+          category?: string
+          communal_available?: boolean
+          created_at?: string
+          created_by_membership_id?: string
+          household_id?: string
+          id?: string
+          location_id?: string | null
+          name?: string
+          name_aliases?: string[]
+          normalized_name?: string | null
+          notes?: string | null
+          opened_at?: string | null
+          owner_membership_id?: string | null
+          ownership_mode?: string
+          prepared_at?: string | null
+          purchased_at?: string | null
+          quantity?: number | null
+          quantity_is_approximate?: boolean
+          quantity_unit?: string
+          remaining_state?: string | null
+          state?: string
+          updated_at?: string
+          use_by?: string | null
+          use_soon_at?: string | null
+          visibility?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pantry_items_created_by_membership_id_fkey"
+            columns: ["created_by_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pantry_items_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pantry_items_location_id_household_id_fkey"
+            columns: ["location_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "household_locations"
+            referencedColumns: ["id", "household_id"]
+          },
+          {
+            foreignKeyName: "pantry_items_owner_membership_id_fkey"
+            columns: ["owner_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pantry_stock_events: {
+        Row: {
+          created_at: string
+          delta_quantity: number | null
+          event_type: string
+          household_id: string
+          id: string
+          new_quantity: number | null
+          new_state: string | null
+          note: string | null
+          pantry_item_id: string
+          previous_quantity: number | null
+          previous_state: string | null
+          reason: string | null
+          recorded_by_membership_id: string
+        }
+        Insert: {
+          created_at?: string
+          delta_quantity?: number | null
+          event_type: string
+          household_id: string
+          id?: string
+          new_quantity?: number | null
+          new_state?: string | null
+          note?: string | null
+          pantry_item_id: string
+          previous_quantity?: number | null
+          previous_state?: string | null
+          reason?: string | null
+          recorded_by_membership_id: string
+        }
+        Update: {
+          created_at?: string
+          delta_quantity?: number | null
+          event_type?: string
+          household_id?: string
+          id?: string
+          new_quantity?: number | null
+          new_state?: string | null
+          note?: string | null
+          pantry_item_id?: string
+          previous_quantity?: number | null
+          previous_state?: string | null
+          reason?: string | null
+          recorded_by_membership_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pantry_stock_events_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pantry_stock_events_pantry_item_id_household_id_fkey"
+            columns: ["pantry_item_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "pantry_items"
+            referencedColumns: ["id", "household_id"]
+          },
+          {
+            foreignKeyName: "pantry_stock_events_recorded_by_membership_id_fkey"
+            columns: ["recorded_by_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pantry_visibility_members: {
+        Row: {
+          created_at: string
+          household_id: string
+          id: string
+          membership_id: string
+          pantry_item_id: string
+        }
+        Insert: {
+          created_at?: string
+          household_id: string
+          id?: string
+          membership_id: string
+          pantry_item_id: string
+        }
+        Update: {
+          created_at?: string
+          household_id?: string
+          id?: string
+          membership_id?: string
+          pantry_item_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pantry_visibility_members_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pantry_visibility_members_membership_id_fkey"
+            columns: ["membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pantry_visibility_members_pantry_item_id_household_id_fkey"
+            columns: ["pantry_item_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "pantry_items"
+            referencedColumns: ["id", "household_id"]
+          },
+        ]
       }
       payment_allocations: {
         Row: {
@@ -3121,6 +3665,74 @@ export type Database = {
           },
         ]
       }
+      resource_expense_links: {
+        Row: {
+          created_at: string
+          created_by_membership_id: string
+          expense_id: string
+          expense_item_id: string
+          household_id: string
+          id: string
+          link_kind: string
+          resource_id: string
+          resource_type: string
+          unlinked_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by_membership_id: string
+          expense_id: string
+          expense_item_id: string
+          household_id: string
+          id?: string
+          link_kind: string
+          resource_id: string
+          resource_type: string
+          unlinked_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by_membership_id?: string
+          expense_id?: string
+          expense_item_id?: string
+          household_id?: string
+          id?: string
+          link_kind?: string
+          resource_id?: string
+          resource_type?: string
+          unlinked_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "resource_expense_links_created_by_membership_id_fkey"
+            columns: ["created_by_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resource_expense_links_expense_id_fkey"
+            columns: ["expense_id"]
+            isOneToOne: false
+            referencedRelation: "expenses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resource_expense_links_expense_item_id_household_id_fkey"
+            columns: ["expense_item_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "expense_items"
+            referencedColumns: ["id", "household_id"]
+          },
+          {
+            foreignKeyName: "resource_expense_links_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       responsibility_areas: {
         Row: {
           category: string
@@ -3369,6 +3981,461 @@ export type Database = {
           },
         ]
       }
+      shopping_list_items: {
+        Row: {
+          approval_hint: boolean
+          assigned_shopper_membership_id: string | null
+          cancelled_at: string | null
+          category: string
+          created_at: string
+          description: string | null
+          estimated_cost_cents: number | null
+          household_id: string
+          id: string
+          intended_owner_membership_id: string | null
+          intended_ownership: string
+          list_id: string
+          name: string
+          needed_by: string | null
+          priority: string
+          purchased_at: string | null
+          purchased_quantity: number | null
+          purchaser_membership_id: string | null
+          quantity: number | null
+          quantity_is_approximate: boolean
+          quantity_unit: string
+          related_calendar_event_id: string | null
+          related_chore_occurrence_id: string | null
+          related_inventory_id: string | null
+          related_pantry_id: string | null
+          related_supply_id: string | null
+          requested_by_membership_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          approval_hint?: boolean
+          assigned_shopper_membership_id?: string | null
+          cancelled_at?: string | null
+          category?: string
+          created_at?: string
+          description?: string | null
+          estimated_cost_cents?: number | null
+          household_id: string
+          id?: string
+          intended_owner_membership_id?: string | null
+          intended_ownership?: string
+          list_id: string
+          name: string
+          needed_by?: string | null
+          priority?: string
+          purchased_at?: string | null
+          purchased_quantity?: number | null
+          purchaser_membership_id?: string | null
+          quantity?: number | null
+          quantity_is_approximate?: boolean
+          quantity_unit?: string
+          related_calendar_event_id?: string | null
+          related_chore_occurrence_id?: string | null
+          related_inventory_id?: string | null
+          related_pantry_id?: string | null
+          related_supply_id?: string | null
+          requested_by_membership_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          approval_hint?: boolean
+          assigned_shopper_membership_id?: string | null
+          cancelled_at?: string | null
+          category?: string
+          created_at?: string
+          description?: string | null
+          estimated_cost_cents?: number | null
+          household_id?: string
+          id?: string
+          intended_owner_membership_id?: string | null
+          intended_ownership?: string
+          list_id?: string
+          name?: string
+          needed_by?: string | null
+          priority?: string
+          purchased_at?: string | null
+          purchased_quantity?: number | null
+          purchaser_membership_id?: string | null
+          quantity?: number | null
+          quantity_is_approximate?: boolean
+          quantity_unit?: string
+          related_calendar_event_id?: string | null
+          related_chore_occurrence_id?: string | null
+          related_inventory_id?: string | null
+          related_pantry_id?: string | null
+          related_supply_id?: string | null
+          requested_by_membership_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shopping_list_items_assigned_shopper_membership_id_fkey"
+            columns: ["assigned_shopper_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shopping_list_items_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shopping_list_items_intended_owner_membership_id_fkey"
+            columns: ["intended_owner_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shopping_list_items_list_id_household_id_fkey"
+            columns: ["list_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "shopping_lists"
+            referencedColumns: ["id", "household_id"]
+          },
+          {
+            foreignKeyName: "shopping_list_items_purchaser_membership_id_fkey"
+            columns: ["purchaser_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shopping_list_items_related_calendar_event_id_fkey"
+            columns: ["related_calendar_event_id"]
+            isOneToOne: false
+            referencedRelation: "calendar_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shopping_list_items_related_chore_occurrence_id_household__fkey"
+            columns: ["related_chore_occurrence_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "chore_occurrences"
+            referencedColumns: ["id", "household_id"]
+          },
+          {
+            foreignKeyName: "shopping_list_items_related_inventory_id_household_id_fkey"
+            columns: ["related_inventory_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id", "household_id"]
+          },
+          {
+            foreignKeyName: "shopping_list_items_related_pantry_id_household_id_fkey"
+            columns: ["related_pantry_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "pantry_items"
+            referencedColumns: ["id", "household_id"]
+          },
+          {
+            foreignKeyName: "shopping_list_items_related_supply_id_household_id_fkey"
+            columns: ["related_supply_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "supply_items"
+            referencedColumns: ["id", "household_id"]
+          },
+          {
+            foreignKeyName: "shopping_list_items_requested_by_membership_id_fkey"
+            columns: ["requested_by_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shopping_lists: {
+        Row: {
+          archived_at: string | null
+          calendar_event_id: string | null
+          created_at: string
+          created_by_membership_id: string
+          household_id: string
+          id: string
+          is_default: boolean
+          name: string
+          responsibility_area_id: string | null
+          store_label: string | null
+          updated_at: string
+        }
+        Insert: {
+          archived_at?: string | null
+          calendar_event_id?: string | null
+          created_at?: string
+          created_by_membership_id: string
+          household_id: string
+          id?: string
+          is_default?: boolean
+          name: string
+          responsibility_area_id?: string | null
+          store_label?: string | null
+          updated_at?: string
+        }
+        Update: {
+          archived_at?: string | null
+          calendar_event_id?: string | null
+          created_at?: string
+          created_by_membership_id?: string
+          household_id?: string
+          id?: string
+          is_default?: boolean
+          name?: string
+          responsibility_area_id?: string | null
+          store_label?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shopping_lists_calendar_event_id_fkey"
+            columns: ["calendar_event_id"]
+            isOneToOne: false
+            referencedRelation: "calendar_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shopping_lists_created_by_membership_id_fkey"
+            columns: ["created_by_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shopping_lists_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shopping_lists_responsibility_area_id_household_id_fkey"
+            columns: ["responsibility_area_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "responsibility_areas"
+            referencedColumns: ["id", "household_id"]
+          },
+        ]
+      }
+      supply_items: {
+        Row: {
+          active: boolean
+          category: string
+          created_at: string
+          created_by_membership_id: string
+          household_id: string
+          id: string
+          last_purchased_at: string | null
+          last_restocked_at: string | null
+          last_stock_check_at: string | null
+          location_id: string | null
+          name: string
+          notes: string | null
+          owner_membership_id: string | null
+          ownership_mode: string
+          preferred_brand: string | null
+          quantity: number | null
+          quantity_is_approximate: boolean
+          quantity_unit: string
+          related_chore_definition_id: string | null
+          reorder_threshold: number | null
+          responsibility_area_id: string | null
+          responsible_membership_id: string | null
+          restock_policy: string
+          stock_state: string
+          target_quantity: number | null
+          updated_at: string
+          visibility: string
+        }
+        Insert: {
+          active?: boolean
+          category: string
+          created_at?: string
+          created_by_membership_id: string
+          household_id: string
+          id?: string
+          last_purchased_at?: string | null
+          last_restocked_at?: string | null
+          last_stock_check_at?: string | null
+          location_id?: string | null
+          name: string
+          notes?: string | null
+          owner_membership_id?: string | null
+          ownership_mode?: string
+          preferred_brand?: string | null
+          quantity?: number | null
+          quantity_is_approximate?: boolean
+          quantity_unit?: string
+          related_chore_definition_id?: string | null
+          reorder_threshold?: number | null
+          responsibility_area_id?: string | null
+          responsible_membership_id?: string | null
+          restock_policy?: string
+          stock_state?: string
+          target_quantity?: number | null
+          updated_at?: string
+          visibility?: string
+        }
+        Update: {
+          active?: boolean
+          category?: string
+          created_at?: string
+          created_by_membership_id?: string
+          household_id?: string
+          id?: string
+          last_purchased_at?: string | null
+          last_restocked_at?: string | null
+          last_stock_check_at?: string | null
+          location_id?: string | null
+          name?: string
+          notes?: string | null
+          owner_membership_id?: string | null
+          ownership_mode?: string
+          preferred_brand?: string | null
+          quantity?: number | null
+          quantity_is_approximate?: boolean
+          quantity_unit?: string
+          related_chore_definition_id?: string | null
+          reorder_threshold?: number | null
+          responsibility_area_id?: string | null
+          responsible_membership_id?: string | null
+          restock_policy?: string
+          stock_state?: string
+          target_quantity?: number | null
+          updated_at?: string
+          visibility?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supply_items_created_by_membership_id_fkey"
+            columns: ["created_by_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supply_items_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supply_items_location_id_household_id_fkey"
+            columns: ["location_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "household_locations"
+            referencedColumns: ["id", "household_id"]
+          },
+          {
+            foreignKeyName: "supply_items_owner_membership_id_fkey"
+            columns: ["owner_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supply_items_related_chore_definition_id_household_id_fkey"
+            columns: ["related_chore_definition_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "chore_definitions"
+            referencedColumns: ["id", "household_id"]
+          },
+          {
+            foreignKeyName: "supply_items_responsibility_area_id_household_id_fkey"
+            columns: ["responsibility_area_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "responsibility_areas"
+            referencedColumns: ["id", "household_id"]
+          },
+          {
+            foreignKeyName: "supply_items_responsible_membership_id_fkey"
+            columns: ["responsible_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      supply_stock_events: {
+        Row: {
+          created_at: string
+          delta_quantity: number | null
+          event_type: string
+          household_id: string
+          id: string
+          new_quantity: number | null
+          new_stock_state: string | null
+          note: string | null
+          previous_quantity: number | null
+          previous_stock_state: string | null
+          reason: string | null
+          recorded_by_membership_id: string
+          supply_item_id: string
+        }
+        Insert: {
+          created_at?: string
+          delta_quantity?: number | null
+          event_type: string
+          household_id: string
+          id?: string
+          new_quantity?: number | null
+          new_stock_state?: string | null
+          note?: string | null
+          previous_quantity?: number | null
+          previous_stock_state?: string | null
+          reason?: string | null
+          recorded_by_membership_id: string
+          supply_item_id: string
+        }
+        Update: {
+          created_at?: string
+          delta_quantity?: number | null
+          event_type?: string
+          household_id?: string
+          id?: string
+          new_quantity?: number | null
+          new_stock_state?: string | null
+          note?: string | null
+          previous_quantity?: number | null
+          previous_stock_state?: string | null
+          reason?: string | null
+          recorded_by_membership_id?: string
+          supply_item_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supply_stock_events_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supply_stock_events_recorded_by_membership_id_fkey"
+            columns: ["recorded_by_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supply_stock_events_supply_item_id_household_id_fkey"
+            columns: ["supply_item_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "supply_items"
+            referencedColumns: ["id", "household_id"]
+          },
+        ]
+      }
       user_notifications: {
         Row: {
           action_href: string | null
@@ -3609,6 +4676,10 @@ export type Database = {
         Args: { p_membership_id: string }
         Returns: string
       }
+      _cancel_resource_source_reminders: {
+        Args: { p_source_id: string; p_source_type: string }
+        Returns: undefined
+      }
       _cancel_scheduled_notification_request: {
         Args: { p_idempotency_key: string }
         Returns: boolean
@@ -3748,6 +4819,14 @@ export type Database = {
         Args: { p_occurrence_id: string }
         Returns: number
       }
+      _reconcile_inventory_reminders: {
+        Args: { p_inventory_item_id: string }
+        Returns: number
+      }
+      _reconcile_pantry_reminders: {
+        Args: { p_pantry_item_id: string }
+        Returns: number
+      }
       _resolve_chore_reassignment: {
         Args: {
           p_request_id: string
@@ -3759,6 +4838,57 @@ export type Database = {
       _resolve_responsibility_transfer: {
         Args: { p_status: string; p_transfer_id: string }
         Returns: string
+      }
+      _resource_active_membership: {
+        Args: { p_household_id: string }
+        Returns: string
+      }
+      _resource_assert_member: {
+        Args: { p_household_id: string; p_membership_id: string }
+        Returns: undefined
+      }
+      _resource_audit: {
+        Args: {
+          p_after?: Json
+          p_before?: Json
+          p_entity_id: string
+          p_entity_type: string
+          p_event_type: string
+          p_household_id: string
+          p_reason?: string
+        }
+        Returns: undefined
+      }
+      _resource_default_visibility: {
+        Args: { p_ownership_mode: string }
+        Returns: string
+      }
+      _resource_inventory_recipients: {
+        Args: { p_item_id: string }
+        Returns: string[]
+      }
+      _resource_notify: {
+        Args: {
+          p_action_href: string
+          p_actor_membership_id: string
+          p_body: string
+          p_entity_id: string
+          p_entity_type: string
+          p_event_type: string
+          p_household_id: string
+          p_memberships: string[]
+          p_title: string
+        }
+        Returns: undefined
+      }
+      _resource_validate_ownership: {
+        Args: {
+          p_household_id: string
+          p_owner_membership_id: string
+          p_ownership_mode: string
+          p_shared_membership_ids: string[]
+        }
+        Returns: undefined
       }
       _sanitize_delivery_error: { Args: { p_error: string }; Returns: string }
       _set_chore_definition_status: {
@@ -3798,6 +4928,10 @@ export type Database = {
         Args: { p_household_id: string }
         Returns: undefined
       }
+      archive_household_location: {
+        Args: { p_location_id: string }
+        Returns: string
+      }
       assign_chore_occurrence: {
         Args: {
           p_membership_id: string
@@ -3808,6 +4942,10 @@ export type Database = {
       }
       assign_responsibility_area: {
         Args: { p_area_id: string; p_membership_id: string; p_role?: string }
+        Returns: string
+      }
+      assign_shopping_item: {
+        Args: { p_item_id: string; p_shopper_membership_id: string }
         Returns: string
       }
       can_confirm_or_void_expense: {
@@ -3827,6 +4965,9 @@ export type Database = {
         Returns: boolean
       }
       can_view_expense: { Args: { p_expense_id: string }; Returns: boolean }
+      can_view_inventory_item: { Args: { p_item_id: string }; Returns: boolean }
+      can_view_pantry_item: { Args: { p_item_id: string }; Returns: boolean }
+      can_view_supply_item: { Args: { p_item_id: string }; Returns: boolean }
       cancel_calendar_event: {
         Args: {
           p_coordinator_override?: boolean
@@ -3880,6 +5021,26 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      cancel_shopping_item: { Args: { p_item_id: string }; Returns: string }
+      change_inventory_condition: {
+        Args: {
+          p_item_id: string
+          p_new_condition: string
+          p_note?: string
+          p_reason?: string
+        }
+        Returns: string
+      }
+      change_inventory_ownership: {
+        Args: {
+          p_item_id: string
+          p_owner_membership_id?: string
+          p_ownership_mode: string
+          p_shared_membership_ids?: string[]
+          p_visibility?: string
+        }
+        Returns: string
       }
       change_membership_roles: {
         Args: {
@@ -3941,6 +5102,7 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      claim_shopping_item: { Args: { p_item_id: string }; Returns: string }
       cleanup_test_household_data: {
         Args: { p_test_run_id: string }
         Returns: number
@@ -4210,6 +5372,27 @@ export type Database = {
         }
         Returns: string
       }
+      create_household_location: {
+        Args: { p_household_id: string; p_name: string; p_parent_id?: string }
+        Returns: string
+      }
+      create_inventory_item: {
+        Args: {
+          p_category: string
+          p_condition?: string
+          p_description?: string
+          p_household_id: string
+          p_location_id?: string
+          p_name: string
+          p_owner_membership_id?: string
+          p_ownership_mode?: string
+          p_quantity?: number
+          p_quantity_unit?: string
+          p_shared_membership_ids?: string[]
+          p_visibility?: string
+        }
+        Returns: string
+      }
       create_one_time_chore: {
         Args: {
           p_all_day?: boolean
@@ -4226,6 +5409,27 @@ export type Database = {
           p_show_on_calendar?: boolean
           p_title: string
           p_verifier_membership_id?: string
+          p_visibility?: string
+        }
+        Returns: string
+      }
+      create_pantry_item: {
+        Args: {
+          p_best_by?: string
+          p_category: string
+          p_communal_available?: boolean
+          p_household_id: string
+          p_location_id?: string
+          p_name: string
+          p_normalized_name?: string
+          p_notes?: string
+          p_owner_membership_id?: string
+          p_ownership_mode?: string
+          p_quantity?: number
+          p_quantity_unit?: string
+          p_remaining_state?: string
+          p_use_by?: string
+          p_use_soon_at?: string
           p_visibility?: string
         }
         Returns: string
@@ -4265,6 +5469,50 @@ export type Database = {
         }
         Returns: string
       }
+      create_shopping_item: {
+        Args: {
+          p_category?: string
+          p_description?: string
+          p_estimated_cost_cents?: number
+          p_household_id: string
+          p_intended_owner_membership_id?: string
+          p_intended_ownership?: string
+          p_list_id?: string
+          p_name: string
+          p_needed_by?: string
+          p_priority?: string
+          p_quantity?: number
+          p_quantity_unit?: string
+          p_related_inventory_id?: string
+          p_related_pantry_id?: string
+          p_related_supply_id?: string
+        }
+        Returns: string
+      }
+      create_shopping_list: {
+        Args: { p_household_id: string; p_name: string; p_store_label?: string }
+        Returns: string
+      }
+      create_supply_item: {
+        Args: {
+          p_category: string
+          p_household_id: string
+          p_location_id?: string
+          p_name: string
+          p_notes?: string
+          p_owner_membership_id?: string
+          p_ownership_mode?: string
+          p_quantity?: number
+          p_quantity_unit?: string
+          p_reorder_threshold?: number
+          p_responsibility_area_id?: string
+          p_responsible_membership_id?: string
+          p_restock_policy?: string
+          p_stock_state?: string
+          p_target_quantity?: number
+        }
+        Returns: string
+      }
       current_membership_id: {
         Args: { p_household_id: string }
         Returns: string
@@ -4285,6 +5533,14 @@ export type Database = {
         Args: { p_transfer_id: string }
         Returns: string
       }
+      discard_pantry_item: {
+        Args: { p_item_id: string; p_note?: string }
+        Returns: string
+      }
+      dispose_inventory_item: {
+        Args: { p_disposition?: string; p_item_id: string; p_status: string }
+        Returns: string
+      }
       effective_calendar_occurrence_fields: {
         Args: { p_event_id: string; p_original_starts_at: string }
         Returns: {
@@ -4303,6 +5559,10 @@ export type Database = {
         Returns: string
       }
       enqueue_test_notification: { Args: never; Returns: string }
+      ensure_default_shopping_list: {
+        Args: { p_household_id: string }
+        Returns: string
+      }
       ensure_profile: {
         Args: never
         Returns: {
@@ -4388,6 +5648,16 @@ export type Database = {
         Args: { p_household_id: string; p_reason?: string }
         Returns: undefined
       }
+      link_resource_to_expense_item: {
+        Args: {
+          p_expense_item_id: string
+          p_household_id: string
+          p_link_kind: string
+          p_resource_id: string
+          p_resource_type: string
+        }
+        Returns: string
+      }
       list_authorized_feed_events: {
         Args: { p_feed_id: string; p_range_end: string; p_range_start: string }
         Returns: {
@@ -4428,6 +5698,27 @@ export type Database = {
         Args: { p_notification_id: string }
         Returns: undefined
       }
+      mark_pantry_finished: {
+        Args: { p_item_id: string; p_note?: string }
+        Returns: string
+      }
+      mark_shopping_item_purchased: {
+        Args: {
+          p_expense_item_id?: string
+          p_item_id: string
+          p_purchased_quantity?: number
+          p_update_related_stock?: boolean
+        }
+        Returns: string
+      }
+      mark_shopping_item_unavailable: {
+        Args: { p_item_id: string; p_note?: string }
+        Returns: string
+      }
+      mark_supply_low: {
+        Args: { p_item_id: string; p_note?: string }
+        Returns: string
+      }
       materialize_chore_occurrences: {
         Args: { p_definition_id: string; p_occurrences: Json }
         Returns: number
@@ -4435,6 +5726,10 @@ export type Database = {
       membership_belongs_to_household: {
         Args: { p_household_id: string; p_membership_id: string }
         Returns: boolean
+      }
+      move_inventory_item: {
+        Args: { p_item_id: string; p_location_id: string }
+        Returns: string
       }
       obligation_confirmed_paid_inline: {
         Args: { p_obligation_id: string }
@@ -4507,6 +5802,29 @@ export type Database = {
         }
         Returns: undefined
       }
+      record_pantry_stock: {
+        Args: {
+          p_event_type: string
+          p_item_id: string
+          p_new_quantity?: number
+          p_note?: string
+          p_reason?: string
+          p_remaining_state?: string
+          p_state?: string
+        }
+        Returns: string
+      }
+      record_supply_stock: {
+        Args: {
+          p_event_type: string
+          p_item_id: string
+          p_new_quantity?: number
+          p_note?: string
+          p_reason?: string
+          p_stock_state?: string
+        }
+        Returns: string
+      }
       regenerate_calendar_feed: {
         Args: { p_feed_id: string; p_new_token_hash: string }
         Returns: string
@@ -4552,6 +5870,10 @@ export type Database = {
           p_reason?: string
         }
         Returns: undefined
+      }
+      rename_household_location: {
+        Args: { p_location_id: string; p_name: string }
+        Returns: string
       }
       reopen_chore_occurrence: {
         Args: { p_occurrence_id: string; p_reason: string }
@@ -4610,6 +5932,15 @@ export type Database = {
           p_guest_count?: number
           p_guest_note?: string
           p_rsvp_status: string
+        }
+        Returns: string
+      }
+      restock_supply_item: {
+        Args: {
+          p_item_id: string
+          p_note?: string
+          p_quantity?: number
+          p_stock_state?: string
         }
         Returns: string
       }
@@ -4733,6 +6064,11 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      touch_supply_stock_check: { Args: { p_item_id: string }; Returns: string }
+      unlink_resource_from_expense_item: {
+        Args: { p_link_id: string }
+        Returns: string
+      }
       update_calendar_event: {
         Args: {
           p_all_day?: boolean
@@ -4798,6 +6134,10 @@ export type Database = {
       }
       update_chore_rotation_members: {
         Args: { p_membership_ids: string[]; p_rotation_id: string }
+        Returns: string
+      }
+      update_inventory_item: {
+        Args: { p_item_id: string; p_patch: Json }
         Returns: string
       }
       upsert_notification_preference: {

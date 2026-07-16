@@ -41,7 +41,8 @@ HouseholdOS is a private, mobile-first household management PWA. Identity, multi
   - Bottom bar shows only enabled `surface: "primary"` items (capped at 4) so new domains do not crowd the thumb bar
   - Sidebar lists all enabled items (primary + `more`)
   - Primary: Home · Calendar · Chores · Money. Settings and Inbox live under `more`
-  - Unshipped domains (House, Records) stay `enabled: false`
+  - Unshipped domains (Records) stay `enabled: false`
+  - House is enabled under `surface: "more"` (Phase 6 resource hub)
   - When primary slots are full, ship new roots as `surface: "more"` (and later a More screen) instead of growing the bottom bar endlessly
 - Standalone PWA: safe-area chrome and optional in-app Back control; authenticated navigations are `NetworkOnly` in the service worker
 
@@ -137,14 +138,35 @@ External Apple/Google/LifeOS clients may **subscribe** to the personal feed. Cha
 | Reminders | `scheduled_notification_requests` with `source_type = 'chore_occurrence'` |
 | Auth | Lifecycle via SECURITY DEFINER RPCs; financial_coordinator has no chore override power |
 
+## House resources (Phase 6)
+
+Four separate domains share locations and expense-item links but are **not** one polymorphic item table.
+
+| Concern | Implementation |
+|---|---|
+| Locations | `household_locations` — household-scoped, rename-safe, archived when referenced |
+| Durable inventory | `inventory_items` + `inventory_condition_events` + `inventory_ownership_members` |
+| Consumable supplies | `supply_items` + append-oriented `supply_stock_events`; restock policy `manual\|suggest\|automatic` (default suggest) |
+| Pantry | `pantry_items` + `pantry_stock_events`; personal `owner_only` rows hidden via RLS (coordinators do not bypass) |
+| Shopping | `shopping_lists` + `shopping_list_items`; default list lazy-created; active supply-request dedupe |
+| Expense linkage | `resource_expense_links` → `expense_items` (not receipt OCR); void/amend does not delete physical items |
+| Ownership | `household\|personal\|shared_selected\|temporary\|unknown` — distinct from payer/restocker |
+| Visibility | `household\|owner_only\|selected_members` enforced in RLS |
+| Quantity | `numeric(12,3)` + unit enum; no cross-unit conversion |
+| Reminders | `scheduled_notification_requests` source types `pantry_item` / `inventory_item` |
+| Nav | House enabled under `surface: "more"`; hub tabs for Inventory / Supplies / Pantry / Shopping |
+| Auth | RPCs with `householdos.resource_mutation`; financial_coordinator has no physical override |
+
+Recipe matching, meal planning, barcode/OCR, and store integrations are deferred to Phase 6.5+.
+
 ## Roadmap
 
 ```text
 Phase 3 — Payment settlement ledger + payment-related in-app notifications
 Phase 3.1 — Notification delivery: web push, preferences, quiet hours, digests, retries
 Phase 4 — Shared HouseholdOS calendar, recurrence, reminders, secure iCalendar feed
-Phase 5 — Chores / responsibility rotations on calendar + notifications (current)
-Phase 6 — Inventory, supplies, shopping lists, pantry
+Phase 5 — Chores / responsibility rotations on calendar + notifications
+Phase 6 — Inventory, supplies, shopping lists, pantry (current)
 Phase 6.5 — Recipe requests matched to pantry / constraints
 Later — LifeOS connector; optional Google/Apple calendar sync
 ```
@@ -153,4 +175,4 @@ Calendar stages remaining: LifeOS connector → optional two-way provider sync.
 
 ## Out of scope (current)
 
-Receipt OCR, actual bank/Venmo/Zelle/Plaid transfers, inventory/grocery/recipes product UI, Google/Apple OAuth calendar sync, two-way calendar writeback, full offline sync, SMS, live email delivery (adapter boundary only until a provider is configured), chore photo evidence storage, public chore rankings or financial penalties for missed chores.
+Receipt OCR, actual bank/Venmo/Zelle/Plaid transfers, recipes/meal planning product UI, Google/Apple OAuth calendar sync, two-way calendar writeback, full offline sync, SMS, live email delivery (adapter boundary only until a provider is configured), chore photo evidence storage, public chore rankings or financial penalties for missed chores, barcode scanning, grocery delivery APIs.
