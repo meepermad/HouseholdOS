@@ -1801,6 +1801,975 @@ export type Database = {
           },
         ]
       }
+      governance_acknowledgments: {
+        Row: {
+          acknowledged_at: string | null
+          comment: string | null
+          created_at: string
+          document_id: string
+          due_at: string | null
+          household_id: string
+          id: string
+          last_reminded_at: string | null
+          membership_id: string
+          reminder_cadence_hours: number | null
+          status: string
+          version_content_hash: string | null
+          version_id: string
+        }
+        Insert: {
+          acknowledged_at?: string | null
+          comment?: string | null
+          created_at?: string
+          document_id: string
+          due_at?: string | null
+          household_id: string
+          id?: string
+          last_reminded_at?: string | null
+          membership_id: string
+          reminder_cadence_hours?: number | null
+          status?: string
+          version_content_hash?: string | null
+          version_id: string
+        }
+        Update: {
+          acknowledged_at?: string | null
+          comment?: string | null
+          created_at?: string
+          document_id?: string
+          due_at?: string | null
+          household_id?: string
+          id?: string
+          last_reminded_at?: string | null
+          membership_id?: string
+          reminder_cadence_hours?: number | null
+          status?: string
+          version_content_hash?: string | null
+          version_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "governance_acknowledgments_document_id_household_id_fkey"
+            columns: ["document_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "governance_documents"
+            referencedColumns: ["id", "household_id"]
+          },
+          {
+            foreignKeyName: "governance_acknowledgments_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "governance_acknowledgments_membership_id_fkey"
+            columns: ["membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "governance_acknowledgments_version_id_household_id_fkey"
+            columns: ["version_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "governance_document_versions"
+            referencedColumns: ["id", "household_id"]
+          },
+        ]
+      }
+      governance_approval_requests: {
+        Row: {
+          approval_mode: string
+          closed_at: string | null
+          coordinator_override: boolean
+          created_at: string
+          document_id: string
+          household_id: string
+          id: string
+          outcome_reason: string | null
+          override_by_membership_id: string | null
+          override_reason: string | null
+          percentage_threshold: number | null
+          quorum: number
+          requested_by_membership_id: string
+          status: string
+          version_id: string
+        }
+        Insert: {
+          approval_mode: string
+          closed_at?: string | null
+          coordinator_override?: boolean
+          created_at?: string
+          document_id: string
+          household_id: string
+          id?: string
+          outcome_reason?: string | null
+          override_by_membership_id?: string | null
+          override_reason?: string | null
+          percentage_threshold?: number | null
+          quorum?: number
+          requested_by_membership_id: string
+          status?: string
+          version_id: string
+        }
+        Update: {
+          approval_mode?: string
+          closed_at?: string | null
+          coordinator_override?: boolean
+          created_at?: string
+          document_id?: string
+          household_id?: string
+          id?: string
+          outcome_reason?: string | null
+          override_by_membership_id?: string | null
+          override_reason?: string | null
+          percentage_threshold?: number | null
+          quorum?: number
+          requested_by_membership_id?: string
+          status?: string
+          version_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "governance_approval_requests_document_id_household_id_fkey"
+            columns: ["document_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "governance_documents"
+            referencedColumns: ["id", "household_id"]
+          },
+          {
+            foreignKeyName: "governance_approval_requests_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "governance_approval_requests_override_by_membership_id_fkey"
+            columns: ["override_by_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "governance_approval_requests_requested_by_membership_id_fkey"
+            columns: ["requested_by_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "governance_approval_requests_version_id_household_id_fkey"
+            columns: ["version_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "governance_document_versions"
+            referencedColumns: ["id", "household_id"]
+          },
+        ]
+      }
+      governance_approval_responses: {
+        Row: {
+          comment: string | null
+          created_at: string
+          decision: string
+          document_id: string
+          household_id: string
+          id: string
+          request_id: string
+          responder_membership_id: string
+          version_content_hash: string
+          version_id: string
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string
+          decision: string
+          document_id: string
+          household_id: string
+          id?: string
+          request_id: string
+          responder_membership_id: string
+          version_content_hash: string
+          version_id: string
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string
+          decision?: string
+          document_id?: string
+          household_id?: string
+          id?: string
+          request_id?: string
+          responder_membership_id?: string
+          version_content_hash?: string
+          version_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "governance_approval_responses_document_id_household_id_fkey"
+            columns: ["document_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "governance_documents"
+            referencedColumns: ["id", "household_id"]
+          },
+          {
+            foreignKeyName: "governance_approval_responses_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "governance_approval_responses_request_id_household_id_fkey"
+            columns: ["request_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "governance_approval_requests"
+            referencedColumns: ["id", "household_id"]
+          },
+          {
+            foreignKeyName: "governance_approval_responses_responder_membership_id_fkey"
+            columns: ["responder_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "governance_approval_responses_version_id_household_id_fkey"
+            columns: ["version_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "governance_document_versions"
+            referencedColumns: ["id", "household_id"]
+          },
+        ]
+      }
+      governance_attachments: {
+        Row: {
+          approval_response_id: string | null
+          comment_id: string | null
+          created_at: string
+          deleted_at: string | null
+          deletion_reason: string | null
+          document_id: string | null
+          file_name: string
+          household_id: string
+          id: string
+          mime_type: string
+          permanently_deleted_at: string | null
+          size_bytes: number
+          storage_path: string
+          transition_task_id: string | null
+          uploaded_by_membership_id: string
+          version_id: string | null
+        }
+        Insert: {
+          approval_response_id?: string | null
+          comment_id?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          deletion_reason?: string | null
+          document_id?: string | null
+          file_name: string
+          household_id: string
+          id?: string
+          mime_type: string
+          permanently_deleted_at?: string | null
+          size_bytes: number
+          storage_path: string
+          transition_task_id?: string | null
+          uploaded_by_membership_id: string
+          version_id?: string | null
+        }
+        Update: {
+          approval_response_id?: string | null
+          comment_id?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          deletion_reason?: string | null
+          document_id?: string | null
+          file_name?: string
+          household_id?: string
+          id?: string
+          mime_type?: string
+          permanently_deleted_at?: string | null
+          size_bytes?: number
+          storage_path?: string
+          transition_task_id?: string | null
+          uploaded_by_membership_id?: string
+          version_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "governance_attachments_approval_response_fk"
+            columns: ["approval_response_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "governance_approval_responses"
+            referencedColumns: ["id", "household_id"]
+          },
+          {
+            foreignKeyName: "governance_attachments_comment_id_household_id_fkey"
+            columns: ["comment_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "governance_comments"
+            referencedColumns: ["id", "household_id"]
+          },
+          {
+            foreignKeyName: "governance_attachments_document_id_household_id_fkey"
+            columns: ["document_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "governance_documents"
+            referencedColumns: ["id", "household_id"]
+          },
+          {
+            foreignKeyName: "governance_attachments_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "governance_attachments_transition_task_fk"
+            columns: ["transition_task_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "household_transition_tasks"
+            referencedColumns: ["id", "household_id"]
+          },
+          {
+            foreignKeyName: "governance_attachments_uploaded_by_membership_id_fkey"
+            columns: ["uploaded_by_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "governance_attachments_version_id_household_id_fkey"
+            columns: ["version_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "governance_document_versions"
+            referencedColumns: ["id", "household_id"]
+          },
+        ]
+      }
+      governance_calendar_links: {
+        Row: {
+          calendar_event_id: string
+          created_at: string
+          document_id: string | null
+          household_id: string
+          id: string
+          link_kind: string
+          transition_workflow_id: string | null
+          version_id: string | null
+        }
+        Insert: {
+          calendar_event_id: string
+          created_at?: string
+          document_id?: string | null
+          household_id: string
+          id?: string
+          link_kind: string
+          transition_workflow_id?: string | null
+          version_id?: string | null
+        }
+        Update: {
+          calendar_event_id?: string
+          created_at?: string
+          document_id?: string | null
+          household_id?: string
+          id?: string
+          link_kind?: string
+          transition_workflow_id?: string | null
+          version_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "governance_calendar_links_document_id_household_id_fkey"
+            columns: ["document_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "governance_documents"
+            referencedColumns: ["id", "household_id"]
+          },
+          {
+            foreignKeyName: "governance_calendar_links_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "governance_calendar_links_transition_fk"
+            columns: ["transition_workflow_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "household_transition_workflows"
+            referencedColumns: ["id", "household_id"]
+          },
+          {
+            foreignKeyName: "governance_calendar_links_version_id_household_id_fkey"
+            columns: ["version_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "governance_document_versions"
+            referencedColumns: ["id", "household_id"]
+          },
+        ]
+      }
+      governance_comments: {
+        Row: {
+          author_membership_id: string
+          body: string
+          created_at: string
+          deleted_at: string | null
+          document_id: string
+          household_id: string
+          id: string
+          requests_changes: boolean
+          version_id: string | null
+        }
+        Insert: {
+          author_membership_id: string
+          body: string
+          created_at?: string
+          deleted_at?: string | null
+          document_id: string
+          household_id: string
+          id?: string
+          requests_changes?: boolean
+          version_id?: string | null
+        }
+        Update: {
+          author_membership_id?: string
+          body?: string
+          created_at?: string
+          deleted_at?: string | null
+          document_id?: string
+          household_id?: string
+          id?: string
+          requests_changes?: boolean
+          version_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "governance_comments_author_membership_id_fkey"
+            columns: ["author_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "governance_comments_document_id_household_id_fkey"
+            columns: ["document_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "governance_documents"
+            referencedColumns: ["id", "household_id"]
+          },
+          {
+            foreignKeyName: "governance_comments_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "governance_comments_version_id_household_id_fkey"
+            columns: ["version_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "governance_document_versions"
+            referencedColumns: ["id", "household_id"]
+          },
+        ]
+      }
+      governance_document_versions: {
+        Row: {
+          acknowledgment_rules: Json
+          activated_at: string | null
+          activation_mode: string
+          approval_rules: Json
+          author_membership_id: string
+          change_summary: string | null
+          content_hash: string
+          created_at: string
+          document_id: string
+          effective_at: string | null
+          effective_until: string | null
+          expires_at: string | null
+          frozen_at: string | null
+          household_id: string
+          id: string
+          plain_text: string
+          prior_version_id: string | null
+          review_at: string | null
+          status: string
+          summary: string | null
+          superseded_by_version_id: string | null
+          title: string
+          version_number: number
+        }
+        Insert: {
+          acknowledgment_rules?: Json
+          activated_at?: string | null
+          activation_mode?: string
+          approval_rules?: Json
+          author_membership_id: string
+          change_summary?: string | null
+          content_hash: string
+          created_at?: string
+          document_id: string
+          effective_at?: string | null
+          effective_until?: string | null
+          expires_at?: string | null
+          frozen_at?: string | null
+          household_id: string
+          id?: string
+          plain_text?: string
+          prior_version_id?: string | null
+          review_at?: string | null
+          status?: string
+          summary?: string | null
+          superseded_by_version_id?: string | null
+          title: string
+          version_number: number
+        }
+        Update: {
+          acknowledgment_rules?: Json
+          activated_at?: string | null
+          activation_mode?: string
+          approval_rules?: Json
+          author_membership_id?: string
+          change_summary?: string | null
+          content_hash?: string
+          created_at?: string
+          document_id?: string
+          effective_at?: string | null
+          effective_until?: string | null
+          expires_at?: string | null
+          frozen_at?: string | null
+          household_id?: string
+          id?: string
+          plain_text?: string
+          prior_version_id?: string | null
+          review_at?: string | null
+          status?: string
+          summary?: string | null
+          superseded_by_version_id?: string | null
+          title?: string
+          version_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "governance_document_versions_author_membership_id_fkey"
+            columns: ["author_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "governance_document_versions_document_id_household_id_fkey"
+            columns: ["document_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "governance_documents"
+            referencedColumns: ["id", "household_id"]
+          },
+          {
+            foreignKeyName: "governance_document_versions_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "governance_versions_prior_fk"
+            columns: ["prior_version_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "governance_document_versions"
+            referencedColumns: ["id", "household_id"]
+          },
+          {
+            foreignKeyName: "governance_versions_superseded_by_fk"
+            columns: ["superseded_by_version_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "governance_document_versions"
+            referencedColumns: ["id", "household_id"]
+          },
+        ]
+      }
+      governance_documents: {
+        Row: {
+          active_version_id: string | null
+          archived_at: string | null
+          created_at: string
+          created_by_membership_id: string
+          current_version_id: string | null
+          document_class: string
+          household_id: string
+          id: string
+          is_financial: boolean
+          status: string
+          summary: string | null
+          template_id: string | null
+          title: string
+          updated_at: string
+          visibility: string
+        }
+        Insert: {
+          active_version_id?: string | null
+          archived_at?: string | null
+          created_at?: string
+          created_by_membership_id: string
+          current_version_id?: string | null
+          document_class: string
+          household_id: string
+          id?: string
+          is_financial?: boolean
+          status?: string
+          summary?: string | null
+          template_id?: string | null
+          title: string
+          updated_at?: string
+          visibility?: string
+        }
+        Update: {
+          active_version_id?: string | null
+          archived_at?: string | null
+          created_at?: string
+          created_by_membership_id?: string
+          current_version_id?: string | null
+          document_class?: string
+          household_id?: string
+          id?: string
+          is_financial?: boolean
+          status?: string
+          summary?: string | null
+          template_id?: string | null
+          title?: string
+          updated_at?: string
+          visibility?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "governance_documents_active_version_fk"
+            columns: ["active_version_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "governance_document_versions"
+            referencedColumns: ["id", "household_id"]
+          },
+          {
+            foreignKeyName: "governance_documents_created_by_membership_id_fkey"
+            columns: ["created_by_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "governance_documents_current_version_fk"
+            columns: ["current_version_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "governance_document_versions"
+            referencedColumns: ["id", "household_id"]
+          },
+          {
+            foreignKeyName: "governance_documents_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      governance_events: {
+        Row: {
+          actor_membership_id: string
+          body: string | null
+          created_at: string
+          document_id: string
+          event_type: string
+          household_id: string
+          id: string
+          payload: Json
+          version_id: string | null
+        }
+        Insert: {
+          actor_membership_id: string
+          body?: string | null
+          created_at?: string
+          document_id: string
+          event_type: string
+          household_id: string
+          id?: string
+          payload?: Json
+          version_id?: string | null
+        }
+        Update: {
+          actor_membership_id?: string
+          body?: string | null
+          created_at?: string
+          document_id?: string
+          event_type?: string
+          household_id?: string
+          id?: string
+          payload?: Json
+          version_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "governance_events_actor_membership_id_fkey"
+            columns: ["actor_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "governance_events_document_id_household_id_fkey"
+            columns: ["document_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "governance_documents"
+            referencedColumns: ["id", "household_id"]
+          },
+          {
+            foreignKeyName: "governance_events_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "governance_events_version_id_household_id_fkey"
+            columns: ["version_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "governance_document_versions"
+            referencedColumns: ["id", "household_id"]
+          },
+        ]
+      }
+      governance_expense_refs: {
+        Row: {
+          category_label: string | null
+          created_at: string
+          created_by_membership_id: string
+          document_id: string
+          expense_id: string | null
+          household_id: string
+          id: string
+          note: string | null
+          threshold_cents: number | null
+          version_id: string | null
+        }
+        Insert: {
+          category_label?: string | null
+          created_at?: string
+          created_by_membership_id: string
+          document_id: string
+          expense_id?: string | null
+          household_id: string
+          id?: string
+          note?: string | null
+          threshold_cents?: number | null
+          version_id?: string | null
+        }
+        Update: {
+          category_label?: string | null
+          created_at?: string
+          created_by_membership_id?: string
+          document_id?: string
+          expense_id?: string | null
+          household_id?: string
+          id?: string
+          note?: string | null
+          threshold_cents?: number | null
+          version_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "governance_expense_refs_created_by_membership_id_fkey"
+            columns: ["created_by_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "governance_expense_refs_document_id_household_id_fkey"
+            columns: ["document_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "governance_documents"
+            referencedColumns: ["id", "household_id"]
+          },
+          {
+            foreignKeyName: "governance_expense_refs_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "governance_expense_refs_version_id_household_id_fkey"
+            columns: ["version_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "governance_document_versions"
+            referencedColumns: ["id", "household_id"]
+          },
+        ]
+      }
+      governance_participants: {
+        Row: {
+          created_at: string
+          document_id: string
+          household_id: string
+          id: string
+          membership_id: string
+          role: string
+        }
+        Insert: {
+          created_at?: string
+          document_id: string
+          household_id: string
+          id?: string
+          membership_id: string
+          role?: string
+        }
+        Update: {
+          created_at?: string
+          document_id?: string
+          household_id?: string
+          id?: string
+          membership_id?: string
+          role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "governance_participants_document_id_household_id_fkey"
+            columns: ["document_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "governance_documents"
+            referencedColumns: ["id", "household_id"]
+          },
+          {
+            foreignKeyName: "governance_participants_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "governance_participants_membership_id_fkey"
+            columns: ["membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      governance_sections: {
+        Row: {
+          body: string | null
+          created_at: string
+          document_id: string
+          heading: string | null
+          household_id: string
+          id: string
+          payload: Json
+          position: number
+          section_type: string
+          version_id: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          document_id: string
+          heading?: string | null
+          household_id: string
+          id?: string
+          payload?: Json
+          position: number
+          section_type: string
+          version_id: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          document_id?: string
+          heading?: string | null
+          household_id?: string
+          id?: string
+          payload?: Json
+          position?: number
+          section_type?: string
+          version_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "governance_sections_document_id_household_id_fkey"
+            columns: ["document_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "governance_documents"
+            referencedColumns: ["id", "household_id"]
+          },
+          {
+            foreignKeyName: "governance_sections_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "governance_sections_version_id_household_id_fkey"
+            columns: ["version_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "governance_document_versions"
+            referencedColumns: ["id", "household_id"]
+          },
+        ]
+      }
+      governance_templates: {
+        Row: {
+          acknowledgment_rules: Json
+          active: boolean
+          approval_rules: Json
+          created_at: string
+          document_class: string
+          household_id: string | null
+          id: string
+          is_system: boolean
+          sections: Json
+          summary: string | null
+          template_key: string
+          title: string
+        }
+        Insert: {
+          acknowledgment_rules?: Json
+          active?: boolean
+          approval_rules?: Json
+          created_at?: string
+          document_class: string
+          household_id?: string | null
+          id?: string
+          is_system?: boolean
+          sections?: Json
+          summary?: string | null
+          template_key: string
+          title: string
+        }
+        Update: {
+          acknowledgment_rules?: Json
+          active?: boolean
+          approval_rules?: Json
+          created_at?: string
+          document_class?: string
+          household_id?: string | null
+          id?: string
+          is_system?: boolean
+          sections?: Json
+          summary?: string | null
+          template_key?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "governance_templates_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       household_invitations: {
         Row: {
           accepted_at: string | null
@@ -2075,6 +3044,493 @@ export type Database = {
             columns: ["household_id"]
             isOneToOne: true
             referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      household_transition_events: {
+        Row: {
+          actor_membership_id: string
+          body: string | null
+          created_at: string
+          event_type: string
+          household_id: string
+          id: string
+          payload: Json
+          workflow_id: string
+        }
+        Insert: {
+          actor_membership_id: string
+          body?: string | null
+          created_at?: string
+          event_type: string
+          household_id: string
+          id?: string
+          payload?: Json
+          workflow_id: string
+        }
+        Update: {
+          actor_membership_id?: string
+          body?: string | null
+          created_at?: string
+          event_type?: string
+          household_id?: string
+          id?: string
+          payload?: Json
+          workflow_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "household_transition_events_actor_membership_id_fkey"
+            columns: ["actor_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "household_transition_events_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "household_transition_events_workflow_id_household_id_fkey"
+            columns: ["workflow_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "household_transition_workflows"
+            referencedColumns: ["id", "household_id"]
+          },
+        ]
+      }
+      household_transition_inventory_links: {
+        Row: {
+          confirmed: boolean
+          created_at: string
+          created_by_membership_id: string
+          household_id: string
+          id: string
+          inventory_item_id: string
+          link_kind: string
+          note: string | null
+          workflow_id: string
+        }
+        Insert: {
+          confirmed?: boolean
+          created_at?: string
+          created_by_membership_id: string
+          household_id: string
+          id?: string
+          inventory_item_id: string
+          link_kind: string
+          note?: string | null
+          workflow_id: string
+        }
+        Update: {
+          confirmed?: boolean
+          created_at?: string
+          created_by_membership_id?: string
+          household_id?: string
+          id?: string
+          inventory_item_id?: string
+          link_kind?: string
+          note?: string | null
+          workflow_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "household_transition_inventor_inventory_item_id_household__fkey"
+            columns: ["inventory_item_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id", "household_id"]
+          },
+          {
+            foreignKeyName: "household_transition_inventory_li_created_by_membership_id_fkey"
+            columns: ["created_by_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "household_transition_inventory_li_workflow_id_household_id_fkey"
+            columns: ["workflow_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "household_transition_workflows"
+            referencedColumns: ["id", "household_id"]
+          },
+          {
+            foreignKeyName: "household_transition_inventory_links_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      household_transition_maintenance_links: {
+        Row: {
+          created_at: string
+          created_by_membership_id: string
+          household_id: string
+          id: string
+          maintenance_request_id: string
+          note: string | null
+          workflow_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by_membership_id: string
+          household_id: string
+          id?: string
+          maintenance_request_id: string
+          note?: string | null
+          workflow_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by_membership_id?: string
+          household_id?: string
+          id?: string
+          maintenance_request_id?: string
+          note?: string | null
+          workflow_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "household_transition_maintena_maintenance_request_id_house_fkey"
+            columns: ["maintenance_request_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "maintenance_requests"
+            referencedColumns: ["id", "household_id"]
+          },
+          {
+            foreignKeyName: "household_transition_maintenance__created_by_membership_id_fkey"
+            columns: ["created_by_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "household_transition_maintenance__workflow_id_household_id_fkey"
+            columns: ["workflow_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "household_transition_workflows"
+            referencedColumns: ["id", "household_id"]
+          },
+          {
+            foreignKeyName: "household_transition_maintenance_links_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      household_transition_private_fields: {
+        Row: {
+          created_at: string
+          field_kind: string
+          household_id: string
+          id: string
+          label: string | null
+          owner_membership_id: string
+          updated_at: string
+          value_text: string
+          workflow_id: string
+        }
+        Insert: {
+          created_at?: string
+          field_kind: string
+          household_id: string
+          id?: string
+          label?: string | null
+          owner_membership_id: string
+          updated_at?: string
+          value_text: string
+          workflow_id: string
+        }
+        Update: {
+          created_at?: string
+          field_kind?: string
+          household_id?: string
+          id?: string
+          label?: string | null
+          owner_membership_id?: string
+          updated_at?: string
+          value_text?: string
+          workflow_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "household_transition_private_fiel_workflow_id_household_id_fkey"
+            columns: ["workflow_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "household_transition_workflows"
+            referencedColumns: ["id", "household_id"]
+          },
+          {
+            foreignKeyName: "household_transition_private_fields_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "household_transition_private_fields_owner_membership_id_fkey"
+            columns: ["owner_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      household_transition_private_grants: {
+        Row: {
+          created_at: string
+          granted_by_membership_id: string
+          grantee_membership_id: string
+          household_id: string
+          id: string
+          private_field_id: string
+        }
+        Insert: {
+          created_at?: string
+          granted_by_membership_id: string
+          grantee_membership_id: string
+          household_id: string
+          id?: string
+          private_field_id: string
+        }
+        Update: {
+          created_at?: string
+          granted_by_membership_id?: string
+          grantee_membership_id?: string
+          household_id?: string
+          id?: string
+          private_field_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "household_transition_private__private_field_id_household_i_fkey"
+            columns: ["private_field_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "household_transition_private_fields"
+            referencedColumns: ["id", "household_id"]
+          },
+          {
+            foreignKeyName: "household_transition_private_gran_granted_by_membership_id_fkey"
+            columns: ["granted_by_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "household_transition_private_grants_grantee_membership_id_fkey"
+            columns: ["grantee_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "household_transition_private_grants_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      household_transition_tasks: {
+        Row: {
+          assignee_membership_id: string | null
+          completed_at: string | null
+          completed_by_membership_id: string | null
+          created_at: string
+          description: string | null
+          due_at: string | null
+          household_id: string
+          id: string
+          linked_chore_occurrence_id: string | null
+          linked_expense_id: string | null
+          linked_inventory_item_id: string | null
+          linked_maintenance_request_id: string | null
+          position: number
+          requires_explicit_confirmation: boolean
+          status: string
+          task_key: string
+          title: string
+          workflow_id: string
+        }
+        Insert: {
+          assignee_membership_id?: string | null
+          completed_at?: string | null
+          completed_by_membership_id?: string | null
+          created_at?: string
+          description?: string | null
+          due_at?: string | null
+          household_id: string
+          id?: string
+          linked_chore_occurrence_id?: string | null
+          linked_expense_id?: string | null
+          linked_inventory_item_id?: string | null
+          linked_maintenance_request_id?: string | null
+          position?: number
+          requires_explicit_confirmation?: boolean
+          status?: string
+          task_key: string
+          title: string
+          workflow_id: string
+        }
+        Update: {
+          assignee_membership_id?: string | null
+          completed_at?: string | null
+          completed_by_membership_id?: string | null
+          created_at?: string
+          description?: string | null
+          due_at?: string | null
+          household_id?: string
+          id?: string
+          linked_chore_occurrence_id?: string | null
+          linked_expense_id?: string | null
+          linked_inventory_item_id?: string | null
+          linked_maintenance_request_id?: string | null
+          position?: number
+          requires_explicit_confirmation?: boolean
+          status?: string
+          task_key?: string
+          title?: string
+          workflow_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "household_transition_tasks_assignee_membership_id_fkey"
+            columns: ["assignee_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "household_transition_tasks_completed_by_membership_id_fkey"
+            columns: ["completed_by_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "household_transition_tasks_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "household_transition_tasks_workflow_id_household_id_fkey"
+            columns: ["workflow_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "household_transition_workflows"
+            referencedColumns: ["id", "household_id"]
+          },
+        ]
+      }
+      household_transition_workflows: {
+        Row: {
+          cancelled_at: string | null
+          completed_at: string | null
+          completion_notes: string | null
+          coordinator_membership_id: string | null
+          created_at: string
+          created_by_membership_id: string
+          household_id: string
+          id: string
+          linked_document_id: string | null
+          membership_removal_scheduled_at: string | null
+          membership_removed_at: string | null
+          notice_date: string | null
+          planned_date: string | null
+          room_assignment: string | null
+          status: string
+          subject_membership_id: string
+          updated_at: string
+          visibility: string
+          workflow_type: string
+        }
+        Insert: {
+          cancelled_at?: string | null
+          completed_at?: string | null
+          completion_notes?: string | null
+          coordinator_membership_id?: string | null
+          created_at?: string
+          created_by_membership_id: string
+          household_id: string
+          id?: string
+          linked_document_id?: string | null
+          membership_removal_scheduled_at?: string | null
+          membership_removed_at?: string | null
+          notice_date?: string | null
+          planned_date?: string | null
+          room_assignment?: string | null
+          status?: string
+          subject_membership_id: string
+          updated_at?: string
+          visibility?: string
+          workflow_type: string
+        }
+        Update: {
+          cancelled_at?: string | null
+          completed_at?: string | null
+          completion_notes?: string | null
+          coordinator_membership_id?: string | null
+          created_at?: string
+          created_by_membership_id?: string
+          household_id?: string
+          id?: string
+          linked_document_id?: string | null
+          membership_removal_scheduled_at?: string | null
+          membership_removed_at?: string | null
+          notice_date?: string | null
+          planned_date?: string | null
+          room_assignment?: string | null
+          status?: string
+          subject_membership_id?: string
+          updated_at?: string
+          visibility?: string
+          workflow_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "household_transition_workflow_linked_document_id_household_fkey"
+            columns: ["linked_document_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "governance_documents"
+            referencedColumns: ["id", "household_id"]
+          },
+          {
+            foreignKeyName: "household_transition_workflows_coordinator_membership_id_fkey"
+            columns: ["coordinator_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "household_transition_workflows_created_by_membership_id_fkey"
+            columns: ["created_by_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "household_transition_workflows_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "household_transition_workflows_subject_membership_id_fkey"
+            columns: ["subject_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
             referencedColumns: ["id"]
           },
         ]
@@ -7966,6 +9422,91 @@ export type Database = {
         }
         Returns: undefined
       }
+      _governance_active_membership: {
+        Args: { p_household_id: string }
+        Returns: string
+      }
+      _governance_append_event: {
+        Args: {
+          p_actor: string
+          p_body?: string
+          p_document_id: string
+          p_event_type: string
+          p_household_id: string
+          p_payload?: Json
+          p_version_id?: string
+        }
+        Returns: undefined
+      }
+      _governance_assert_lifecycle: {
+        Args: { p_from: string; p_to: string }
+        Returns: undefined
+      }
+      _governance_audit: {
+        Args: {
+          p_after?: Json
+          p_before?: Json
+          p_entity_id: string
+          p_entity_type: string
+          p_event_type: string
+          p_household_id: string
+        }
+        Returns: undefined
+      }
+      _governance_hash_content: {
+        Args: {
+          p_plain_text: string
+          p_sections: Json
+          p_summary: string
+          p_title: string
+        }
+        Returns: string
+      }
+      _governance_insert_sections: {
+        Args: {
+          p_document_id: string
+          p_household_id: string
+          p_sections: Json
+          p_version_id: string
+        }
+        Returns: undefined
+      }
+      _governance_notify: {
+        Args: {
+          p_actor_membership_id: string
+          p_body: string
+          p_deep_link: string
+          p_entity_id: string
+          p_event_type: string
+          p_household_id: string
+          p_memberships: string[]
+          p_title: string
+        }
+        Returns: undefined
+      }
+      _governance_quorum_satisfied: {
+        Args: {
+          p_abstain_count: number
+          p_approve_count: number
+          p_changes_count: number
+          p_mode: string
+          p_pending_count: number
+          p_percentage: number
+          p_quorum: number
+          p_reject_count: number
+          p_required_count: number
+          p_total_voters: number
+        }
+        Returns: Json
+      }
+      _governance_sections_to_plain: {
+        Args: { p_sections: Json }
+        Returns: string
+      }
+      _is_financial_coordinator: {
+        Args: { p_household_id: string }
+        Returns: boolean
+      }
       _link_chore_occurrence_calendar: {
         Args: { p_occurrence_id: string }
         Returns: string
@@ -8169,12 +9710,20 @@ export type Database = {
         Returns: undefined
       }
       _sanitize_delivery_error: { Args: { p_error: string }; Returns: string }
+      _seed_transition_tasks: {
+        Args: { p_household_id: string; p_type: string; p_workflow_id: string }
+        Returns: undefined
+      }
       _set_chore_definition_status: {
         Args: { p_definition_id: string; p_status: string }
         Returns: string
       }
       _sync_obligation_settlement_status: {
         Args: { p_obligation_id: string }
+        Returns: undefined
+      }
+      _test_cleanup_governance_household: {
+        Args: { p_household_id: string }
         Returns: undefined
       }
       _test_cleanup_maintenance_household: {
@@ -8185,6 +9734,17 @@ export type Database = {
         Args: { p_household_id: string }
         Returns: undefined
       }
+      _transition_append_event: {
+        Args: {
+          p_actor: string
+          p_body?: string
+          p_event_type: string
+          p_household_id: string
+          p_payload?: Json
+          p_workflow_id: string
+        }
+        Returns: undefined
+      }
       _transition_chore_occurrence: {
         Args: {
           p_action: string
@@ -8193,6 +9753,18 @@ export type Database = {
           p_reason?: string
         }
         Returns: string
+      }
+      _transition_notify: {
+        Args: {
+          p_actor_membership_id: string
+          p_body: string
+          p_event_type: string
+          p_household_id: string
+          p_memberships: string[]
+          p_title: string
+          p_workflow_id: string
+        }
+        Returns: undefined
       }
       _valid_chore_reminder_offsets: {
         Args: { p_offsets: number[] }
@@ -8228,6 +9800,41 @@ export type Database = {
         Args: { p_transfer_id: string }
         Returns: string
       }
+      acknowledge_governance_version: {
+        Args: { p_comment?: string; p_version_id: string }
+        Returns: string
+      }
+      activate_governance_version: {
+        Args: {
+          p_document_id: string
+          p_effective_at?: string
+          p_version_id?: string
+        }
+        Returns: string
+      }
+      add_governance_attachment: {
+        Args: {
+          p_comment_id?: string
+          p_document_id?: string
+          p_file_name: string
+          p_household_id: string
+          p_mime_type: string
+          p_size_bytes: number
+          p_storage_path: string
+          p_transition_task_id?: string
+          p_version_id?: string
+        }
+        Returns: string
+      }
+      add_governance_comment: {
+        Args: {
+          p_body: string
+          p_document_id: string
+          p_requests_changes?: boolean
+          p_version_id?: string
+        }
+        Returns: string
+      }
       add_maintenance_attachment: {
         Args: {
           p_file_name: string
@@ -8242,8 +9849,16 @@ export type Database = {
         Args: { p_body: string; p_request_id: string }
         Returns: string
       }
+      advance_household_transition: {
+        Args: { p_next_status: string; p_notes?: string; p_workflow_id: string }
+        Returns: string
+      }
       approve_chore_reassignment: {
         Args: { p_request_id: string; p_resolution_note?: string }
+        Returns: string
+      }
+      archive_governance_document: {
+        Args: { p_document_id: string; p_reason?: string }
         Returns: string
       }
       archive_household: {
@@ -8299,6 +9914,14 @@ export type Database = {
         Args: { p_expense_id: string }
         Returns: boolean
       }
+      can_manage_governance_document: {
+        Args: { p_document_id: string }
+        Returns: boolean
+      }
+      can_manage_transition_workflow: {
+        Args: { p_workflow_id: string }
+        Returns: boolean
+      }
       can_view_chore_definition: {
         Args: { p_definition_id: string }
         Returns: boolean
@@ -8308,6 +9931,10 @@ export type Database = {
         Returns: boolean
       }
       can_view_expense: { Args: { p_expense_id: string }; Returns: boolean }
+      can_view_governance_document: {
+        Args: { p_document_id: string }
+        Returns: boolean
+      }
       can_view_inventory_item: { Args: { p_item_id: string }; Returns: boolean }
       can_view_maintenance_request: {
         Args: { p_request_id: string }
@@ -8318,6 +9945,14 @@ export type Database = {
       can_view_pantry_item: { Args: { p_item_id: string }; Returns: boolean }
       can_view_recipe: { Args: { p_recipe_id: string }; Returns: boolean }
       can_view_supply_item: { Args: { p_item_id: string }; Returns: boolean }
+      can_view_transition_private_field: {
+        Args: { p_field_id: string }
+        Returns: boolean
+      }
+      can_view_transition_workflow: {
+        Args: { p_workflow_id: string }
+        Returns: boolean
+      }
       cancel_calendar_event: {
         Args: {
           p_coordinator_override?: boolean
@@ -8336,6 +9971,10 @@ export type Database = {
       }
       cancel_chore_occurrence: {
         Args: { p_occurrence_id: string; p_reason?: string }
+        Returns: string
+      }
+      cancel_household_transition: {
+        Args: { p_reason?: string; p_workflow_id: string }
         Returns: string
       }
       cancel_maintenance_appointment: {
@@ -8488,6 +10127,19 @@ export type Database = {
       }
       complete_chore_occurrence: {
         Args: { p_completion_note?: string; p_occurrence_id: string }
+        Returns: string
+      }
+      complete_household_transition: {
+        Args: {
+          p_notes?: string
+          p_removal_at?: string
+          p_schedule_membership_removal?: boolean
+          p_workflow_id: string
+        }
+        Returns: string
+      }
+      complete_household_transition_task: {
+        Args: { p_note?: string; p_task_id: string }
         Returns: string
       }
       complete_notification_delivery: {
@@ -8741,6 +10393,22 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      create_governance_document: {
+        Args: {
+          p_acknowledgment_rules?: Json
+          p_approval_rules?: Json
+          p_document_class: string
+          p_household_id: string
+          p_is_financial?: boolean
+          p_participant_membership_ids?: string[]
+          p_sections?: Json
+          p_summary?: string
+          p_template_id?: string
+          p_title: string
+          p_visibility?: string
+        }
+        Returns: string
+      }
       create_household: {
         Args: {
           p_acknowledge_reimbursement_policy?: boolean
@@ -8784,6 +10452,20 @@ export type Database = {
       }
       create_household_location: {
         Args: { p_household_id: string; p_name: string; p_parent_id?: string }
+        Returns: string
+      }
+      create_household_transition: {
+        Args: {
+          p_coordinator_membership_id?: string
+          p_household_id: string
+          p_linked_document_id?: string
+          p_notice_date?: string
+          p_planned_date?: string
+          p_room_assignment?: string
+          p_subject_membership_id: string
+          p_visibility?: string
+          p_workflow_type: string
+        }
         Returns: string
       }
       create_inventory_item: {
@@ -9006,6 +10688,18 @@ export type Database = {
         }
         Returns: string
       }
+      create_revised_governance_version: {
+        Args: {
+          p_acknowledgment_rules?: Json
+          p_approval_rules?: Json
+          p_change_summary?: string
+          p_document_id: string
+          p_sections?: Json
+          p_summary?: string
+          p_title?: string
+        }
+        Returns: string
+      }
       create_shopping_item: {
         Args: {
           p_category?: string
@@ -9180,11 +10874,28 @@ export type Database = {
         Args: { p_meal_request_id: string }
         Returns: Json
       }
+      governance_approval_status: {
+        Args: { p_request_id: string }
+        Returns: Json
+      }
+      grant_transition_private_field: {
+        Args: { p_field_id: string; p_grantee_membership_id: string }
+        Returns: string
+      }
       has_responsibility: {
         Args: { p_household_id: string; p_roles: string[] }
         Returns: boolean
       }
       hook_before_user_created: { Args: { event: Json }; Returns: Json }
+      instantiate_governance_template: {
+        Args: {
+          p_household_id: string
+          p_template_id: string
+          p_title?: string
+          p_visibility?: string
+        }
+        Returns: string
+      }
       is_active_member: { Args: { p_household_id: string }; Returns: boolean }
       is_calendar_event_participant: {
         Args: { p_event_id: string }
@@ -9198,6 +10909,17 @@ export type Database = {
       leave_household: {
         Args: { p_household_id: string; p_reason?: string }
         Returns: undefined
+      }
+      link_governance_calendar_event: {
+        Args: {
+          p_calendar_event_id: string
+          p_document_id?: string
+          p_household_id: string
+          p_link_kind: string
+          p_transition_workflow_id?: string
+          p_version_id?: string
+        }
+        Returns: string
       }
       link_maintenance_chore: {
         Args: {
@@ -9226,6 +10948,23 @@ export type Database = {
           p_link_kind: string
           p_resource_id: string
           p_resource_type: string
+        }
+        Returns: string
+      }
+      link_transition_inventory_item: {
+        Args: {
+          p_inventory_item_id: string
+          p_link_kind: string
+          p_note?: string
+          p_workflow_id: string
+        }
+        Returns: string
+      }
+      link_transition_maintenance_request: {
+        Args: {
+          p_maintenance_request_id: string
+          p_note?: string
+          p_workflow_id: string
         }
         Returns: string
       }
@@ -9360,6 +11099,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      override_governance_approval: {
+        Args: { p_activate?: boolean; p_reason: string; p_request_id: string }
+        Returns: string
+      }
       pause_chore_definition: {
         Args: { p_definition_id: string }
         Returns: string
@@ -9367,6 +11110,14 @@ export type Database = {
       process_due_scheduled_notifications: {
         Args: { p_limit?: number }
         Returns: number
+      }
+      propose_governance_version: {
+        Args: {
+          p_document_id: string
+          p_participant_membership_ids?: string[]
+          p_version_id?: string
+        }
+        Returns: string
       }
       rank_recipe_candidates: {
         Args: { p_meal_request_id: string }
@@ -9387,6 +11138,14 @@ export type Database = {
       recalculate_meal_shopping_prep: {
         Args: { p_meal_plan_id: string }
         Returns: string
+      }
+      recommendation_weight_table: {
+        Args: never
+        Returns: {
+          component_key: string
+          mode: string
+          weight: number
+        }[]
       }
       reconcile_calendar_event_occurrences: {
         Args: { p_event_id: string; p_occurrences: Json }
@@ -9503,6 +11262,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      remove_governance_attachment: {
+        Args: { p_attachment_id: string; p_reason?: string }
+        Returns: string
+      }
       remove_household_member: {
         Args: {
           p_household_id: string
@@ -9595,6 +11358,10 @@ export type Database = {
         }
         Returns: string
       }
+      respond_to_governance_approval: {
+        Args: { p_comment?: string; p_decision: string; p_request_id: string }
+        Returns: string
+      }
       respond_to_meal_plan: {
         Args: {
           p_guest_count?: number
@@ -9677,6 +11444,20 @@ export type Database = {
       }
       run_recipe_recommendation: {
         Args: { p_meal_request_id: string }
+        Returns: string
+      }
+      save_governance_draft: {
+        Args: {
+          p_acknowledgment_rules?: Json
+          p_approval_rules?: Json
+          p_change_summary?: string
+          p_create_new_version?: boolean
+          p_document_id: string
+          p_sections?: Json
+          p_summary?: string
+          p_title?: string
+          p_visibility?: string
+        }
         Returns: string
       }
       save_imported_recipe: {
@@ -9929,6 +11710,15 @@ export type Database = {
         }
         Returns: string
       }
+      upsert_transition_private_field: {
+        Args: {
+          p_field_kind: string
+          p_label?: string
+          p_value_text: string
+          p_workflow_id: string
+        }
+        Returns: string
+      }
       verify_chore_completion: {
         Args: { p_occurrence_id: string }
         Returns: string
@@ -9993,6 +11783,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      withdraw_governance_proposal: {
+        Args: { p_document_id: string; p_reason?: string }
+        Returns: string
       }
       write_audit_event: {
         Args: {

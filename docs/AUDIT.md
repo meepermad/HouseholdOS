@@ -186,6 +186,20 @@ Preference/feedback audit payloads must not include preference signals, numeric 
 - `maintenance.evidence_added`
 - `maintenance.expense_linked`
 
+## Event types (Phase 8 governance)
+
+- `governance.draft_created`
+- `governance.proposed`
+- `governance.comment_added`
+- `governance.approval_response`
+- `governance.activated`
+- `governance.acknowledged`
+- `governance.archived`
+- `governance.coordinator_override`
+- `governance.transition_created`
+- `governance.transition_completed`
+- `governance.calendar_linked`
+
 Maintenance audit payloads must not include raw storage paths, private evidence URLs, or private comment bodies beyond redacted flags.
 
 ## Shape

@@ -60,6 +60,17 @@ export const CAPABILITIES = [
   "maintenance.create",
   "maintenance.manage_own",
   "maintenance.coordinator_override",
+  "governance.view",
+  "governance.create",
+  "governance.edit_own_draft",
+  "governance.propose",
+  "governance.comment",
+  "governance.approve",
+  "governance.activate",
+  "governance.archive",
+  "governance.manage_templates",
+  "governance.manage_transitions",
+  "governance.coordinator_override",
 ] as const;
 
 export type Capability = (typeof CAPABILITIES)[number];
@@ -125,6 +136,16 @@ const MAINTENANCE_MEMBER_CAPABILITIES = [
   "maintenance.manage_own",
 ] as const satisfies readonly Capability[];
 
+/** Governance — members may view active policies; create/propose when granted. */
+const GOVERNANCE_MEMBER_CAPABILITIES = [
+  "governance.view",
+  "governance.create",
+  "governance.edit_own_draft",
+  "governance.propose",
+  "governance.comment",
+  "governance.approve",
+] as const satisfies readonly Capability[];
+
 const ROLE_CAPABILITIES: Record<HouseholdResponsibility, readonly Capability[]> = {
   member: [
     "household.view",
@@ -137,6 +158,7 @@ const ROLE_CAPABILITIES: Record<HouseholdResponsibility, readonly Capability[]> 
     ...RESOURCE_MEMBER_CAPABILITIES,
     ...MEAL_MEMBER_CAPABILITIES,
     ...MAINTENANCE_MEMBER_CAPABILITIES,
+    ...GOVERNANCE_MEMBER_CAPABILITIES,
   ],
   household_coordinator: [
     "household.view",
@@ -156,6 +178,7 @@ const ROLE_CAPABILITIES: Record<HouseholdResponsibility, readonly Capability[]> 
     ...RESOURCE_MEMBER_CAPABILITIES,
     ...MEAL_MEMBER_CAPABILITIES,
     ...MAINTENANCE_MEMBER_CAPABILITIES,
+    ...GOVERNANCE_MEMBER_CAPABILITIES,
     "meal.settings",
     // Only the household coordinator may edit/cancel household-visible events
     // organized by someone else.
@@ -165,6 +188,11 @@ const ROLE_CAPABILITIES: Record<HouseholdResponsibility, readonly Capability[]> 
     "responsibility.manage",
     "resource.coordinator_override",
     "maintenance.coordinator_override",
+    "governance.activate",
+    "governance.archive",
+    "governance.manage_templates",
+    "governance.manage_transitions",
+    "governance.coordinator_override",
   ],
   financial_coordinator: [
     "household.view",
@@ -178,6 +206,9 @@ const ROLE_CAPABILITIES: Record<HouseholdResponsibility, readonly Capability[]> 
     ...RESOURCE_MEMBER_CAPABILITIES,
     ...MEAL_MEMBER_CAPABILITIES,
     ...MAINTENANCE_MEMBER_CAPABILITIES,
+    ...GOVERNANCE_MEMBER_CAPABILITIES,
+    // Financial coordinators may approve financial documents via RPC rules only —
+    // they do not receive governance.coordinator_override.
   ],
 };
 

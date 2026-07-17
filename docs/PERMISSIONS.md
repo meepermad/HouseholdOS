@@ -94,6 +94,17 @@ anonymized explanations only. Coordinators do not bypass preference privacy.
 | `maintenance.create` | yes | yes | yes |
 | `maintenance.manage_own` | yes | yes | yes |
 | `maintenance.coordinator_override` | no | yes | **no** |
+| `governance.view` | yes | yes | yes |
+| `governance.create` | yes | yes | yes |
+| `governance.edit_own_draft` | yes | yes | yes |
+| `governance.propose` | yes | yes | yes |
+| `governance.comment` | yes | yes | yes |
+| `governance.approve` | yes | yes | yes |
+| `governance.activate` | no | yes | no |
+| `governance.archive` | no | yes | no |
+| `governance.manage_templates` | no | yes | no |
+| `governance.manage_transitions` | no | yes | no |
+| `governance.coordinator_override` | no | yes | **no** |
 
 Maintenance expense links require same-household expenses and existing financial permissions. Linking does not confirm or allocate an expense. Private evidence is limited to viewers authorized for the request; raw storage paths are not placed in notifications.
 

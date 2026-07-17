@@ -203,8 +203,9 @@ Phase 5 — Chores / responsibility rotations on calendar + notifications
 Phase 6 — Inventory, supplies, shopping lists, pantry
 Phase 6.5 — Recipes, meal requests, meal planning, meal-prep batches
 Phase 6.6 — Secure recipe URL import and review
-Phase 7 — Preference-aware recipe recommendations + maintenance / repair coordination (current)
-Phase 8 — Household agreements, policies, approvals, acknowledgments, move-in/out, document retention
+Phase 7 — Preference-aware recipe recommendations + maintenance / repair coordination
+Phase 8 — Household agreements, policies, approvals, acknowledgments, move-in/out, document retention (current)
+Phase 9 — Broader household records / landlord portals / advanced analytics (future)
 Later — LifeOS connector; optional Google/Apple calendar sync
 ```
 
@@ -223,6 +224,12 @@ Key tables: `recipe_recommendation_runs`, `recipe_recommendation_results`, `reci
 Separate domain (never mixed into meal/recipe tables): requests, assignments, append-only events, actions, chore/calendar/expense/inventory links, vendors, quotes, warranty claims, and private evidence (`maintenance-evidence` bucket; JPEG/PNG/WebP/PDF; signed URLs only).
 
 Lifecycle is RPC-enforced. Emergency guidance is deterministic and never claims emergency services were contacted. `financial_coordinator` does not receive `maintenance.coordinator_override`.
+
+## Phase 8 — Governance
+
+Separate domain under `src/lib/governance/` and `/app/[householdId]/governance`: versioned household agreements/policies, section editor, proposal/approval/acknowledgment workflows, move-in/out transition checklists, private transition fields, and `governance-attachments` storage.
+
+Writes are RPC-only (`householdos.governance_mutation`). Approved/active versions are immutable. Coordinator override never fabricates individual approvals. Financial coordinator approval is limited to financial documents. Membership is never removed merely by creating a move-out workflow.
 
 ## Out of scope (current)
 

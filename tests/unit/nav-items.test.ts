@@ -19,9 +19,11 @@ describe("nav items growth rules", () => {
       "inbox",
       "house",
       "maintenance",
+      "governance",
     ]);
     expect(HOUSEHOLD_NAV_ITEMS.some((i) => i.key === "house" && i.enabled)).toBe(true);
     expect(HOUSEHOLD_NAV_ITEMS.some((i) => i.key === "maintenance" && i.enabled)).toBe(true);
+    expect(HOUSEHOLD_NAV_ITEMS.some((i) => i.key === "governance" && i.enabled)).toBe(true);
   });
 
   it("keeps the bottom bar at or under the primary cap", () => {
@@ -35,7 +37,7 @@ describe("nav items growth rules", () => {
     ]);
   });
 
-  it("lists primary items before settings, inbox, house, and maintenance", () => {
+  it("lists primary items before settings, inbox, house, maintenance, and governance", () => {
     expect(sidebarNavItems().map((i) => i.key)).toEqual([
       "home",
       "calendar",
@@ -45,15 +47,17 @@ describe("nav items growth rules", () => {
       "inbox",
       "house",
       "maintenance",
+      "governance",
     ]);
   });
 
-  it("exposes house and maintenance under more for mobile overflow", () => {
+  it("exposes house, maintenance, and governance under more for mobile overflow", () => {
     expect(moreNavItems().map((i) => i.key)).toEqual([
       "settings",
       "inbox",
       "house",
       "maintenance",
+      "governance",
     ]);
   });
 

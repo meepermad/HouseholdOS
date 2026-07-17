@@ -17,6 +17,10 @@ import {
   waitingStatusSchema,
 } from "@/lib/validations/maintenance";
 import { SAFETY_HAZARD_FLAGS, type SafetyHazardFlag } from "@/lib/maintenance";
+import {
+  validateMaintenanceEvidence,
+} from "@/lib/maintenance/evidence";
+import { MAINTENANCE_EVIDENCE_BUCKET } from "@/lib/storage/signed-urls";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type UntypedDb = any;
@@ -39,6 +43,7 @@ function invalidate(householdId: string, requestId?: string) {
   revalidatePath(`/app/${householdId}`);
   if (requestId) {
     revalidatePath(`/app/${householdId}/maintenance/${requestId}`);
+    revalidatePath(`/app/${householdId}/maintenance/${requestId}/evidence`);
   }
 }
 
@@ -339,6 +344,78 @@ export async function createMaintenanceVendorAction(
     if ((error as { digest?: string })?.digest?.startsWith("NEXT_REDIRECT")) {
       throw error;
     }
+    return { ok: false, error: toPublicErrorMessage(error) };
+  }
+}
+
+export async function uploadMaintenanceEvidenceAction(
+  _prev: ActionResult | null,
+  formData: FormData,
+): Promise<ActionResult> {
+  try {
+    const householdId = str(formData.get("householdId"));
+    const requestId = str(formData.get("requestId"));
+    const file = formData.get("file");
+    if (!(file instanceof File) || file.size === 0) {
+      return { ok: false, error: "Choose a file to upload" };
+    }
+    const { supabase } = await context(householdId, "maintenance.create");
+
+    const { count } = await supabase
+      .from("maintenance_attachments")
+      .select("id", { count: "exact", head: true })
+      .eq("request_id", requestId)
+      .is("deleted_at", null);
+
+    const validated = validateMaintenanceEvidence({
+      mimeType: file.type,
+      fileName: file.name,
+      sizeBytes: file.size,
+      existingCount: count ?? 0,
+    });
+    if (!validated.ok) return { ok: false, error: validated.error };
+
+    const storagePath = `${householdId}/${requestId}/${crypto.randomUUID()}.${validated.extension}`;
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    const { error: uploadError } = await supabase.storage
+      .from(MAINTENANCE_EVIDENCE_BUCKET)
+      .upload(storagePath, bytes, {
+        contentType: validated.mimeType,
+        upsert: false,
+      });
+    if (uploadError) return { ok: false, error: uploadError.message };
+
+    const { error } = await supabase.rpc("add_maintenance_attachment", {
+      p_request_id: requestId,
+      p_storage_path: storagePath,
+      p_mime_type: validated.mimeType,
+      p_file_name: file.name,
+      p_size_bytes: file.size,
+    });
+    if (error) return { ok: false, error: error.message };
+    invalidate(householdId, requestId);
+    return { ok: true };
+  } catch (error) {
+    return { ok: false, error: toPublicErrorMessage(error) };
+  }
+}
+
+export async function removeMaintenanceEvidenceAction(
+  _prev: ActionResult | null,
+  formData: FormData,
+): Promise<ActionResult> {
+  try {
+    const householdId = str(formData.get("householdId"));
+    const requestId = str(formData.get("requestId"));
+    const attachmentId = str(formData.get("attachmentId"));
+    const { supabase } = await context(householdId, "maintenance.manage_own");
+    const { error } = await supabase.rpc("remove_maintenance_attachment", {
+      p_attachment_id: attachmentId,
+    });
+    if (error) return { ok: false, error: error.message };
+    invalidate(householdId, requestId);
+    return { ok: true };
+  } catch (error) {
     return { ok: false, error: toPublicErrorMessage(error) };
   }
 }

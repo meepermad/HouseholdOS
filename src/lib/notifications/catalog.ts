@@ -133,6 +133,31 @@ export const EVENT_AGREEMENT_ACKNOWLEDGMENT_REQUIRED =
 /** @deprecated Prefer EVENT_AGREEMENT_ACKNOWLEDGMENT_REQUIRED */
 export const EVENT_AGREEMENT_PROPOSED = EVENT_AGREEMENT_ACKNOWLEDGMENT_REQUIRED;
 export const EVENT_AGREEMENT_ACCEPTED = "agreement.accepted" as const;
+
+export const EVENT_GOVERNANCE_APPROVAL_REQUESTED =
+  "governance.approval_requested" as const;
+export const EVENT_GOVERNANCE_CHANGES_REQUESTED =
+  "governance.changes_requested" as const;
+export const EVENT_GOVERNANCE_PROPOSAL_REJECTED =
+  "governance.proposal_rejected" as const;
+export const EVENT_GOVERNANCE_PROPOSAL_APPROVED =
+  "governance.proposal_approved" as const;
+export const EVENT_GOVERNANCE_DOCUMENT_ACTIVATED =
+  "governance.document_activated" as const;
+export const EVENT_GOVERNANCE_DOCUMENT_SUPERSEDED =
+  "governance.document_superseded" as const;
+export const EVENT_GOVERNANCE_ACKNOWLEDGMENT_REQUESTED =
+  "governance.acknowledgment_requested" as const;
+export const EVENT_GOVERNANCE_ACKNOWLEDGMENT_OVERDUE =
+  "governance.acknowledgment_overdue" as const;
+export const EVENT_GOVERNANCE_TRANSITION_TASK =
+  "governance.transition_task_assigned" as const;
+export const EVENT_GOVERNANCE_TRANSITION_COMPLETED =
+  "governance.transition_completed" as const;
+export const EVENT_GOVERNANCE_MOVE_IN_CREATED =
+  "governance.move_in_created" as const;
+export const EVENT_GOVERNANCE_MOVE_OUT_CREATED =
+  "governance.move_out_created" as const;
 export const EVENT_HOUSEHOLD_INVITATION_CREATED =
   "household.invitation_created" as const;
 export const EVENT_HOUSEHOLD_INVITATION_ACCEPTED =
@@ -840,44 +865,176 @@ export const NOTIFICATION_CATALOG: Readonly<Record<string, CatalogEntry>> = {
     category: "approvals",
     defaultUrgency: "high",
     recipientRule: "explicit",
-    deepLinkPattern: `${APP_LINK}/approvals/{entityId}`,
+    deepLinkPattern: `${APP_LINK}/governance/documents/{entityId}`,
     digestAllowed: false,
     actionOriented: true,
     privacy: "generic_ok",
-    active: false,
+    active: true,
   }),
   [EVENT_APPROVAL_DECIDED]: entry({
     eventType: EVENT_APPROVAL_DECIDED,
     category: "approvals",
     defaultUrgency: "normal",
     recipientRule: "raiser",
-    deepLinkPattern: `${APP_LINK}/approvals/{entityId}`,
+    deepLinkPattern: `${APP_LINK}/governance/documents/{entityId}`,
     digestAllowed: true,
     actionOriented: false,
     privacy: "generic_ok",
-    active: false,
+    active: true,
   }),
   [EVENT_AGREEMENT_ACKNOWLEDGMENT_REQUIRED]: entry({
     eventType: EVENT_AGREEMENT_ACKNOWLEDGMENT_REQUIRED,
     category: "agreements",
     defaultUrgency: "normal",
     recipientRule: "other_active_members",
-    deepLinkPattern: `${APP_LINK}/agreements/{entityId}`,
+    deepLinkPattern: `${APP_LINK}/governance/acknowledgments`,
     digestAllowed: true,
     actionOriented: true,
     privacy: "generic_ok",
-    active: false,
+    active: true,
   }),
   [EVENT_AGREEMENT_ACCEPTED]: entry({
     eventType: EVENT_AGREEMENT_ACCEPTED,
     category: "agreements",
     defaultUrgency: "low",
     recipientRule: "involved_parties",
-    deepLinkPattern: `${APP_LINK}/agreements/{entityId}`,
+    deepLinkPattern: `${APP_LINK}/governance/documents/{entityId}`,
     digestAllowed: true,
     actionOriented: false,
     privacy: "generic_ok",
-    active: false,
+    active: true,
+  }),
+  [EVENT_GOVERNANCE_APPROVAL_REQUESTED]: entry({
+    eventType: EVENT_GOVERNANCE_APPROVAL_REQUESTED,
+    category: "approvals",
+    defaultUrgency: "high",
+    recipientRule: "explicit",
+    deepLinkPattern: `${APP_LINK}/governance/documents/{entityId}`,
+    digestAllowed: false,
+    actionOriented: true,
+    privacy: "generic_ok",
+    active: true,
+  }),
+  [EVENT_GOVERNANCE_CHANGES_REQUESTED]: entry({
+    eventType: EVENT_GOVERNANCE_CHANGES_REQUESTED,
+    category: "approvals",
+    defaultUrgency: "normal",
+    recipientRule: "explicit",
+    deepLinkPattern: `${APP_LINK}/governance/documents/{entityId}`,
+    digestAllowed: false,
+    actionOriented: true,
+    privacy: "generic_ok",
+    active: true,
+  }),
+  [EVENT_GOVERNANCE_PROPOSAL_REJECTED]: entry({
+    eventType: EVENT_GOVERNANCE_PROPOSAL_REJECTED,
+    category: "approvals",
+    defaultUrgency: "high",
+    recipientRule: "explicit",
+    deepLinkPattern: `${APP_LINK}/governance/documents/{entityId}`,
+    digestAllowed: true,
+    actionOriented: false,
+    privacy: "generic_ok",
+    active: true,
+  }),
+  [EVENT_GOVERNANCE_PROPOSAL_APPROVED]: entry({
+    eventType: EVENT_GOVERNANCE_PROPOSAL_APPROVED,
+    category: "approvals",
+    defaultUrgency: "normal",
+    recipientRule: "explicit",
+    deepLinkPattern: `${APP_LINK}/governance/documents/{entityId}`,
+    digestAllowed: true,
+    actionOriented: true,
+    privacy: "generic_ok",
+    active: true,
+  }),
+  [EVENT_GOVERNANCE_DOCUMENT_ACTIVATED]: entry({
+    eventType: EVENT_GOVERNANCE_DOCUMENT_ACTIVATED,
+    category: "agreements",
+    defaultUrgency: "normal",
+    recipientRule: "explicit",
+    deepLinkPattern: `${APP_LINK}/governance/documents/{entityId}`,
+    digestAllowed: true,
+    actionOriented: false,
+    privacy: "generic_ok",
+    active: true,
+  }),
+  [EVENT_GOVERNANCE_DOCUMENT_SUPERSEDED]: entry({
+    eventType: EVENT_GOVERNANCE_DOCUMENT_SUPERSEDED,
+    category: "agreements",
+    defaultUrgency: "normal",
+    recipientRule: "explicit",
+    deepLinkPattern: `${APP_LINK}/governance/documents/{entityId}`,
+    digestAllowed: true,
+    actionOriented: false,
+    privacy: "generic_ok",
+    active: true,
+  }),
+  [EVENT_GOVERNANCE_ACKNOWLEDGMENT_REQUESTED]: entry({
+    eventType: EVENT_GOVERNANCE_ACKNOWLEDGMENT_REQUESTED,
+    category: "agreements",
+    defaultUrgency: "normal",
+    recipientRule: "explicit",
+    deepLinkPattern: `${APP_LINK}/governance/acknowledgments`,
+    digestAllowed: true,
+    actionOriented: true,
+    privacy: "generic_ok",
+    active: true,
+  }),
+  [EVENT_GOVERNANCE_ACKNOWLEDGMENT_OVERDUE]: entry({
+    eventType: EVENT_GOVERNANCE_ACKNOWLEDGMENT_OVERDUE,
+    category: "agreements",
+    defaultUrgency: "high",
+    recipientRule: "explicit",
+    deepLinkPattern: `${APP_LINK}/governance/acknowledgments`,
+    digestAllowed: false,
+    actionOriented: true,
+    privacy: "generic_ok",
+    active: true,
+  }),
+  [EVENT_GOVERNANCE_TRANSITION_TASK]: entry({
+    eventType: EVENT_GOVERNANCE_TRANSITION_TASK,
+    category: "agreements",
+    defaultUrgency: "normal",
+    recipientRule: "explicit",
+    deepLinkPattern: `${APP_LINK}/governance/transitions/{entityId}`,
+    digestAllowed: true,
+    actionOriented: true,
+    privacy: "generic_ok",
+    active: true,
+  }),
+  [EVENT_GOVERNANCE_TRANSITION_COMPLETED]: entry({
+    eventType: EVENT_GOVERNANCE_TRANSITION_COMPLETED,
+    category: "agreements",
+    defaultUrgency: "normal",
+    recipientRule: "explicit",
+    deepLinkPattern: `${APP_LINK}/governance/transitions/{entityId}`,
+    digestAllowed: true,
+    actionOriented: false,
+    privacy: "generic_ok",
+    active: true,
+  }),
+  [EVENT_GOVERNANCE_MOVE_IN_CREATED]: entry({
+    eventType: EVENT_GOVERNANCE_MOVE_IN_CREATED,
+    category: "agreements",
+    defaultUrgency: "normal",
+    recipientRule: "explicit",
+    deepLinkPattern: `${APP_LINK}/governance/transitions/{entityId}`,
+    digestAllowed: true,
+    actionOriented: true,
+    privacy: "generic_ok",
+    active: true,
+  }),
+  [EVENT_GOVERNANCE_MOVE_OUT_CREATED]: entry({
+    eventType: EVENT_GOVERNANCE_MOVE_OUT_CREATED,
+    category: "agreements",
+    defaultUrgency: "normal",
+    recipientRule: "explicit",
+    deepLinkPattern: `${APP_LINK}/governance/transitions/{entityId}`,
+    digestAllowed: true,
+    actionOriented: true,
+    privacy: "generic_ok",
+    active: true,
   }),
   [EVENT_HOUSEHOLD_INVITATION_CREATED]: entry({
     eventType: EVENT_HOUSEHOLD_INVITATION_CREATED,
