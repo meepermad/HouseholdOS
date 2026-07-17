@@ -150,6 +150,26 @@ Feed tokens are per-user and per-household. Scope `visible_to_me` exports events
 
 Push endpoints are capability URLs — never placed in notification payloads or audit details.
 
+## Receipts (launch)
+
+| Capability | Rule |
+|---|---|
+| Upload receipt | Active member; storage path must be `{householdId}/…` |
+| View receipt draft / OCR / line items / signed URL | Uploader, financial coordinator, or (when linked) expense creator / payer / allocation participant via `can_view_expense_receipt` |
+| Edit / confirm receipt as draft expense | Uploader or financial coordinator via `can_edit_expense_receipt` |
+| Unrelated active member | Denied for unconfirmed drafts and private OCR payloads |
+| Removed / other-household member | Denied |
+| Claim / complete OCR jobs | `service_role` + `DOCUMENT_JOB_WORKER_SECRET` HTTP worker only |
+
+## Record comments (launch)
+
+| Capability | Rule |
+|---|---|
+| List / add comment | Must `can_view_comment_parent` **and** `can_comment_on_parent` for the same household — membership alone is insufficient |
+| Edit comment | Author within 15-minute edit window; parent must still be visible |
+| Soft-delete comment | Author or household coordinator; parent must still be visible |
+| Change parent lifecycle via comment | Forbidden |
+
 ## Payment visibility
 
 Active household members may see public payment fields (parties, amount, method category, status, claimed date, public note, allocations, related expenses).

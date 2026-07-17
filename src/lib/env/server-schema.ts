@@ -67,6 +67,9 @@ export const serverEnvSchema = publicEnvSchema
       .regex(/^[A-Z]{3}$/, "DEFAULT_CURRENCY must be a three-letter uppercase code")
       .default("USD"),
     NOTIFICATION_WORKER_SECRET: optionalNonEmptyString(16),
+    DOCUMENT_JOB_WORKER_SECRET: optionalNonEmptyString(16),
+    EXPORT_WORKER_SECRET: optionalNonEmptyString(16),
+    SYNC_WORKER_SECRET: optionalNonEmptyString(16),
     VAPID_PRIVATE_KEY: optionalNonEmptyString(),
     VAPID_SUBJECT: z.preprocess(
       (value) =>
@@ -126,6 +129,9 @@ export function parseServerEnv(
     DEFAULT_TIMEZONE: source.DEFAULT_TIMEZONE ?? "America/Chicago",
     DEFAULT_CURRENCY: source.DEFAULT_CURRENCY ?? "USD",
     NOTIFICATION_WORKER_SECRET: source.NOTIFICATION_WORKER_SECRET || undefined,
+    DOCUMENT_JOB_WORKER_SECRET: source.DOCUMENT_JOB_WORKER_SECRET || undefined,
+    EXPORT_WORKER_SECRET: source.EXPORT_WORKER_SECRET || undefined,
+    SYNC_WORKER_SECRET: source.SYNC_WORKER_SECRET || undefined,
     VAPID_PRIVATE_KEY: source.VAPID_PRIVATE_KEY || undefined,
     VAPID_SUBJECT: source.VAPID_SUBJECT || undefined,
     NOTIFICATION_DELIVERY_ENABLED: source.NOTIFICATION_DELIVERY_ENABLED,

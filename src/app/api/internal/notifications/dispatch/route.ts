@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getServerEnv } from "@/lib/env/server";
-import { authorizeNotificationWorker } from "@/lib/notifications/auth-worker";
+import { authorizeWorkerSecret } from "@/lib/notifications/auth-worker";
 import { dispatchNotificationDeliveries } from "@/lib/notifications/worker";
 
 export const runtime = "nodejs";
@@ -25,9 +25,10 @@ function acceptRateLimit(): boolean {
 
 export async function POST(request: Request) {
   const env = getServerEnv();
-  const auth = authorizeNotificationWorker(
+  const auth = authorizeWorkerSecret(
     request,
     env.NOTIFICATION_WORKER_SECRET,
+    "Notification",
   );
   if (!auth.ok) {
     return NextResponse.json({ error: auth.error }, { status: auth.status });

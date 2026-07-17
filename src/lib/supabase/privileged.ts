@@ -4,7 +4,9 @@
  * Permitted uses:
  * - Integration tests that need to seed multi-user fixtures
  * - Narrow operational recovery (e.g. admin tooling) documented at call sites
- * - Notification delivery worker (`src/lib/notifications/worker.ts`) only
+ * - Notification delivery worker (`src/lib/notifications/worker.ts`)
+ * - Document / receipt OCR worker (`src/lib/receipts/worker.ts`)
+ * - Export archive worker (`src/lib/export/worker.ts`)
  *
  * Never use this client for ordinary authenticated household queries.
  * Never import this module from Client Components.

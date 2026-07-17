@@ -151,7 +151,7 @@ export async function listOccurrencesInRange(
     .select(
       `id, event_id, original_starts_at, starts_at, ends_at, all_day,
        start_date, end_date_exclusive, is_cancelled, exception_id,
-       event:calendar_events!inner(
+       event:calendar_events!calendar_event_occurrences_event_id_household_id_fkey!inner(
          id, title, description, location, category, visibility, status,
          time_zone, organizer_membership_id, event_guest_count, guest_label,
          source_type, calendar_id

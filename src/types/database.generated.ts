@@ -2624,6 +2624,303 @@ export type Database = {
           },
         ]
       }
+      expense_receipt_duplicates: {
+        Row: {
+          created_at: string
+          household_id: string
+          id: string
+          match_expense_id: string | null
+          match_receipt_id: string | null
+          outcome: string
+          receipt_id: string
+          signals: Json
+        }
+        Insert: {
+          created_at?: string
+          household_id: string
+          id?: string
+          match_expense_id?: string | null
+          match_receipt_id?: string | null
+          outcome: string
+          receipt_id: string
+          signals?: Json
+        }
+        Update: {
+          created_at?: string
+          household_id?: string
+          id?: string
+          match_expense_id?: string | null
+          match_receipt_id?: string | null
+          outcome?: string
+          receipt_id?: string
+          signals?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expense_receipt_duplicates_receipt_id_household_id_fkey"
+            columns: ["receipt_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "expense_receipts"
+            referencedColumns: ["id", "household_id"]
+          },
+        ]
+      }
+      expense_receipt_extractions: {
+        Row: {
+          adapter_name: string
+          confidence: number | null
+          content_hash: string | null
+          created_at: string
+          household_id: string
+          id: string
+          proposed: Json
+          raw_response_redacted: Json | null
+          receipt_id: string
+        }
+        Insert: {
+          adapter_name: string
+          confidence?: number | null
+          content_hash?: string | null
+          created_at?: string
+          household_id: string
+          id?: string
+          proposed?: Json
+          raw_response_redacted?: Json | null
+          receipt_id: string
+        }
+        Update: {
+          adapter_name?: string
+          confidence?: number | null
+          content_hash?: string | null
+          created_at?: string
+          household_id?: string
+          id?: string
+          proposed?: Json
+          raw_response_redacted?: Json | null
+          receipt_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expense_receipt_extractions_receipt_id_household_id_fkey"
+            columns: ["receipt_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "expense_receipts"
+            referencedColumns: ["id", "household_id"]
+          },
+        ]
+      }
+      expense_receipt_jobs: {
+        Row: {
+          attempts: number
+          available_at: string
+          claimed_at: string | null
+          claimed_by: string | null
+          created_at: string
+          household_id: string
+          id: string
+          last_error: string | null
+          receipt_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          attempts?: number
+          available_at?: string
+          claimed_at?: string | null
+          claimed_by?: string | null
+          created_at?: string
+          household_id: string
+          id?: string
+          last_error?: string | null
+          receipt_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          attempts?: number
+          available_at?: string
+          claimed_at?: string | null
+          claimed_by?: string | null
+          created_at?: string
+          household_id?: string
+          id?: string
+          last_error?: string | null
+          receipt_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expense_receipt_jobs_receipt_id_household_id_fkey"
+            columns: ["receipt_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "expense_receipts"
+            referencedColumns: ["id", "household_id"]
+          },
+        ]
+      }
+      expense_receipt_line_items: {
+        Row: {
+          category: string | null
+          classification: string
+          confidence: number | null
+          corrected_name: string | null
+          created_at: string
+          expense_item_id: string | null
+          household_id: string
+          id: string
+          ocr_text: string | null
+          participant_membership_ids: string[]
+          quantity: number | null
+          receipt_id: string
+          resource_destination: string
+          review_status: string
+          sort_index: number
+          total_price_cents: number | null
+          unit_price_cents: number | null
+          updated_at: string
+        }
+        Insert: {
+          category?: string | null
+          classification?: string
+          confidence?: number | null
+          corrected_name?: string | null
+          created_at?: string
+          expense_item_id?: string | null
+          household_id: string
+          id?: string
+          ocr_text?: string | null
+          participant_membership_ids?: string[]
+          quantity?: number | null
+          receipt_id: string
+          resource_destination?: string
+          review_status?: string
+          sort_index?: number
+          total_price_cents?: number | null
+          unit_price_cents?: number | null
+          updated_at?: string
+        }
+        Update: {
+          category?: string | null
+          classification?: string
+          confidence?: number | null
+          corrected_name?: string | null
+          created_at?: string
+          expense_item_id?: string | null
+          household_id?: string
+          id?: string
+          ocr_text?: string | null
+          participant_membership_ids?: string[]
+          quantity?: number | null
+          receipt_id?: string
+          resource_destination?: string
+          review_status?: string
+          sort_index?: number
+          total_price_cents?: number | null
+          unit_price_cents?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expense_receipt_line_items_receipt_id_household_id_fkey"
+            columns: ["receipt_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "expense_receipts"
+            referencedColumns: ["id", "household_id"]
+          },
+        ]
+      }
+      expense_receipts: {
+        Row: {
+          confirm_idempotency_key: string | null
+          created_at: string
+          currency: string
+          declared_total_cents: number | null
+          deleted_at: string | null
+          expense_id: string | null
+          file_hash: string | null
+          file_name: string
+          household_id: string
+          id: string
+          merchant_corrected: string | null
+          mime_type: string
+          notes: string | null
+          perceptual_hash: string | null
+          purchase_date_corrected: string | null
+          size_bytes: number
+          status: string
+          storage_path: string
+          updated_at: string
+          uploaded_by_membership_id: string
+        }
+        Insert: {
+          confirm_idempotency_key?: string | null
+          created_at?: string
+          currency?: string
+          declared_total_cents?: number | null
+          deleted_at?: string | null
+          expense_id?: string | null
+          file_hash?: string | null
+          file_name: string
+          household_id: string
+          id?: string
+          merchant_corrected?: string | null
+          mime_type: string
+          notes?: string | null
+          perceptual_hash?: string | null
+          purchase_date_corrected?: string | null
+          size_bytes: number
+          status?: string
+          storage_path: string
+          updated_at?: string
+          uploaded_by_membership_id: string
+        }
+        Update: {
+          confirm_idempotency_key?: string | null
+          created_at?: string
+          currency?: string
+          declared_total_cents?: number | null
+          deleted_at?: string | null
+          expense_id?: string | null
+          file_hash?: string | null
+          file_name?: string
+          household_id?: string
+          id?: string
+          merchant_corrected?: string | null
+          mime_type?: string
+          notes?: string | null
+          perceptual_hash?: string | null
+          purchase_date_corrected?: string | null
+          size_bytes?: number
+          status?: string
+          storage_path?: string
+          updated_at?: string
+          uploaded_by_membership_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expense_receipts_expense_id_household_id_fkey"
+            columns: ["expense_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "expenses"
+            referencedColumns: ["id", "household_id"]
+          },
+          {
+            foreignKeyName: "expense_receipts_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expense_receipts_uploaded_by_membership_id_fkey"
+            columns: ["uploaded_by_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       expenses: {
         Row: {
           calculated_adjustments_cents: number
@@ -3977,6 +4274,176 @@ export type Database = {
           },
         ]
       }
+      household_export_jobs: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          error_text: string | null
+          expires_at: string | null
+          household_id: string
+          id: string
+          requested_by_membership_id: string
+          result_meta: Json | null
+          status: string
+          storage_path: string | null
+          updated_at: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          error_text?: string | null
+          expires_at?: string | null
+          household_id: string
+          id?: string
+          requested_by_membership_id: string
+          result_meta?: Json | null
+          status?: string
+          storage_path?: string | null
+          updated_at?: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          error_text?: string | null
+          expires_at?: string | null
+          household_id?: string
+          id?: string
+          requested_by_membership_id?: string
+          result_meta?: Json | null
+          status?: string
+          storage_path?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "household_export_jobs_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "household_export_jobs_requested_by_membership_id_fkey"
+            columns: ["requested_by_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      household_import_batches: {
+        Row: {
+          column_map: Json
+          completed_at: string | null
+          created_at: string
+          created_by_membership_id: string
+          domain: string
+          error_summary: string | null
+          file_name: string
+          household_id: string
+          id: string
+          idempotency_key: string | null
+          result_summary: Json | null
+          row_count: number
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          column_map?: Json
+          completed_at?: string | null
+          created_at?: string
+          created_by_membership_id: string
+          domain: string
+          error_summary?: string | null
+          file_name: string
+          household_id: string
+          id?: string
+          idempotency_key?: string | null
+          result_summary?: Json | null
+          row_count?: number
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          column_map?: Json
+          completed_at?: string | null
+          created_at?: string
+          created_by_membership_id?: string
+          domain?: string
+          error_summary?: string | null
+          file_name?: string
+          household_id?: string
+          id?: string
+          idempotency_key?: string | null
+          result_summary?: Json | null
+          row_count?: number
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "household_import_batches_created_by_membership_id_fkey"
+            columns: ["created_by_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "household_import_batches_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      household_import_rows: {
+        Row: {
+          batch_id: string
+          created_at: string
+          created_entity_id: string | null
+          household_id: string
+          id: string
+          mapped: Json
+          messages: string[]
+          raw: Json
+          row_number: number
+          status: string
+        }
+        Insert: {
+          batch_id: string
+          created_at?: string
+          created_entity_id?: string | null
+          household_id: string
+          id?: string
+          mapped?: Json
+          messages?: string[]
+          raw?: Json
+          row_number: number
+          status?: string
+        }
+        Update: {
+          batch_id?: string
+          created_at?: string
+          created_entity_id?: string | null
+          household_id?: string
+          id?: string
+          mapped?: Json
+          messages?: string[]
+          raw?: Json
+          row_number?: number
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "household_import_rows_batch_id_household_id_fkey"
+            columns: ["batch_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "household_import_batches"
+            referencedColumns: ["id", "household_id"]
+          },
+        ]
+      }
       household_invitations: {
         Row: {
           accepted_at: string | null
@@ -4403,6 +4870,47 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "household_settings_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: true
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      household_setup_progress: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          current_step: string | null
+          dismissed_at: string | null
+          household_id: string
+          id: string
+          steps: Json
+          updated_at: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          current_step?: string | null
+          dismissed_at?: string | null
+          household_id: string
+          id?: string
+          steps?: Json
+          updated_at?: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          current_step?: string | null
+          dismissed_at?: string | null
+          household_id?: string
+          id?: string
+          steps?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "household_setup_progress_household_id_fkey"
             columns: ["household_id"]
             isOneToOne: true
             referencedRelation: "households"
@@ -9452,6 +9960,66 @@ export type Database = {
           },
         ]
       }
+      record_comments: {
+        Row: {
+          author_membership_id: string
+          body: string
+          created_at: string
+          deleted_at: string | null
+          edit_window_ends_at: string
+          edited_at: string | null
+          household_id: string
+          id: string
+          mentioned_membership_ids: string[]
+          parent_id: string
+          parent_type: string
+          updated_at: string
+        }
+        Insert: {
+          author_membership_id: string
+          body: string
+          created_at?: string
+          deleted_at?: string | null
+          edit_window_ends_at: string
+          edited_at?: string | null
+          household_id: string
+          id?: string
+          mentioned_membership_ids?: string[]
+          parent_id: string
+          parent_type: string
+          updated_at?: string
+        }
+        Update: {
+          author_membership_id?: string
+          body?: string
+          created_at?: string
+          deleted_at?: string | null
+          edit_window_ends_at?: string
+          edited_at?: string | null
+          household_id?: string
+          id?: string
+          mentioned_membership_ids?: string[]
+          parent_id?: string
+          parent_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "record_comments_author_membership_id_fkey"
+            columns: ["author_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "record_comments_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reimbursement_disputes: {
         Row: {
           created_at: string
@@ -11416,6 +11984,16 @@ export type Database = {
         Args: { p_body: string; p_request_id: string }
         Returns: string
       }
+      add_record_comment: {
+        Args: {
+          p_body: string
+          p_household_id: string
+          p_mentioned_membership_ids?: string[]
+          p_parent_id: string
+          p_parent_type: string
+        }
+        Returns: string
+      }
       advance_household_transition: {
         Args: { p_next_status: string; p_notes?: string; p_workflow_id: string }
         Returns: string
@@ -11473,12 +12051,24 @@ export type Database = {
         Args: { p_meal_plan_id: string; p_shopping_list_id?: string }
         Returns: string
       }
+      can_comment_on_parent: {
+        Args: {
+          p_household_id: string
+          p_parent_id: string
+          p_parent_type: string
+        }
+        Returns: boolean
+      }
       can_confirm_or_void_expense: {
         Args: { p_expense_id: string }
         Returns: boolean
       }
       can_edit_expense_draft: {
         Args: { p_expense_id: string }
+        Returns: boolean
+      }
+      can_edit_expense_receipt: {
+        Args: { p_receipt_id: string }
         Returns: boolean
       }
       can_manage_calendar: { Args: { p_calendar_id: string }; Returns: boolean }
@@ -11511,12 +12101,28 @@ export type Database = {
         Args: { p_occurrence_id: string }
         Returns: boolean
       }
+      can_view_comment_parent: {
+        Args: {
+          p_household_id: string
+          p_parent_id: string
+          p_parent_type: string
+        }
+        Returns: boolean
+      }
       can_view_event_availability: {
         Args: { p_event_id: string }
         Returns: boolean
       }
       can_view_event_details: { Args: { p_event_id: string }; Returns: boolean }
       can_view_expense: { Args: { p_expense_id: string }; Returns: boolean }
+      can_view_expense_receipt: {
+        Args: { p_receipt_id: string }
+        Returns: boolean
+      }
+      can_view_expense_receipt_path: {
+        Args: { p_storage_path: string }
+        Returns: boolean
+      }
       can_view_governance_document: {
         Args: { p_document_id: string }
         Returns: boolean
@@ -11684,6 +12290,28 @@ export type Database = {
         Args: { p_occurrence_id: string }
         Returns: string
       }
+      claim_export_jobs: {
+        Args: { p_batch_size?: number; p_worker_id?: string }
+        Returns: {
+          completed_at: string | null
+          created_at: string
+          error_text: string | null
+          expires_at: string | null
+          household_id: string
+          id: string
+          requested_by_membership_id: string
+          result_meta: Json | null
+          status: string
+          storage_path: string | null
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "household_export_jobs"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       claim_maintenance_request: {
         Args: { p_request_id: string }
         Returns: string
@@ -11724,6 +12352,32 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      claim_receipt_extraction_jobs: {
+        Args: {
+          p_batch_size?: number
+          p_claim_ttl_seconds?: number
+          p_worker_id?: string
+        }
+        Returns: {
+          attempts: number
+          available_at: string
+          claimed_at: string | null
+          claimed_by: string | null
+          created_at: string
+          household_id: string
+          id: string
+          last_error: string | null
+          receipt_id: string
+          status: string
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "expense_receipt_jobs"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       claim_shopping_item: { Args: { p_item_id: string }; Returns: string }
       cleanup_test_household_data: {
         Args: { p_test_run_id: string }
@@ -11740,6 +12394,35 @@ export type Database = {
       complete_chore_occurrence: {
         Args: { p_completion_note?: string; p_occurrence_id: string }
         Returns: string
+      }
+      complete_export_job: {
+        Args: {
+          p_error?: string
+          p_expires_at: string
+          p_job_id: string
+          p_result_meta?: Json
+          p_storage_path: string
+        }
+        Returns: undefined
+      }
+      complete_household_setup: {
+        Args: { p_household_id: string }
+        Returns: {
+          completed_at: string | null
+          created_at: string
+          current_step: string | null
+          dismissed_at: string | null
+          household_id: string
+          id: string
+          steps: Json
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "household_setup_progress"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       complete_household_transition: {
         Args: {
@@ -11762,6 +12445,23 @@ export type Database = {
           p_subscription_id?: string
         }
         Returns: boolean
+      }
+      complete_receipt_extraction: {
+        Args: {
+          p_adapter_name: string
+          p_confidence: number
+          p_configured?: boolean
+          p_content_hash: string
+          p_duplicate_outcome?: string
+          p_duplicate_signals?: Json
+          p_error?: string
+          p_line_items: Json
+          p_match_expense_id?: string
+          p_match_receipt_id?: string
+          p_proposed: Json
+          p_receipt_id: string
+        }
+        Returns: undefined
       }
       complete_recipe_import_draft: {
         Args: {
@@ -11901,6 +12601,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      confirm_receipt_as_expense: {
+        Args: { p_idempotency_key: string; p_receipt_id: string }
+        Returns: string
       }
       create_calendar_availability_override: {
         Args: {
@@ -12100,6 +12804,15 @@ export type Database = {
           p_subject_membership_id: string
           p_visibility?: string
           p_workflow_type: string
+        }
+        Returns: string
+      }
+      create_import_batch: {
+        Args: {
+          p_domain: string
+          p_file_name: string
+          p_household_id: string
+          p_idempotency_key?: string
         }
         Returns: string
       }
@@ -12404,6 +13117,25 @@ export type Database = {
         Args: { p_item_id: string; p_note?: string }
         Returns: string
       }
+      dismiss_household_setup: {
+        Args: { p_household_id: string }
+        Returns: {
+          completed_at: string | null
+          created_at: string
+          current_step: string | null
+          dismissed_at: string | null
+          household_id: string
+          id: string
+          steps: Json
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "household_setup_progress"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       dismiss_meal_request: {
         Args: { p_meal_request_id: string }
         Returns: string
@@ -12415,6 +13147,10 @@ export type Database = {
       dispose_inventory_item: {
         Args: { p_disposition?: string; p_item_id: string; p_status: string }
         Returns: string
+      }
+      edit_record_comment: {
+        Args: { p_body: string; p_comment_id: string }
+        Returns: undefined
       }
       effective_calendar_occurrence_fields: {
         Args: { p_event_id: string; p_original_starts_at: string }
@@ -12441,6 +13177,25 @@ export type Database = {
       ensure_default_shopping_list: {
         Args: { p_household_id: string }
         Returns: string
+      }
+      ensure_household_setup_progress: {
+        Args: { p_household_id: string }
+        Returns: {
+          completed_at: string | null
+          created_at: string
+          current_step: string | null
+          dismissed_at: string | null
+          household_id: string
+          id: string
+          steps: Json
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "household_setup_progress"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       ensure_profile: {
         Args: never
@@ -12638,6 +13393,15 @@ export type Database = {
       mark_chore_blocked: {
         Args: { p_note?: string; p_occurrence_id: string; p_reason: string }
         Returns: string
+      }
+      mark_import_batch_status: {
+        Args: {
+          p_batch_id: string
+          p_error_summary?: string
+          p_result_summary?: Json
+          p_status: string
+        }
+        Returns: undefined
       }
       mark_meal_batch_finished: {
         Args: { p_batch_id: string }
@@ -12898,6 +13662,18 @@ export type Database = {
         }
         Returns: string
       }
+      register_expense_receipt: {
+        Args: {
+          p_file_hash?: string
+          p_file_name: string
+          p_household_id: string
+          p_mime_type: string
+          p_perceptual_hash?: string
+          p_size_bytes: number
+          p_storage_path: string
+        }
+        Returns: string
+      }
       reject_payment: {
         Args: { p_payment_id: string; p_reason: string }
         Returns: {
@@ -12967,6 +13743,10 @@ export type Database = {
           p_requested_effective_at?: string
           p_suggested_membership_id?: string
         }
+        Returns: string
+      }
+      request_household_export: {
+        Args: { p_household_id: string }
         Returns: string
       }
       request_recipe_feedback: {
@@ -13144,6 +13924,10 @@ export type Database = {
         }
         Returns: string
       }
+      save_import_mapping: {
+        Args: { p_batch_id: string; p_column_map: Json; p_rows: Json }
+        Returns: undefined
+      }
       save_imported_recipe: {
         Args: {
           p_draft_id: string
@@ -13211,6 +13995,10 @@ export type Database = {
       skip_chore_occurrence: {
         Args: { p_occurrence_id: string; p_reason: string }
         Returns: string
+      }
+      soft_delete_record_comment: {
+        Args: { p_comment_id: string }
+        Returns: undefined
       }
       split_calendar_event_series: {
         Args: {
@@ -13374,6 +14162,30 @@ export type Database = {
         }
         Returns: string
       }
+      update_household_setup_step: {
+        Args: {
+          p_draft?: Json
+          p_household_id: string
+          p_status: string
+          p_step: string
+        }
+        Returns: {
+          completed_at: string | null
+          created_at: string
+          current_step: string | null
+          dismissed_at: string | null
+          household_id: string
+          id: string
+          steps: Json
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "household_setup_progress"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       update_inventory_item: {
         Args: { p_item_id: string; p_patch: Json }
         Returns: string
@@ -13381,6 +14193,18 @@ export type Database = {
       update_meal_batch_remaining_state: {
         Args: { p_batch_id: string; p_remaining_state: string }
         Returns: string
+      }
+      update_receipt_review: {
+        Args: {
+          p_currency?: string
+          p_declared_total_cents?: number
+          p_line_items?: Json
+          p_merchant?: string
+          p_notes?: string
+          p_purchase_date?: string
+          p_receipt_id: string
+        }
+        Returns: undefined
       }
       update_recipe: {
         Args: { p_patch: Json; p_recipe_id: string }

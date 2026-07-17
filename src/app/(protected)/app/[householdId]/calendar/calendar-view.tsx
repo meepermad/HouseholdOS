@@ -17,7 +17,7 @@ import { DEFAULT_TIMEZONE } from "@/lib/time";
 import {
   calendarViewPath,
   type CalendarView,
-} from "@/components/calendar/CalendarToolbar";
+} from "@/lib/calendar/view-path";
 import { householdRoutes } from "@/lib/routes/household";
 
 export const dynamic = "force-dynamic";

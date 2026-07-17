@@ -34,7 +34,7 @@ export default async function CalendarInvitationsPage({
     .from("calendar_event_attendees")
     .select(
       `event_id, rsvp_status, needs_reconfirmation,
-       event:calendar_events!inner(id, title, starts_at, start_date, status, all_day)`,
+       event:calendar_events!calendar_event_attendees_event_id_household_id_fkey!inner(id, title, starts_at, start_date, status, all_day)`,
     )
     .eq("membership_id", ctx.membershipId)
     .eq("household_id", householdId)

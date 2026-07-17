@@ -5,18 +5,14 @@ import { useState } from "react";
 import { Ellipsis, Plus } from "lucide-react";
 import { BottomSheet } from "@/components/ui/bottom-sheet";
 import {
-  householdRoutes,
-  type CalendarViewSlug,
-} from "@/lib/routes/household";
+  CALENDAR_VIEWS,
+  calendarViewPath,
+  type CalendarView,
+} from "@/lib/calendar/view-path";
+import { householdRoutes } from "@/lib/routes/household";
 
-export type CalendarView = CalendarViewSlug;
-
-export const CALENDAR_VIEWS: readonly CalendarView[] = [
-  "agenda",
-  "day",
-  "week",
-  "month",
-];
+export type { CalendarView };
+export { CALENDAR_VIEWS, calendarViewPath };
 
 const VIEW_LABELS: Record<CalendarView, string> = {
   agenda: "Agenda",
@@ -24,14 +20,6 @@ const VIEW_LABELS: Record<CalendarView, string> = {
   month: "Month",
   week: "Week",
 };
-
-export function calendarViewPath(
-  householdId: string,
-  view: CalendarView,
-  date?: string,
-): string {
-  return householdRoutes.calendar.view(householdId, view, date);
-}
 
 export function CalendarToolbar({
   householdId,

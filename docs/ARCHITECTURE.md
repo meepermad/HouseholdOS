@@ -258,12 +258,16 @@ Extends Phase 4 without replacing working calendar models:
 |---|---|
 | Setup wizard | Optional `household_setup_progress`; skippable steps; Home reminder until dismissed/completed; starter templates call existing RPCs |
 | Receipts | Private `expense-receipts` bucket; review-first OCR via `ReceiptExtractionAdapter` (OpenAI / fixture / disabled); draft expense only after confirm; integer cents |
+| Receipt authorization | `can_view_expense_receipt` / `can_edit_expense_receipt` — uploader, financial coordinator, or linked-expense creator/payer/allocation participant. Unrelated active members cannot see drafts, OCR payloads, line classifications, or signed URLs |
 | Duplicates | Advisory file/content/merchant-date-total signals — never silent merge |
 | Resource links | Optional pantry/supply/inventory/shopping suggestions after review; void/amend does not delete physical resources |
 | CSV import | Review-first batches; same-household RPCs; no opening-balance import |
-| Export | Coordinator async JSON/CSV archive; excludes secrets, push endpoints, feed tokens; not a full restore |
-| Comments | Polymorphic `record_comments` on selected parents; append-oriented; cannot change financial/governance state |
-| Receipt retention | Soft-delete (`deleted_at`); removed members lose access via active-member RLS; do not put receipt content in notification payloads |
+| Export | Coordinator async JSON/CSV archive via `EXPORT_WORKER_SECRET` worker; excludes secrets, push endpoints, feed tokens; not a full restore |
+| Document jobs | Receipt OCR claim/complete via `DOCUMENT_JOB_WORKER_SECRET` at `/api/internal/documents/process` |
+| Notifications worker | `/api/internal/notifications/dispatch` uses `NOTIFICATION_WORKER_SECRET` only |
+| Comments | Polymorphic `record_comments`; `can_view_comment_parent` + `can_comment_on_parent` required (membership alone is insufficient); append-oriented; cannot change financial/governance state |
+| Feature readiness | Launch routes probe for required tables; hide controls and show coordinator-facing setup state when objects are missing |
+| Receipt retention | Soft-delete (`deleted_at`); removed members lose access; do not put receipt content in notification payloads |
 
 ## Out of scope (current)
 

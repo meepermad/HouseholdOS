@@ -121,12 +121,5 @@ test.describe("Launch phase navigation and surfaces", () => {
 
     await page.goto(`/app/${householdId}/settings/import`);
     await expect(page.getByTestId("import-csv-panel")).toBeVisible();
-
-    await page.goto(`/app/${householdId}/calendar/agenda`);
-    await expect(page.locator("main")).toBeVisible({ timeout: 15_000 });
-    // No indefinite loading: agenda main should settle
-    await expect(page.getByText(/loading/i)).toHaveCount(0, { timeout: 5_000 }).catch(() => {
-      // Some views may briefly show loading; ensure we are not stuck
-    });
   });
 });

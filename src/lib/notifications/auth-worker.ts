@@ -2,15 +2,24 @@ import "server-only";
 
 import { timingSafeEqual } from "node:crypto";
 
-export function authorizeNotificationWorker(
+export type WorkerAuthResult =
+  | { ok: true }
+  | { ok: false; status: number; error: string };
+
+/**
+ * Authorize an internal worker request with a family-specific bearer secret.
+ * Never log the presented or expected secret.
+ */
+export function authorizeWorkerSecret(
   request: Request,
   expectedSecret: string | undefined,
-): { ok: true } | { ok: false; status: number; error: string } {
+  familyLabel: string,
+): WorkerAuthResult {
   if (!expectedSecret || expectedSecret.length < 16) {
     return {
       ok: false,
       status: 503,
-      error: "Notification worker secret is not configured",
+      error: `${familyLabel} worker secret is not configured`,
     };
   }
 
@@ -43,12 +52,19 @@ export function authorizeNotificationWorker(
   return { ok: true };
 }
 
+/** @deprecated Prefer authorizeWorkerSecret with an explicit family label. */
+export function authorizeNotificationWorker(
+  request: Request,
+  expectedSecret: string | undefined,
+): WorkerAuthResult {
+  return authorizeWorkerSecret(request, expectedSecret, "Notification");
+}
+
 /** Timing-safe string compare; unequal lengths never call unequal Buffer compare. */
 function timingSafeEqualSecrets(presented: string, expected: string): boolean {
   const a = Buffer.from(presented);
   const b = Buffer.from(expected);
   if (a.length !== b.length) {
-    // Burn a same-length compare so length mismatch is not an early easy path.
     timingSafeEqual(b, b);
     return false;
   }

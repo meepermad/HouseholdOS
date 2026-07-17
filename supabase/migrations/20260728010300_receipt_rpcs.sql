@@ -144,7 +144,7 @@ begin
     return;
   end if;
 
-  insert into public.expense_receipt_extracted (
+  insert into public.expense_receipt_extractions (
     receipt_id, household_id, adapter_name, confidence, proposed, content_hash
   ) values (
     p_receipt_id, v_household_id, p_adapter_name, p_confidence, coalesce(p_proposed, '{}'::jsonb), p_content_hash
@@ -210,8 +210,8 @@ begin
   if auth.uid() is null then raise exception 'Not authenticated'; end if;
   select household_id into v_household_id from public.expense_receipts where id = p_receipt_id for update;
   if not found then raise exception 'Receipt not found'; end if;
-  if not public.is_active_member(v_household_id) then
-    raise exception 'Not an active household member';
+  if not public.can_edit_expense_receipt(p_receipt_id) then
+    raise exception 'Not authorized to edit this receipt';
   end if;
   if (select status from public.expense_receipts where id = p_receipt_id) = 'confirmed' then
     raise exception 'Receipt already confirmed';
@@ -284,8 +284,8 @@ begin
   if not found or v_receipt.deleted_at is not null then
     raise exception 'Receipt not found';
   end if;
-  if not public.is_active_member(v_receipt.household_id) then
-    raise exception 'Not an active household member';
+  if not public.can_edit_expense_receipt(p_receipt_id) then
+    raise exception 'Not authorized to confirm this receipt';
   end if;
   v_membership_id := public.current_membership_id(v_receipt.household_id);
 

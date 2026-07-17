@@ -8,9 +8,7 @@ import {
   sanitizeCommentBody,
   type CommentParentType,
 } from "@/lib/comments/types";
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type UntypedDb = any;
+import { createClient } from "@/lib/supabase/server";
 
 export async function addRecordCommentAction(
   _prev: ActionResult | null,
@@ -32,8 +30,7 @@ export async function addRecordCommentAction(
     }
 
     await assertActiveMembership(householdId);
-    const { createClient } = await import("@/lib/supabase/server");
-    const supabase = (await createClient()) as UntypedDb;
+    const supabase = await createClient();
     const { error } = await supabase.rpc("add_record_comment", {
       p_household_id: householdId,
       p_parent_type: parentType,
@@ -58,14 +55,33 @@ export async function editRecordCommentAction(
     const commentId = String(formData.get("commentId") ?? "");
     const body = sanitizeCommentBody(String(formData.get("body") ?? ""));
     await assertActiveMembership(householdId);
-    const { createClient } = await import("@/lib/supabase/server");
-    const supabase = (await createClient()) as UntypedDb;
+    const supabase = await createClient();
     const { error } = await supabase.rpc("edit_record_comment", {
       p_comment_id: commentId,
       p_body: body,
     });
     if (error) return { ok: false, error: error.message };
     return { ok: true, message: "Comment updated." };
+  } catch (e) {
+    return { ok: false, error: toPublicErrorMessage(e) };
+  }
+}
+
+export async function softDeleteRecordCommentAction(
+  _prev: ActionResult | null,
+  formData: FormData,
+): Promise<ActionResult> {
+  try {
+    const householdId = String(formData.get("householdId") ?? "");
+    const commentId = String(formData.get("commentId") ?? "");
+    await assertActiveMembership(householdId);
+    const supabase = await createClient();
+    const { error } = await supabase.rpc("soft_delete_record_comment", {
+      p_comment_id: commentId,
+    });
+    if (error) return { ok: false, error: error.message };
+    revalidatePath(`/app/${householdId}`);
+    return { ok: true, message: "Comment deleted." };
   } catch (e) {
     return { ok: false, error: toPublicErrorMessage(e) };
   }

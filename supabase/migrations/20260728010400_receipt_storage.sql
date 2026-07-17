@@ -18,13 +18,7 @@ drop policy if exists expense_receipts_storage_insert on storage.objects;
 drop policy if exists expense_receipts_storage_update on storage.objects;
 drop policy if exists expense_receipts_storage_delete on storage.objects;
 
-create policy expense_receipts_storage_select on storage.objects
-  for select to authenticated
-  using (
-    bucket_id = 'expense-receipts'
-    and public.is_active_member((storage.foldername(name))[1]::uuid)
-  );
-
+-- Insert: any active member may upload under their household folder (register RPC binds uploader).
 create policy expense_receipts_storage_insert on storage.objects
   for insert to authenticated
   with check (
@@ -32,16 +26,27 @@ create policy expense_receipts_storage_insert on storage.objects
     and public.is_active_member((storage.foldername(name))[1]::uuid)
   );
 
+-- Select / update / delete: only actors authorized for the matching receipt row.
+create policy expense_receipts_storage_select on storage.objects
+  for select to authenticated
+  using (
+    bucket_id = 'expense-receipts'
+    and public.can_view_expense_receipt_path(name)
+  );
+
 create policy expense_receipts_storage_update on storage.objects
   for update to authenticated
   using (
     bucket_id = 'expense-receipts'
-    and public.is_active_member((storage.foldername(name))[1]::uuid)
+    and public.can_view_expense_receipt_path(name)
   );
 
 create policy expense_receipts_storage_delete on storage.objects
   for delete to authenticated
   using (
     bucket_id = 'expense-receipts'
-    and public.is_active_member((storage.foldername(name))[1]::uuid)
+    and (
+      public.can_view_expense_receipt_path(name)
+      or public._is_financial_coordinator((storage.foldername(name))[1]::uuid)
+    )
   );

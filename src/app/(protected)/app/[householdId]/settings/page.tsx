@@ -15,6 +15,8 @@ import {
 } from "lucide-react";
 import { assertActiveMembership } from "@/lib/household-context";
 import { SettingsList, SettingsRow } from "@/components/ui/settings-list";
+import { getLaunchFeatureReadiness } from "@/lib/launch/feature-readiness";
+import { LaunchFeatureUnavailable } from "@/components/launch/LaunchFeatureUnavailable";
 
 export const dynamic = "force-dynamic";
 
@@ -27,6 +29,7 @@ export default async function SettingsHubPage({
   const ctx = await assertActiveMembership(householdId);
   const base = `/app/${householdId}/settings`;
   const showOps = ctx.roles.includes("household_coordinator");
+  const launch = await getLaunchFeatureReadiness();
 
   return (
     <main className="space-y-6" data-testid="settings-hub">
@@ -38,6 +41,13 @@ export default async function SettingsHubPage({
           Personal preferences and household configuration.
         </p>
       </section>
+
+      {!launch.allReady && launch.missingMessage ? (
+        <LaunchFeatureUnavailable
+          title="Some launch features are unavailable"
+          message={launch.missingMessage}
+        />
+      ) : null}
 
       <div className="space-y-4">
         <div>
@@ -73,27 +83,33 @@ export default async function SettingsHubPage({
             Household
           </h2>
           <SettingsList ariaLabel="Household settings">
-            <SettingsRow
-              href={`/app/${householdId}/setup`}
-              label="Setup checklist"
-              description="Optional guided household launch"
-              icon={ListChecks}
-              testId="settings-row-setup"
-            />
-            <SettingsRow
-              href={`${base}/import`}
-              label="Import data"
-              description="Review-first CSV import"
-              icon={Upload}
-              testId="settings-row-import"
-            />
-            <SettingsRow
-              href={`${base}/export`}
-              label="Export household"
-              description="Coordinator backup archive"
-              icon={Download}
-              testId="settings-row-export"
-            />
+            {launch.setup ? (
+              <SettingsRow
+                href={`/app/${householdId}/setup`}
+                label="Setup checklist"
+                description="Optional guided household launch"
+                icon={ListChecks}
+                testId="settings-row-setup"
+              />
+            ) : null}
+            {launch.importExport ? (
+              <SettingsRow
+                href={`${base}/import`}
+                label="Import data"
+                description="Review-first CSV import"
+                icon={Upload}
+                testId="settings-row-import"
+              />
+            ) : null}
+            {launch.importExport ? (
+              <SettingsRow
+                href={`${base}/export`}
+                label="Export household"
+                description="Coordinator backup archive"
+                icon={Download}
+                testId="settings-row-export"
+              />
+            ) : null}
             <SettingsRow
               href={`${base}/household`}
               label="Household"

@@ -10,6 +10,8 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AppBackButton } from "@/components/app-back-button";
 import { MoneyActionCenter } from "@/components/payments/action-center";
+import { getLaunchFeatureReadiness } from "@/lib/launch/feature-readiness";
+import { LaunchFeatureUnavailable } from "@/components/launch/LaunchFeatureUnavailable";
 
 export const dynamic = "force-dynamic";
 
@@ -114,6 +116,7 @@ export default async function MoneyHubPage({
 }) {
   const { householdId } = await params;
   const ctx = await assertActiveMembership(householdId);
+  const launch = await getLaunchFeatureReadiness();
 
   return (
     <main className="space-y-6">
@@ -127,6 +130,13 @@ export default async function MoneyHubPage({
           does not move money or verify payment providers.
         </p>
       </header>
+
+      {!launch.receipts && launch.missingMessage ? (
+        <LaunchFeatureUnavailable
+          title="Receipt capture not ready"
+          message={launch.missingMessage}
+        />
+      ) : null}
 
       <Suspense
         fallback={
@@ -149,7 +159,7 @@ export default async function MoneyHubPage({
       </Suspense>
 
       <div className="flex flex-wrap gap-2">
-        {can(ctx.roles, "expense.create") ? (
+        {launch.receipts && can(ctx.roles, "expense.create") ? (
           <Link
             href={`/app/${householdId}/money/receipts/new`}
             className="inline-flex min-h-11 items-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
@@ -158,13 +168,15 @@ export default async function MoneyHubPage({
             Scan receipt
           </Link>
         ) : null}
-        <Link
-          href={`/app/${householdId}/money/receipts`}
-          className="inline-flex min-h-11 items-center rounded-md border border-border bg-secondary px-4 py-2 text-sm text-secondary-foreground"
-          data-testid="money-receipt-drafts"
-        >
-          Receipt drafts
-        </Link>
+        {launch.receipts ? (
+          <Link
+            href={`/app/${householdId}/money/receipts`}
+            className="inline-flex min-h-11 items-center rounded-md border border-border bg-secondary px-4 py-2 text-sm text-secondary-foreground"
+            data-testid="money-receipt-drafts"
+          >
+            Receipt drafts
+          </Link>
+        ) : null}
         {can(ctx.roles, "expense.create") ? (
           <Link
             href={`/app/${householdId}/money/expenses/new`}

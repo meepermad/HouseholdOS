@@ -11,13 +11,10 @@ import {
   SUPPLY_TEMPLATES,
 } from "@/lib/setup/templates";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type UntypedDb = any;
-
 async function db(householdId: string) {
   const ctx = await assertActiveMembership(householdId);
   const { createClient } = await import("@/lib/supabase/server");
-  return { ctx, supabase: (await createClient()) as UntypedDb };
+  return { ctx, supabase: await createClient() };
 }
 
 function invalidate(householdId: string) {
@@ -117,7 +114,7 @@ export async function applyResponsibilityTemplatesAction(
         p_category: tpl.category,
         p_start_date: new Date().toISOString().slice(0, 10),
         p_description: tpl.description,
-        p_handoff_expectations: null,
+        p_handoff_expectations: undefined,
       });
       if (!error) created += 1;
     }
@@ -149,7 +146,7 @@ export async function applySupplyTemplatesAction(
         p_household_id: householdId,
         p_name: tpl.name,
         p_category: "cleaning",
-        p_notes: null,
+        p_notes: undefined,
       });
       if (!error) created += 1;
     }
@@ -159,7 +156,7 @@ export async function applySupplyTemplatesAction(
         p_household_id: householdId,
         p_name: tpl.name,
         p_category: "staple",
-        p_notes: null,
+        p_notes: undefined,
       });
       if (!error) created += 1;
     }

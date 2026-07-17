@@ -9,13 +9,10 @@ import { autoMapColumns } from "@/lib/import/map-columns";
 import { validateImportRows } from "@/lib/import/validate";
 import type { ImportDomain } from "@/lib/import/domains";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type UntypedDb = any;
-
 async function db(householdId: string) {
   const ctx = await assertActiveMembership(householdId);
   const { createClient } = await import("@/lib/supabase/server");
-  return { ctx, supabase: (await createClient()) as UntypedDb };
+  return { ctx, supabase: await createClient() };
 }
 
 export async function createImportBatchAction(
@@ -53,7 +50,7 @@ export async function createImportBatchAction(
       p_household_id: householdId,
       p_domain: domain,
       p_file_name: file.name,
-      p_idempotency_key: idempotencyKey,
+      p_idempotency_key: idempotencyKey ?? undefined,
     });
     if (error) return { ok: false, error: error.message };
 
@@ -96,8 +93,6 @@ export async function confirmImportBatchAction(
     await supabase.rpc("mark_import_batch_status", {
       p_batch_id: batchId,
       p_status: "executing",
-      p_result_summary: null,
-      p_error_summary: null,
     });
 
     const { data: batch } = await supabase
@@ -131,7 +126,7 @@ export async function confirmImportBatchAction(
       p_batch_id: batchId,
       p_status: failed > 0 && imported === 0 ? "failed" : "completed",
       p_result_summary: { imported, failed },
-      p_error_summary: failed > 0 ? `${failed} rows failed` : null,
+      p_error_summary: failed > 0 ? `${failed} rows failed` : undefined,
     });
 
     revalidatePath(`/app/${householdId}/settings/import`);

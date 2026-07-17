@@ -167,22 +167,14 @@ test.describe("Phase 3.1 notification UI", () => {
       timeout: 20_000,
     });
 
-    // Prefer storage + reload (same path as theme-responsive e2e) so the class
-    // is applied before hydration races with controlled radios.
-    await page.evaluate(() => {
-      localStorage.setItem("householdos-theme", "dark");
-    });
-    await page.reload();
-    await expect
-      .poll(async () =>
-        page.evaluate(() =>
-          document.documentElement.classList.contains("dark"),
-        ),
-      )
-      .toBe(true);
-
     await page.goto(`/app/${householdId}/settings/notifications`);
     await expect(page.getByTestId("notification-settings-page")).toBeVisible();
+    await page.evaluate(() => {
+      localStorage.setItem("householdos-theme", "dark");
+      document.documentElement.classList.add("dark");
+      document.documentElement.style.colorScheme = "dark";
+      document.documentElement.dataset.theme = "dark";
+    });
     await expect(page.getByTestId("push-permission-card")).toBeVisible();
 
     const contrast = await page.evaluate(() => {

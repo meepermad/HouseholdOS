@@ -11,8 +11,7 @@ export async function processReceiptExtractionJobs(options?: {
   batchSize?: number;
 }): Promise<{ claimed: number; succeeded: number; failed: number; manual: number }> {
   const { createPrivilegedClient } = await import("@/lib/supabase/privileged");
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const supabase = (await createPrivilegedClient()) as any;
+  const supabase = await createPrivilegedClient();
   const adapter = resolveReceiptExtractionAdapter();
 
   const { data: jobs, error } = await supabase.rpc("claim_receipt_extraction_jobs", {
@@ -55,9 +54,9 @@ export async function processReceiptExtractionJobs(options?: {
       await supabase.rpc("complete_receipt_extraction", {
         p_receipt_id: receipt.id,
         p_adapter_name: adapter.name,
-        p_confidence: null,
+        p_confidence: 0,
         p_proposed: {},
-        p_content_hash: null,
+        p_content_hash: "",
         p_line_items: [],
         p_configured: adapter.configured,
         p_error: "Could not download receipt",
@@ -79,9 +78,9 @@ export async function processReceiptExtractionJobs(options?: {
       await supabase.rpc("complete_receipt_extraction", {
         p_receipt_id: receipt.id,
         p_adapter_name: result.adapter,
-        p_confidence: null,
+        p_confidence: 0,
         p_proposed: {},
-        p_content_hash: null,
+        p_content_hash: "",
         p_line_items: [],
         p_configured: result.configured,
         p_error: result.error,
@@ -117,32 +116,22 @@ export async function processReceiptExtractionJobs(options?: {
         contentHash: extraction.contentHash,
         expenseId: null,
       },
-      (existing ?? []).map(
-        (r: {
-          id: string;
-          file_hash: string | null;
-          perceptual_hash: string | null;
-          merchant_corrected: string | null;
-          purchase_date_corrected: string | null;
-          declared_total_cents: number | null;
-          expense_id: string | null;
-        }) => ({
-          id: r.id,
-          fileHash: r.file_hash,
-          perceptualHash: r.perceptual_hash,
-          merchant: r.merchant_corrected,
-          purchaseDate: r.purchase_date_corrected,
-          totalCents: r.declared_total_cents,
-          contentHash: null,
-          expenseId: r.expense_id,
-        }),
-      ),
+      (existing ?? []).map((r) => ({
+        id: r.id,
+        fileHash: r.file_hash,
+        perceptualHash: r.perceptual_hash,
+        merchant: r.merchant_corrected,
+        purchaseDate: r.purchase_date_corrected,
+        totalCents: r.declared_total_cents,
+        contentHash: null,
+        expenseId: r.expense_id,
+      })),
     );
 
     await supabase.rpc("complete_receipt_extraction", {
       p_receipt_id: receipt.id,
       p_adapter_name: result.adapter,
-      p_confidence: extraction.confidence,
+      p_confidence: extraction.confidence ?? 0,
       p_proposed: {
         merchant: extraction.merchant,
         purchaseDate: extraction.purchaseDate,
@@ -153,7 +142,7 @@ export async function processReceiptExtractionJobs(options?: {
         currency: extraction.currency,
         paymentMethodSummary: extraction.paymentMethodSummary,
       },
-      p_content_hash: extraction.contentHash,
+      p_content_hash: extraction.contentHash ?? "",
       p_line_items: extraction.lineItems.map((li) => ({
         ocrText: li.ocrText,
         name: li.name,
@@ -164,10 +153,9 @@ export async function processReceiptExtractionJobs(options?: {
       })),
       p_duplicate_outcome: dup.outcome,
       p_duplicate_signals: dup.signals,
-      p_match_receipt_id: dup.matchReceiptId,
-      p_match_expense_id: dup.matchExpenseId,
+      p_match_receipt_id: dup.matchReceiptId ?? undefined,
+      p_match_expense_id: dup.matchExpenseId ?? undefined,
       p_configured: true,
-      p_error: null,
     });
     succeeded += 1;
   }

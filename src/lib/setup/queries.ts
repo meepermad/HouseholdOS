@@ -5,17 +5,14 @@ import {
   type SetupProgressState,
   type SetupStepKey,
 } from "@/lib/setup/steps";
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type UntypedDb = any;
+import { createClient } from "@/lib/supabase/server";
 
 export async function loadSetupProgress(
   householdId: string,
 ): Promise<SetupProgressState | null> {
   await assertActiveMembership(householdId);
   try {
-    const { createClient } = await import("@/lib/supabase/server");
-    const supabase = (await createClient()) as UntypedDb;
+    const supabase = await createClient();
     const { data, error } = await supabase.rpc("ensure_household_setup_progress", {
       p_household_id: householdId,
     });

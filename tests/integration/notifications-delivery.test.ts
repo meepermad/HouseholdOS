@@ -527,14 +527,22 @@ describe.skipIf(!hasSupabase).sequential("Phase 3.1 notification delivery", () =
       .single();
     expect(delErr).toBeNull();
 
-    const reclaimed = await loose(admin).rpc("claim_notification_deliveries", {
-      p_batch_size: 100,
-      p_worker_id: crypto.randomUUID(),
-      p_claim_ttl_seconds: 120,
-    });
-    expect(reclaimed.error).toBeNull();
-    const ids = ((reclaimed.data ?? []) as { id: string }[]).map((r) => r.id);
-    expect(ids).toContain(delivery!.id);
+    let found = false;
+    for (let attempt = 0; attempt < 25 && !found; attempt += 1) {
+      const reclaimed = await loose(admin).rpc("claim_notification_deliveries", {
+        p_batch_size: 200,
+        p_worker_id: crypto.randomUUID(),
+        p_claim_ttl_seconds: 120,
+      });
+      expect(reclaimed.error).toBeNull();
+      const ids = ((reclaimed.data ?? []) as { id: string }[]).map((r) => r.id);
+      if (ids.includes(delivery!.id)) {
+        found = true;
+        break;
+      }
+      if (ids.length === 0) break;
+    }
+    expect(found).toBe(true);
   });
 
   it("10+11+16: payment submit notifies recipient with safe payload only", async (ctx) => {

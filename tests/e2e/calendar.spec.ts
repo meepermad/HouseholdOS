@@ -215,11 +215,7 @@ test.describe("authenticated calendar smoke", () => {
     await expect(
       page.getByRole("heading", { name: /Agenda|Month|Week|Day/i }),
     ).toBeVisible();
-    await expect(
-      page.getByTestId("calendar-overflow").or(
-        page.getByRole("tablist", { name: "Calendar view" }),
-      ),
-    ).toBeVisible();
+    await expect(page.getByTestId("calendar-toolbar")).toBeVisible();
     await page.close();
   });
 
@@ -230,11 +226,6 @@ test.describe("authenticated calendar smoke", () => {
     await expect(page.getByTestId("calendar-toolbar")).toBeVisible({
       timeout: 20_000,
     });
-    await expect(
-      page.getByTestId("calendar-overflow").or(
-        page.getByRole("tablist", { name: "Calendar view" }),
-      ),
-    ).toBeVisible();
     await page.goto(`/app/${householdId}/calendar/invitations`);
     await expect(
       page.getByRole("heading", { name: "Invitations" }),

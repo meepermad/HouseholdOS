@@ -14,13 +14,10 @@ import {
 import { detectDuplicateReceipts } from "@/lib/receipts/duplicates";
 import { describeReceiptOcrStatus } from "@/lib/receipts/adapters";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type UntypedDb = any;
-
 async function db(householdId: string) {
   const ctx = await assertActiveMembership(householdId);
   const { createClient } = await import("@/lib/supabase/server");
-  return { ctx, supabase: (await createClient()) as UntypedDb };
+  return { ctx, supabase: await createClient() };
 }
 
 function invalidate(householdId: string, receiptId?: string) {
@@ -91,7 +88,7 @@ export async function uploadReceiptAction(
       p_file_name: file.name,
       p_size_bytes: file.size,
       p_file_hash: fileHash,
-      p_perceptual_hash: null,
+      p_perceptual_hash: undefined,
     });
     if (error) return { ok: false, error: error.message };
 
@@ -164,12 +161,12 @@ export async function updateReceiptReviewAction(
     const { supabase } = await db(householdId);
     const { error } = await supabase.rpc("update_receipt_review", {
       p_receipt_id: receiptId,
-      p_merchant: merchant,
-      p_purchase_date: purchaseDate,
-      p_declared_total_cents: declaredTotalCents,
+      p_merchant: merchant ?? undefined,
+      p_purchase_date: purchaseDate ?? undefined,
+      p_declared_total_cents: declaredTotalCents ?? undefined,
       p_currency: "USD",
-      p_notes: null,
-      p_line_items: lineItems,
+      p_notes: undefined,
+      p_line_items: lineItems ?? undefined,
     });
     if (error) return { ok: false, error: error.message };
     invalidate(householdId, receiptId);

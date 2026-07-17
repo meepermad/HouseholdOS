@@ -22,7 +22,10 @@ HouseholdOS validates environment variables with Zod. Missing or malformed value
 | `INVITATION_TTL_HOURS` | No | Default `168`. |
 | `DEFAULT_TIMEZONE` | No | IANA timezone; default `America/Chicago`. |
 | `DEFAULT_CURRENCY` | No | Three-letter uppercase code; default `USD`. |
-| `NOTIFICATION_WORKER_SECRET` | For cron worker | Bearer secret (≥16 chars) for `POST /api/internal/notifications/dispatch`. |
+| `NOTIFICATION_WORKER_SECRET` | For cron worker | Bearer secret (≥16 chars) for `POST /api/internal/notifications/dispatch` only. |
+| `DOCUMENT_JOB_WORKER_SECRET` | For OCR worker | Bearer secret (≥16 chars) for `POST /api/internal/documents/process` only. |
+| `EXPORT_WORKER_SECRET` | For export worker | Bearer secret (≥16 chars) for `POST /api/internal/exports/process` only. |
+| `SYNC_WORKER_SECRET` | Reserved | Declared for Completion-D sync worker; unused until offline sync ships. |
 | `NOTIFICATION_DELIVERY_ENABLED` | No | Default `false`. Set `true` only when VAPID + cron are ready. |
 | `VAPID_PRIVATE_KEY` | For push send | Server-only. Never `NEXT_PUBLIC_*`. Keep stable across deploys. |
 | `VAPID_SUBJECT` | For push send | `mailto:` or `https://` contact for VAPID. |
@@ -30,6 +33,8 @@ HouseholdOS validates environment variables with Zod. Missing or malformed value
 | `EMAIL_PROVIDER` / `EMAIL_API_KEY` / `EMAIL_FROM` | Optional | Reserved for a future provider integration. |
 | `RECEIPT_OCR_PROVIDER` | No | `openai` \| `fixture` \| `disabled`. Default: `openai` when `OPENAI_API_KEY` is set, otherwise disabled/manual. |
 | `OPENAI_API_KEY` | For receipt OCR | Server-only. Never `NEXT_PUBLIC_*`. When unset, receipt upload + manual review remain available. |
+
+Worker secrets must never appear in client bundles, URLs, notification payloads, logs, or browser storage. Each secret authorizes only its own endpoint family.
 
 \*Ordinary household queries use the cookie-based authenticated server client and remain subject to RLS.
 
