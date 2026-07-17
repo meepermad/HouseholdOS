@@ -29,6 +29,8 @@ Enforced in:
 | View / create calendar events | yes | yes | yes |
 | RSVP / update own guest count | yes | yes | yes |
 | Edit / cancel own events | yes | yes | yes |
+| Invite / view availability / manage own integrations | yes | yes | yes |
+| Manage household calendars & resources | no | yes | no |
 | Coordinator calendar override (household-visible only) | no | yes**** | no |
 | Manage own calendar feed tokens | yes | yes | yes |
 | View / create chores | yes | yes | yes |

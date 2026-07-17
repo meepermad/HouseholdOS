@@ -25,7 +25,7 @@ export function CalendarEventCard({
 
   return (
     <Link
-      href={`/app/${householdId}/calendar/events/${occurrence.eventId}?originalStartsAt=${encodeURIComponent(occurrence.originalStartsAt)}`}
+      href={`/app/${householdId}/calendar/event/${occurrence.eventId}?originalStartsAt=${encodeURIComponent(occurrence.originalStartsAt)}`}
       className={`flex items-start gap-3 rounded-md border px-3 py-2.5 text-sm transition-colors ${containerClass}`}
       aria-label={`${occurrence.title}${cancelled ? " (cancelled)" : ""}`}
     >

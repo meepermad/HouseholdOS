@@ -118,7 +118,7 @@ HouseholdOS is the authoritative calendar. One domain model powers the website a
 | Recurrence | RFC 5545 RRULE on the master; exception/override rows (including **metadata-only** guest/reminder/attendee overrides); bounded occurrence materialization (~90 days past / ~180 future) via `reconcile_calendar_event_occurrences` |
 | Lifecycle | `scheduled` → `cancelled` through RPCs only; direct status updates blocked |
 | Reminders | Reminder offsets on the master (or per-occurrence override); schedules fan out per materialized occurrence into `scheduled_notification_requests` |
-| Feeds | Per-user hashed bearer token; scopes `visible_to_me` / `household_public_only`; `GET /api/calendar/feed/[token]` returns `text/calendar` with `Cache-Control: private, no-store`. Read-only; no provider OAuth. Raw tokens never logged. |
+| Feeds | Per-user hashed bearer token; scopes `visible_to_me` / `household_public_only`; optional Phase 9 `purpose` (`personal_ics` \| `lifeos` \| `export`) + calendar scope; `GET /api/calendar/feed/[token]` returns `text/calendar` with `Cache-Control: private, no-store`. Raw tokens never logged. |
 | Worker health | Coordinators see aggregate delivery/horizon health under Settings → Operations (no secrets or payloads). |
 | Nav | Primary: Home · Calendar · Chores · Money. Settings and Inbox under sidebar/`more`. |
 
@@ -204,12 +204,12 @@ Phase 6 — Inventory, supplies, shopping lists, pantry
 Phase 6.5 — Recipes, meal requests, meal planning, meal-prep batches
 Phase 6.6 — Secure recipe URL import and review
 Phase 7 — Preference-aware recipe recommendations + maintenance / repair coordination
-Phase 8 — Household agreements, policies, approvals, acknowledgments, move-in/out, document retention (current)
-Phase 9 — Broader household records / landlord portals / advanced analytics (future)
-Later — LifeOS connector; optional Google/Apple calendar sync
+Phase 8 — Household agreements, policies, approvals, acknowledgments, move-in/out, document retention
+Phase 9 — Calendar expansion: availability, conflicts, resources, domain aggregation, ICS import/export, LifeOS read contract, Google OAuth sync architecture (current)
+Later — Broader household records / landlord portals / advanced analytics; deeper provider sync maturity
 ```
 
-Calendar stages remaining: LifeOS connector → optional two-way provider sync.
+Phase 4 calendar tables/RPCs/ICS feeds remain the source of truth. Phase 9 extends them additively (no rename-for-rename).
 
 ## Phase 7A — Preference-aware recommendations
 
@@ -231,6 +231,24 @@ Separate domain under `src/lib/governance/` and `/app/[householdId]/governance`:
 
 Writes are RPC-only (`householdos.governance_mutation`). Approved/active versions are immutable. Coordinator override never fabricates individual approvals. Financial coordinator approval is limited to financial documents. Membership is never removed merely by creating a move-out workflow.
 
+## Phase 9 — Calendar expansion
+
+Extends Phase 4 without replacing working calendar models:
+
+| Concern | Approach |
+|---|---|
+| Calendars | `household_calendars` + memberships (household / personal / subgroup / domain / external); events gain `calendar_id` |
+| RSVP | Material-change reconfirmation (`needs_reconfirmation`); invitations inbox |
+| Recurrence | This / this-and-future / entire series (`split_calendar_event_series`) |
+| Availability | Rules + overrides + deterministic finder (suggestions never auto-create) |
+| Conflicts | Soft warnings + hard exclusive-resource blocks |
+| Resources | Optional bookable `calendar_resources` (not inventory ownership) |
+| Domain aggregation | `source_type` projections + deep links; edits route to owning domain |
+| ICS | Existing subscribe feeds + download export + import preview/confirm |
+| LifeOS | Versioned read-only scoped feed contract (`docs/CALENDAR_LIFEOS.md`) |
+| Google | OAuth + encrypted refresh tokens + sync mappings; two-way opt-in for native events; mock-verified unless live credentials exist |
+| Attachments | Private `calendar-attachments` bucket; signed URLs only |
+
 ## Out of scope (current)
 
-Receipt OCR, actual bank/Venmo/Zelle/Plaid transfers, Google/Apple OAuth calendar sync, two-way calendar writeback, full offline sync, SMS, live email delivery (adapter boundary only until a provider is configured), chore photo evidence storage, public chore rankings or financial penalties for missed chores, barcode scanning, grocery delivery APIs, recipe-site crawling/indexing, paywall or anti-bot bypass, AI-generated recipes, portion claiming, automatic emergency-service contact, automatic landlord/vendor messaging.
+Receipt OCR, actual bank/Venmo/Zelle/Plaid transfers, full offline sync, SMS, live email delivery (adapter boundary only until a provider is configured), chore photo evidence storage, public chore rankings or financial penalties for missed chores, barcode scanning, grocery delivery APIs, recipe-site crawling/indexing, paywall or anti-bot bypass, AI-generated recipes, portion claiming, automatic emergency-service contact, automatic landlord/vendor messaging, Apple Calendar two-way writeback, claiming live Google/Apple verification without credentials.

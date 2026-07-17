@@ -41,7 +41,7 @@ function calendarPath(householdId: string, suffix = "") {
 }
 
 function eventPath(householdId: string, eventId: string) {
-  return calendarPath(householdId, `/events/${eventId}`);
+  return calendarPath(householdId, `/event/${eventId}`);
 }
 
 function boolFromForm(value: FormDataEntryValue | null): boolean {
@@ -702,3 +702,313 @@ export async function regenerateCalendarFeedAction(
     return { ok: false, error: toPublicErrorMessage(error) };
   }
 }
+
+// ---------------------------------------------------------------------------
+// Phase 9: availability, series split, resources, ICS, external sync
+// ---------------------------------------------------------------------------
+
+export async function searchAvailabilityAction(input: {
+  householdId: string;
+  requiredMembershipIds: string[];
+  optionalMembershipIds: string[];
+  durationMinutes: number;
+  earliestMinute: number;
+  latestMinute: number;
+}): Promise<
+  | { ok: true; suggestions: Array<{
+      startsAt: string;
+      endsAt: string;
+      requiredAvailable: boolean;
+      optionalAvailableCount: number;
+      conflictCount: number;
+      preferenceScore: number;
+    }> }
+  | { ok: false; error: string }
+> {
+  try {
+    const ctx = await assertActiveMembership(input.householdId);
+    if (!can(ctx.roles, "calendar.view_availability")) {
+      return { ok: false, error: "Not allowed to view availability." };
+    }
+
+    const { findAvailabilityWindows } = await import(
+      "@/lib/calendar/availability"
+    );
+    const { listOccurrencesInRange } = await import("@/lib/calendar/queries");
+
+    const now = new Date();
+    const rangeStart = now;
+    const rangeEnd = new Date(now.getTime() + 14 * 24 * 60 * 60_000);
+
+    const allMemberIds = [
+      ...input.requiredMembershipIds,
+      ...input.optionalMembershipIds,
+    ];
+    const occurrences = await listOccurrencesInRange(
+      input.householdId,
+      ctx.membershipId,
+      rangeStart.toISOString(),
+      rangeEnd.toISOString(),
+    );
+
+    const busy = occurrences.flatMap((occ) => {
+      const ids =
+        occ.isBusyProjection || occ.visibility === "household"
+          ? allMemberIds.filter(
+              (id) =>
+                id === occ.organizerMembershipId ||
+                (occ.viewerRsvp != null && id === ctx.membershipId),
+            )
+          : [occ.organizerMembershipId];
+      // Approximate: organizer is busy; attendees known only when viewer is participant
+      const membershipIds = [occ.organizerMembershipId];
+      if (occ.viewerRsvp) membershipIds.push(ctx.membershipId);
+      void ids;
+      return membershipIds.map((membershipId) => ({
+        membershipId,
+        startsAt: new Date(occ.startsAt),
+        endsAt: new Date(occ.endsAt),
+        busyOnly: occ.isBusyProjection,
+      }));
+    });
+
+    const windows = findAvailabilityWindows({
+      requiredMembershipIds: input.requiredMembershipIds,
+      optionalMembershipIds: input.optionalMembershipIds,
+      rangeStart,
+      rangeEnd,
+      durationMinutes: input.durationMinutes,
+      earliestMinute: input.earliestMinute,
+      latestMinute: input.latestMinute,
+      busy,
+      rules: [],
+      overrides: [],
+      now,
+    });
+
+    return {
+      ok: true,
+      suggestions: windows
+        .filter((w) => w.requiredAvailable)
+        .slice(0, 24)
+        .map((w) => ({
+          startsAt: w.startsAt.toISOString(),
+          endsAt: w.endsAt.toISOString(),
+          requiredAvailable: w.requiredAvailable,
+          optionalAvailableCount: w.optionalAvailableCount,
+          conflictCount: w.conflictCount,
+          preferenceScore: w.preferenceScore,
+        })),
+    };
+  } catch (error) {
+    return { ok: false, error: toPublicErrorMessage(error) };
+  }
+}
+
+export async function splitCalendarSeriesAction(
+  _prev: ActionResult | null,
+  formData: FormData,
+): Promise<ActionResult> {
+  try {
+    const householdId = String(formData.get("householdId") ?? "");
+    const eventId = String(formData.get("eventId") ?? "");
+    const splitStartsAt = String(formData.get("splitStartsAt") ?? "");
+    const idempotencyKey = String(
+      formData.get("clientIdempotencyKey") ?? crypto.randomUUID(),
+    );
+    const ctx = await assertActiveMembership(householdId);
+    if (!can(ctx.roles, "calendar.manage_own")) {
+      return { ok: false, error: "Not allowed." };
+    }
+    const { createClient } = await import("@/lib/supabase/server");
+    const supabase = db(await createClient());
+    const { data, error } = await supabase.rpc("split_calendar_event_series", {
+      p_event_id: eventId,
+      p_split_starts_at: splitStartsAt,
+      p_client_idempotency_key: idempotencyKey,
+    });
+    if (error) return { ok: false, error: "Unable to split series." };
+    const newId = data as string;
+    await rematerialize(supabase, eventId);
+    await rematerialize(supabase, newId);
+    revalidatePath(calendarPath(householdId));
+    redirect(eventPath(householdId, newId));
+  } catch (error) {
+    if (error && typeof error === "object" && "digest" in error) throw error;
+    return { ok: false, error: toPublicErrorMessage(error) };
+  }
+}
+
+export async function createCalendarResourceAction(
+  _prev: ActionResult | null,
+  formData: FormData,
+): Promise<ActionResult> {
+  try {
+    const householdId = String(formData.get("householdId") ?? "");
+    const name = String(formData.get("name") ?? "").trim();
+    const resourceKind = String(formData.get("resourceKind") ?? "generic");
+    const ctx = await assertActiveMembership(householdId);
+    if (
+      !can(ctx.roles, "calendar.manage_resources") &&
+      !can(ctx.roles, "calendar.create")
+    ) {
+      return { ok: false, error: "Not allowed." };
+    }
+    const { createClient } = await import("@/lib/supabase/server");
+    const supabase = db(await createClient());
+    const { error } = await supabase.rpc("create_calendar_resource", {
+      p_household_id: householdId,
+      p_name: name,
+      p_resource_kind: resourceKind,
+    });
+    if (error) return { ok: false, error: "Unable to create resource." };
+    revalidatePath(`/app/${householdId}/settings/calendar`);
+    return { ok: true, message: "Resource created." };
+  } catch (error) {
+    return { ok: false, error: toPublicErrorMessage(error) };
+  }
+}
+
+export async function importIcsPreviewAction(input: {
+  householdId: string;
+  icsText: string;
+}): Promise<
+  | {
+      ok: true;
+      events: Array<{ uid: string; summary: string; allDay: boolean }>;
+      duplicateCount: number;
+    }
+  | { ok: false; error: string }
+> {
+  try {
+    const ctx = await assertActiveMembership(input.householdId);
+    if (!can(ctx.roles, "calendar.create")) {
+      return { ok: false, error: "Not allowed." };
+    }
+    const { parseIcsEvents, dedupeIcsByUid } = await import(
+      "@/lib/calendar/ics-parse"
+    );
+    const parsed = parseIcsEvents(input.icsText);
+    const { createClient } = await import("@/lib/supabase/server");
+    const supabase = db(await createClient());
+    const { data: existing } = await supabase
+      .from("calendar_ics_import_uids")
+      .select("ics_uid")
+      .eq("household_id", input.householdId);
+    const existingUids = new Set(
+      ((existing ?? []) as Array<{ ics_uid: string }>).map((r) => r.ics_uid),
+    );
+    const { toImport, skippedDuplicates } = dedupeIcsByUid(
+      parsed,
+      existingUids,
+    );
+    return {
+      ok: true,
+      events: toImport.map((e) => ({
+        uid: e.uid,
+        summary: e.summary,
+        allDay: e.allDay,
+      })),
+      duplicateCount: skippedDuplicates.length,
+    };
+  } catch (error) {
+    return { ok: false, error: toPublicErrorMessage(error) };
+  }
+}
+
+export async function startGoogleCalendarOAuthAction(
+  householdId: string,
+): Promise<ActionResult & { data?: { authUrl: string } }> {
+  try {
+    const ctx = await assertActiveMembership(householdId);
+    if (!can(ctx.roles, "calendar.manage_integrations")) {
+      return { ok: false, error: "Not allowed." };
+    }
+    const clientId = process.env.GOOGLE_CALENDAR_CLIENT_ID;
+    if (!clientId) {
+      return {
+        ok: false,
+        error:
+          "Google Calendar is not configured on this deployment (missing client id).",
+      };
+    }
+    const { createHash, randomBytes } = await import("crypto");
+    const verifier = randomBytes(32).toString("base64url");
+    const challenge = createHash("sha256")
+      .update(verifier)
+      .digest("base64url");
+    const state = Buffer.from(
+      JSON.stringify({
+        householdId,
+        userId: ctx.userId,
+        nonce: randomBytes(16).toString("hex"),
+        verifier,
+      }),
+    ).toString("base64url");
+
+    const origin = await resolveOrigin();
+    const { buildGoogleAuthUrl } = await import(
+      "@/lib/calendar/external/google"
+    );
+    const authUrl = buildGoogleAuthUrl({
+      clientId,
+      redirectUri: `${origin}/api/calendar/google/callback`,
+      state,
+      codeChallenge: challenge,
+    });
+    return { ok: true, message: "Continue to Google", data: { authUrl } };
+  } catch (error) {
+    return { ok: false, error: toPublicErrorMessage(error) };
+  }
+}
+
+export async function revokeGoogleCalendarConnectionAction(
+  _prev: ActionResult | null,
+  formData: FormData,
+): Promise<ActionResult> {
+  try {
+    const householdId = String(formData.get("householdId") ?? "");
+    const connectionId = String(formData.get("connectionId") ?? "");
+    const ctx = await assertActiveMembership(householdId);
+    if (!can(ctx.roles, "calendar.manage_integrations")) {
+      return { ok: false, error: "Not allowed." };
+    }
+    const { createClient } = await import("@/lib/supabase/server");
+    const supabase = db(await createClient());
+    const { error } = await supabase.rpc(
+      "revoke_calendar_external_connection",
+      { p_connection_id: connectionId },
+    );
+    if (error) return { ok: false, error: "Unable to revoke connection." };
+    revalidatePath(`/app/${householdId}/settings/integrations/calendar`);
+    return { ok: true, message: "Connection revoked." };
+  } catch (error) {
+    return { ok: false, error: toPublicErrorMessage(error) };
+  }
+}
+
+export async function enqueueCalendarSyncAction(
+  _prev: ActionResult | null,
+  formData: FormData,
+): Promise<ActionResult> {
+  try {
+    const householdId = String(formData.get("householdId") ?? "");
+    const connectionId = String(formData.get("connectionId") ?? "");
+    const ctx = await assertActiveMembership(householdId);
+    if (!can(ctx.roles, "calendar.manage_integrations")) {
+      return { ok: false, error: "Not allowed." };
+    }
+    const { createClient } = await import("@/lib/supabase/server");
+    const supabase = db(await createClient());
+    const { error } = await supabase.rpc("enqueue_calendar_sync_run", {
+      p_connection_id: connectionId,
+      p_trigger_kind: "manual",
+    });
+    if (error) return { ok: false, error: "Unable to start sync." };
+    revalidatePath(`/app/${householdId}/settings/integrations/calendar`);
+    return { ok: true, message: "Sync queued." };
+  } catch (error) {
+    return { ok: false, error: toPublicErrorMessage(error) };
+  }
+}
+

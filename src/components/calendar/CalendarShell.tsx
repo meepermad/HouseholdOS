@@ -9,6 +9,7 @@ export function CalendarShell({
   nextHref,
   todayHref,
   canCreate,
+  date,
   children,
 }: {
   householdId: string;
@@ -18,6 +19,7 @@ export function CalendarShell({
   nextHref: string;
   todayHref: string;
   canCreate: boolean;
+  date?: string;
   children: ReactNode;
 }) {
   return (
@@ -30,6 +32,7 @@ export function CalendarShell({
         nextHref={nextHref}
         todayHref={todayHref}
         canCreate={canCreate}
+        date={date}
       />
       <section>{children}</section>
     </main>

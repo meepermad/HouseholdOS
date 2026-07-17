@@ -60,6 +60,40 @@ test.describe("calendar routes smoke", () => {
     );
     await expect(page).toHaveURL(/login/);
   });
+
+  test("unauthenticated day view redirects to login", async ({ page }) => {
+    await page.goto(
+      "/app/00000000-0000-4000-8000-000000000001/calendar/day",
+    );
+    await expect(page).toHaveURL(/login/);
+  });
+
+  test("unauthenticated invitations route redirects to login", async ({
+    page,
+  }) => {
+    await page.goto(
+      "/app/00000000-0000-4000-8000-000000000001/calendar/invitations",
+    );
+    await expect(page).toHaveURL(/login/);
+  });
+
+  test("unauthenticated availability route redirects to login", async ({
+    page,
+  }) => {
+    await page.goto(
+      "/app/00000000-0000-4000-8000-000000000001/calendar/availability",
+    );
+    await expect(page).toHaveURL(/login/);
+  });
+
+  test("unauthenticated integrations settings redirects to login", async ({
+    page,
+  }) => {
+    await page.goto(
+      "/app/00000000-0000-4000-8000-000000000001/settings/integrations/calendar",
+    );
+    await expect(page).toHaveURL(/login/);
+  });
 });
 
 test.describe.configure({ mode: "serial" });
@@ -149,9 +183,27 @@ test.describe("authenticated calendar smoke", () => {
     await page.goto(`/app/${householdId}/calendar`);
 
     await expect(
-      page.getByRole("heading", { name: /Agenda|Month|Week/i }),
+      page.getByRole("heading", { name: /Agenda|Month|Week|Day/i }),
     ).toBeVisible({ timeout: 20_000 });
     await expect(page.getByRole("tablist", { name: "Calendar view" })).toBeVisible();
+    await page.close();
+  });
+
+  test("day and invitations routes load", async ({ browser }, testInfo) => {
+    test.skip(testInfo.project.name !== "Desktop Chrome");
+    const page = await pageWithStoredSession(browser, storageStatePath);
+    await page.goto(`/app/${householdId}/calendar/day`);
+    await expect(page.getByRole("tablist", { name: "Calendar view" })).toBeVisible({
+      timeout: 20_000,
+    });
+    await page.goto(`/app/${householdId}/calendar/invitations`);
+    await expect(
+      page.getByRole("heading", { name: "Invitations" }),
+    ).toBeVisible({ timeout: 20_000 });
+    await page.goto(`/app/${householdId}/calendar/availability`);
+    await expect(
+      page.getByRole("heading", { name: "Find a time" }),
+    ).toBeVisible({ timeout: 20_000 });
     await page.close();
   });
 

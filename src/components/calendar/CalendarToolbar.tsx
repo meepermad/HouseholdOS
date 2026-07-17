@@ -1,15 +1,17 @@
 import Link from "next/link";
 
-export type CalendarView = "agenda" | "month" | "week";
+export type CalendarView = "agenda" | "day" | "month" | "week";
 
 export const CALENDAR_VIEWS: readonly CalendarView[] = [
   "agenda",
-  "month",
+  "day",
   "week",
+  "month",
 ];
 
 const VIEW_LABELS: Record<CalendarView, string> = {
   agenda: "Agenda",
+  day: "Day",
   month: "Month",
   week: "Week",
 };
@@ -22,6 +24,15 @@ function pill(active: boolean): string {
     : `${base} text-text-secondary hover:bg-surface-interactive hover:text-text-primary`;
 }
 
+export function calendarViewPath(
+  householdId: string,
+  view: CalendarView,
+  date?: string,
+): string {
+  const base = `/app/${householdId}/calendar/${view}`;
+  return date ? `${base}?date=${date}` : base;
+}
+
 export function CalendarToolbar({
   householdId,
   view,
@@ -31,6 +42,7 @@ export function CalendarToolbar({
   todayHref,
   canCreate,
   hideWeekOnMobile = true,
+  date,
 }: {
   householdId: string;
   view: CalendarView;
@@ -40,9 +52,10 @@ export function CalendarToolbar({
   todayHref: string;
   canCreate: boolean;
   hideWeekOnMobile?: boolean;
+  date?: string;
 }) {
   function viewHref(v: CalendarView): string {
-    return `/app/${householdId}/calendar?view=${v}`;
+    return calendarViewPath(householdId, v, date);
   }
 
   return (
@@ -51,14 +64,28 @@ export function CalendarToolbar({
         <h1 className="font-[family-name:var(--font-display)] text-2xl font-semibold tracking-tight sm:text-3xl">
           {heading}
         </h1>
-        {canCreate ? (
+        <div className="flex flex-wrap gap-2">
           <Link
-            href={`/app/${householdId}/calendar/new`}
-            className="inline-flex min-h-11 items-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
+            href={`/app/${householdId}/calendar/invitations`}
+            className="inline-flex min-h-11 items-center rounded-md border border-border px-3 py-2 text-sm font-medium text-text-secondary hover:bg-surface-interactive"
           >
-            New event
+            Invitations
           </Link>
-        ) : null}
+          <Link
+            href={`/app/${householdId}/calendar/availability`}
+            className="inline-flex min-h-11 items-center rounded-md border border-border px-3 py-2 text-sm font-medium text-text-secondary hover:bg-surface-interactive"
+          >
+            Find time
+          </Link>
+          {canCreate ? (
+            <Link
+              href={`/app/${householdId}/calendar/new`}
+              className="inline-flex min-h-11 items-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
+            >
+              New event
+            </Link>
+          ) : null}
+        </div>
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -85,23 +112,23 @@ export function CalendarToolbar({
         <div className="flex items-center gap-1">
           <Link
             href={prevHref}
+            className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-md border border-border text-text-secondary hover:bg-surface-interactive"
             aria-label="Previous"
-            className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-md border border-border bg-surface text-sm text-text-secondary hover:bg-surface-interactive"
           >
-            <span aria-hidden>‹</span>
+            ‹
           </Link>
           <Link
             href={todayHref}
-            className="inline-flex min-h-11 items-center rounded-md border border-border bg-surface px-3 py-1.5 text-sm font-medium text-text-secondary hover:bg-surface-interactive"
+            className="inline-flex min-h-11 items-center rounded-md border border-border px-3 text-sm font-medium text-text-secondary hover:bg-surface-interactive"
           >
             Today
           </Link>
           <Link
             href={nextHref}
+            className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-md border border-border text-text-secondary hover:bg-surface-interactive"
             aria-label="Next"
-            className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-md border border-border bg-surface text-sm text-text-secondary hover:bg-surface-interactive"
           >
-            <span aria-hidden>›</span>
+            ›
           </Link>
         </div>
       </div>

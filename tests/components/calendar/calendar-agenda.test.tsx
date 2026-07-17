@@ -44,6 +44,8 @@ function makeOccurrence(
     isBusyProjection: false,
     cancelled: false,
     viewerRsvp: null,
+    sourceType: null,
+    calendarId: null,
     ...overrides,
   };
 }

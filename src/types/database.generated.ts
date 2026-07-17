@@ -123,6 +123,123 @@ export type Database = {
         }
         Relationships: []
       }
+      calendar_availability_overrides: {
+        Row: {
+          created_at: string
+          ends_at: string
+          household_id: string
+          id: string
+          membership_id: string
+          note: string | null
+          override_kind: string
+          starts_at: string
+        }
+        Insert: {
+          created_at?: string
+          ends_at: string
+          household_id: string
+          id?: string
+          membership_id: string
+          note?: string | null
+          override_kind: string
+          starts_at: string
+        }
+        Update: {
+          created_at?: string
+          ends_at?: string
+          household_id?: string
+          id?: string
+          membership_id?: string
+          note?: string | null
+          override_kind?: string
+          starts_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calendar_availability_overrides_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_availability_overrides_membership_id_fkey"
+            columns: ["membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      calendar_availability_rules: {
+        Row: {
+          calendar_ids: string[]
+          created_at: string
+          end_minute: number
+          household_id: string
+          id: string
+          is_active: boolean
+          max_event_minutes: number | null
+          membership_id: string
+          min_notice_minutes: number
+          priority: number
+          rule_kind: string
+          start_minute: number
+          time_zone: string
+          updated_at: string
+          weekdays: number[]
+        }
+        Insert: {
+          calendar_ids?: string[]
+          created_at?: string
+          end_minute: number
+          household_id: string
+          id?: string
+          is_active?: boolean
+          max_event_minutes?: number | null
+          membership_id: string
+          min_notice_minutes?: number
+          priority?: number
+          rule_kind: string
+          start_minute: number
+          time_zone?: string
+          updated_at?: string
+          weekdays?: number[]
+        }
+        Update: {
+          calendar_ids?: string[]
+          created_at?: string
+          end_minute?: number
+          household_id?: string
+          id?: string
+          is_active?: boolean
+          max_event_minutes?: number | null
+          membership_id?: string
+          min_notice_minutes?: number
+          priority?: number
+          rule_kind?: string
+          start_minute?: number
+          time_zone?: string
+          updated_at?: string
+          weekdays?: number[]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calendar_availability_rules_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_availability_rules_membership_id_fkey"
+            columns: ["membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       calendar_event_attendees: {
         Row: {
           created_at: string
@@ -131,9 +248,13 @@ export type Database = {
           guest_note: string | null
           household_id: string
           id: string
+          is_required: boolean
           membership_id: string
+          needs_reconfirmation: boolean
           participation_role: string
           responded_at: string | null
+          response_event_sequence: number
+          response_note: string | null
           rsvp_status: string
           updated_at: string
         }
@@ -144,9 +265,13 @@ export type Database = {
           guest_note?: string | null
           household_id: string
           id?: string
+          is_required?: boolean
           membership_id: string
+          needs_reconfirmation?: boolean
           participation_role?: string
           responded_at?: string | null
+          response_event_sequence?: number
+          response_note?: string | null
           rsvp_status?: string
           updated_at?: string
         }
@@ -157,9 +282,13 @@ export type Database = {
           guest_note?: string | null
           household_id?: string
           id?: string
+          is_required?: boolean
           membership_id?: string
+          needs_reconfirmation?: boolean
           participation_role?: string
           responded_at?: string | null
+          response_event_sequence?: number
+          response_note?: string | null
           rsvp_status?: string
           updated_at?: string
         }
@@ -191,6 +320,97 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "household_memberships"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      calendar_event_conflicts: {
+        Row: {
+          conflict_class: string
+          conflict_kind: string
+          conflicting_event_id: string | null
+          created_at: string
+          event_id: string
+          household_id: string
+          id: string
+          is_resolved: boolean
+          resolution_note: string | null
+          resolved_at: string | null
+          resolved_by_membership_id: string | null
+          resource_id: string | null
+          summary: string
+        }
+        Insert: {
+          conflict_class: string
+          conflict_kind: string
+          conflicting_event_id?: string | null
+          created_at?: string
+          event_id: string
+          household_id: string
+          id?: string
+          is_resolved?: boolean
+          resolution_note?: string | null
+          resolved_at?: string | null
+          resolved_by_membership_id?: string | null
+          resource_id?: string | null
+          summary: string
+        }
+        Update: {
+          conflict_class?: string
+          conflict_kind?: string
+          conflicting_event_id?: string | null
+          created_at?: string
+          event_id?: string
+          household_id?: string
+          id?: string
+          is_resolved?: boolean
+          resolution_note?: string | null
+          resolved_at?: string | null
+          resolved_by_membership_id?: string | null
+          resource_id?: string | null
+          summary?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calendar_event_conflicts_conflicting_event_id_fkey"
+            columns: ["conflicting_event_id"]
+            isOneToOne: false
+            referencedRelation: "calendar_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_event_conflicts_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "calendar_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_event_conflicts_event_id_household_id_fkey"
+            columns: ["event_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "calendar_events"
+            referencedColumns: ["id", "household_id"]
+          },
+          {
+            foreignKeyName: "calendar_event_conflicts_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_event_conflicts_resolved_by_membership_id_fkey"
+            columns: ["resolved_by_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_event_conflicts_resource_fkey"
+            columns: ["resource_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "calendar_resources"
+            referencedColumns: ["id", "household_id"]
           },
         ]
       }
@@ -426,6 +646,77 @@ export type Database = {
           },
         ]
       }
+      calendar_event_links: {
+        Row: {
+          created_at: string
+          created_by_membership_id: string
+          event_id: string
+          external_url: string | null
+          household_id: string
+          id: string
+          label: string | null
+          link_kind: string
+          related_id: string | null
+          related_table: string | null
+          storage_path: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by_membership_id: string
+          event_id: string
+          external_url?: string | null
+          household_id: string
+          id?: string
+          label?: string | null
+          link_kind: string
+          related_id?: string | null
+          related_table?: string | null
+          storage_path?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by_membership_id?: string
+          event_id?: string
+          external_url?: string | null
+          household_id?: string
+          id?: string
+          label?: string | null
+          link_kind?: string
+          related_id?: string | null
+          related_table?: string | null
+          storage_path?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calendar_event_links_created_by_membership_id_fkey"
+            columns: ["created_by_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_event_links_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "calendar_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_event_links_event_id_household_id_fkey"
+            columns: ["event_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "calendar_events"
+            referencedColumns: ["id", "household_id"]
+          },
+          {
+            foreignKeyName: "calendar_event_links_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       calendar_event_occurrences: {
         Row: {
           all_day: boolean
@@ -555,22 +846,30 @@ export type Database = {
       calendar_events: {
         Row: {
           all_day: boolean
+          busy_status: string
+          calendar_id: string
           calendar_uid: string
           cancellation_reason: string | null
           cancelled_at: string | null
           cancelled_by_membership_id: string | null
+          canonical_deep_link: string | null
           category: string
           client_idempotency_key: string
           created_at: string
           description: string | null
+          draft_status: string
           end_date_exclusive: string | null
           ends_at: string | null
           event_guest_count: number
           guest_label: string | null
           household_id: string
           id: string
+          is_deletable: boolean
+          is_editable: boolean
+          lifecycle_owner: string
           location: string | null
           materialized_through: string | null
+          meeting_url: string | null
           organizer_membership_id: string
           recurrence_count: number | null
           recurrence_until: string | null
@@ -578,33 +877,44 @@ export type Database = {
           sequence: number
           series_id: string
           source_id: string | null
+          source_system: string | null
           source_type: string | null
+          source_version: string | null
           start_date: string | null
           starts_at: string | null
           status: string
           time_zone: string
           title: string
+          travel_buffer_minutes: number
           updated_at: string
           visibility: string
         }
         Insert: {
           all_day?: boolean
+          busy_status?: string
+          calendar_id: string
           calendar_uid: string
           cancellation_reason?: string | null
           cancelled_at?: string | null
           cancelled_by_membership_id?: string | null
+          canonical_deep_link?: string | null
           category?: string
           client_idempotency_key: string
           created_at?: string
           description?: string | null
+          draft_status?: string
           end_date_exclusive?: string | null
           ends_at?: string | null
           event_guest_count?: number
           guest_label?: string | null
           household_id: string
           id?: string
+          is_deletable?: boolean
+          is_editable?: boolean
+          lifecycle_owner?: string
           location?: string | null
           materialized_through?: string | null
+          meeting_url?: string | null
           organizer_membership_id: string
           recurrence_count?: number | null
           recurrence_until?: string | null
@@ -612,33 +922,44 @@ export type Database = {
           sequence?: number
           series_id?: string
           source_id?: string | null
+          source_system?: string | null
           source_type?: string | null
+          source_version?: string | null
           start_date?: string | null
           starts_at?: string | null
           status?: string
           time_zone?: string
           title: string
+          travel_buffer_minutes?: number
           updated_at?: string
           visibility?: string
         }
         Update: {
           all_day?: boolean
+          busy_status?: string
+          calendar_id?: string
           calendar_uid?: string
           cancellation_reason?: string | null
           cancelled_at?: string | null
           cancelled_by_membership_id?: string | null
+          canonical_deep_link?: string | null
           category?: string
           client_idempotency_key?: string
           created_at?: string
           description?: string | null
+          draft_status?: string
           end_date_exclusive?: string | null
           ends_at?: string | null
           event_guest_count?: number
           guest_label?: string | null
           household_id?: string
           id?: string
+          is_deletable?: boolean
+          is_editable?: boolean
+          lifecycle_owner?: string
           location?: string | null
           materialized_through?: string | null
+          meeting_url?: string | null
           organizer_membership_id?: string
           recurrence_count?: number | null
           recurrence_until?: string | null
@@ -646,16 +967,26 @@ export type Database = {
           sequence?: number
           series_id?: string
           source_id?: string | null
+          source_system?: string | null
           source_type?: string | null
+          source_version?: string | null
           start_date?: string | null
           starts_at?: string | null
           status?: string
           time_zone?: string
           title?: string
+          travel_buffer_minutes?: number
           updated_at?: string
           visibility?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "calendar_events_calendar_id_fkey"
+            columns: ["calendar_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "household_calendars"
+            referencedColumns: ["id", "household_id"]
+          },
           {
             foreignKeyName: "calendar_events_cancelled_by_membership_id_fkey"
             columns: ["cancelled_by_membership_id"]
@@ -679,41 +1010,281 @@ export type Database = {
           },
         ]
       }
+      calendar_external_calendars: {
+        Row: {
+          connection_id: string
+          created_at: string
+          display_name: string
+          household_calendar_id: string | null
+          household_id: string
+          id: string
+          is_selected: boolean
+          last_synced_at: string | null
+          provider_calendar_id: string
+          provider_etag: string | null
+          provider_sync_token: string | null
+          sync_direction: string
+        }
+        Insert: {
+          connection_id: string
+          created_at?: string
+          display_name: string
+          household_calendar_id?: string | null
+          household_id: string
+          id?: string
+          is_selected?: boolean
+          last_synced_at?: string | null
+          provider_calendar_id: string
+          provider_etag?: string | null
+          provider_sync_token?: string | null
+          sync_direction?: string
+        }
+        Update: {
+          connection_id?: string
+          created_at?: string
+          display_name?: string
+          household_calendar_id?: string | null
+          household_id?: string
+          id?: string
+          is_selected?: boolean
+          last_synced_at?: string | null
+          provider_calendar_id?: string
+          provider_etag?: string | null
+          provider_sync_token?: string | null
+          sync_direction?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calendar_external_calendars_connection_id_fkey"
+            columns: ["connection_id"]
+            isOneToOne: false
+            referencedRelation: "calendar_external_connections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_external_calendars_connection_id_household_id_fkey"
+            columns: ["connection_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "calendar_external_connections"
+            referencedColumns: ["id", "household_id"]
+          },
+          {
+            foreignKeyName: "calendar_external_calendars_household_calendar_id_fkey"
+            columns: ["household_calendar_id"]
+            isOneToOne: false
+            referencedRelation: "household_calendars"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_external_calendars_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      calendar_external_connections: {
+        Row: {
+          access_token_expires_at: string | null
+          account_email: string | null
+          created_at: string
+          household_id: string
+          id: string
+          last_error_code: string | null
+          last_error_message: string | null
+          last_sync_at: string | null
+          owner_user_id: string
+          provider: string
+          refresh_token_ciphertext: string | null
+          refresh_token_nonce: string | null
+          revoked_at: string | null
+          scopes: string[]
+          status: string
+          sync_mode: string
+          updated_at: string
+        }
+        Insert: {
+          access_token_expires_at?: string | null
+          account_email?: string | null
+          created_at?: string
+          household_id: string
+          id?: string
+          last_error_code?: string | null
+          last_error_message?: string | null
+          last_sync_at?: string | null
+          owner_user_id: string
+          provider: string
+          refresh_token_ciphertext?: string | null
+          refresh_token_nonce?: string | null
+          revoked_at?: string | null
+          scopes?: string[]
+          status?: string
+          sync_mode?: string
+          updated_at?: string
+        }
+        Update: {
+          access_token_expires_at?: string | null
+          account_email?: string | null
+          created_at?: string
+          household_id?: string
+          id?: string
+          last_error_code?: string | null
+          last_error_message?: string | null
+          last_sync_at?: string | null
+          owner_user_id?: string
+          provider?: string
+          refresh_token_ciphertext?: string | null
+          refresh_token_nonce?: string | null
+          revoked_at?: string | null
+          scopes?: string[]
+          status?: string
+          sync_mode?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calendar_external_connections_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      calendar_external_event_mappings: {
+        Row: {
+          conflict_resolution: string | null
+          conflict_type: string | null
+          connection_id: string
+          created_at: string
+          event_id: string
+          external_calendar_id: string
+          household_id: string
+          id: string
+          last_synced_local_version: number | null
+          last_synced_provider_version: string | null
+          local_version: number
+          provider_etag: string | null
+          provider_event_id: string
+          provider_version: string | null
+          resolved_at: string | null
+          resolved_by_user_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          conflict_resolution?: string | null
+          conflict_type?: string | null
+          connection_id: string
+          created_at?: string
+          event_id: string
+          external_calendar_id: string
+          household_id: string
+          id?: string
+          last_synced_local_version?: number | null
+          last_synced_provider_version?: string | null
+          local_version?: number
+          provider_etag?: string | null
+          provider_event_id: string
+          provider_version?: string | null
+          resolved_at?: string | null
+          resolved_by_user_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          conflict_resolution?: string | null
+          conflict_type?: string | null
+          connection_id?: string
+          created_at?: string
+          event_id?: string
+          external_calendar_id?: string
+          household_id?: string
+          id?: string
+          last_synced_local_version?: number | null
+          last_synced_provider_version?: string | null
+          local_version?: number
+          provider_etag?: string | null
+          provider_event_id?: string
+          provider_version?: string | null
+          resolved_at?: string | null
+          resolved_by_user_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calendar_external_event_mappings_connection_id_fkey"
+            columns: ["connection_id"]
+            isOneToOne: false
+            referencedRelation: "calendar_external_connections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_external_event_mappings_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "calendar_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_external_event_mappings_external_calendar_id_fkey"
+            columns: ["external_calendar_id"]
+            isOneToOne: false
+            referencedRelation: "calendar_external_calendars"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_external_event_mappings_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       calendar_feed_tokens: {
         Row: {
+          calendar_ids: string[]
           created_at: string
           created_by_user_id: string
           expires_at: string | null
           household_id: string
           id: string
+          include_private: boolean
           label: string
           last_accessed_at: string | null
+          purpose: string
           revoked_at: string | null
           scope: string
           token_hash: string
           user_id: string
         }
         Insert: {
+          calendar_ids?: string[]
           created_at?: string
           created_by_user_id: string
           expires_at?: string | null
           household_id: string
           id?: string
+          include_private?: boolean
           label?: string
           last_accessed_at?: string | null
+          purpose?: string
           revoked_at?: string | null
           scope?: string
           token_hash: string
           user_id: string
         }
         Update: {
+          calendar_ids?: string[]
           created_at?: string
           created_by_user_id?: string
           expires_at?: string | null
           household_id?: string
           id?: string
+          include_private?: boolean
           label?: string
           last_accessed_at?: string | null
+          purpose?: string
           revoked_at?: string | null
           scope?: string
           token_hash?: string
@@ -722,6 +1293,295 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "calendar_feed_tokens_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      calendar_ics_import_uids: {
+        Row: {
+          calendar_id: string
+          event_id: string
+          household_id: string
+          ics_uid: string
+          id: string
+          imported_at: string
+        }
+        Insert: {
+          calendar_id: string
+          event_id: string
+          household_id: string
+          ics_uid: string
+          id?: string
+          imported_at?: string
+        }
+        Update: {
+          calendar_id?: string
+          event_id?: string
+          household_id?: string
+          ics_uid?: string
+          id?: string
+          imported_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calendar_ics_import_uids_calendar_id_fkey"
+            columns: ["calendar_id"]
+            isOneToOne: false
+            referencedRelation: "household_calendars"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_ics_import_uids_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "calendar_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_ics_import_uids_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      calendar_resource_reservations: {
+        Row: {
+          confirmed: boolean
+          created_at: string
+          created_by_membership_id: string
+          event_id: string
+          household_id: string
+          id: string
+          quantity: number
+          resource_id: string
+        }
+        Insert: {
+          confirmed?: boolean
+          created_at?: string
+          created_by_membership_id: string
+          event_id: string
+          household_id: string
+          id?: string
+          quantity?: number
+          resource_id: string
+        }
+        Update: {
+          confirmed?: boolean
+          created_at?: string
+          created_by_membership_id?: string
+          event_id?: string
+          household_id?: string
+          id?: string
+          quantity?: number
+          resource_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calendar_resource_reservations_created_by_membership_id_fkey"
+            columns: ["created_by_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_resource_reservations_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "calendar_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_resource_reservations_event_id_household_id_fkey"
+            columns: ["event_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "calendar_events"
+            referencedColumns: ["id", "household_id"]
+          },
+          {
+            foreignKeyName: "calendar_resource_reservations_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_resource_reservations_resource_id_fkey"
+            columns: ["resource_id"]
+            isOneToOne: false
+            referencedRelation: "calendar_resources"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_resource_reservations_resource_id_household_id_fkey"
+            columns: ["resource_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "calendar_resources"
+            referencedColumns: ["id", "household_id"]
+          },
+        ]
+      }
+      calendar_resources: {
+        Row: {
+          capacity: number
+          capacity_mode: string
+          created_at: string
+          household_id: string
+          id: string
+          is_active: boolean
+          name: string
+          notes: string | null
+          resource_kind: string
+          updated_at: string
+        }
+        Insert: {
+          capacity?: number
+          capacity_mode?: string
+          created_at?: string
+          household_id: string
+          id?: string
+          is_active?: boolean
+          name: string
+          notes?: string | null
+          resource_kind?: string
+          updated_at?: string
+        }
+        Update: {
+          capacity?: number
+          capacity_mode?: string
+          created_at?: string
+          household_id?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          notes?: string | null
+          resource_kind?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calendar_resources_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      calendar_sync_failures: {
+        Row: {
+          connection_id: string
+          created_at: string
+          failure_code: string
+          failure_message: string
+          id: string
+          is_retryable: boolean
+          provider_event_id: string | null
+          sync_run_id: string
+        }
+        Insert: {
+          connection_id: string
+          created_at?: string
+          failure_code: string
+          failure_message: string
+          id?: string
+          is_retryable?: boolean
+          provider_event_id?: string | null
+          sync_run_id: string
+        }
+        Update: {
+          connection_id?: string
+          created_at?: string
+          failure_code?: string
+          failure_message?: string
+          id?: string
+          is_retryable?: boolean
+          provider_event_id?: string | null
+          sync_run_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calendar_sync_failures_connection_id_fkey"
+            columns: ["connection_id"]
+            isOneToOne: false
+            referencedRelation: "calendar_external_connections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_sync_failures_sync_run_id_fkey"
+            columns: ["sync_run_id"]
+            isOneToOne: false
+            referencedRelation: "calendar_sync_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      calendar_sync_runs: {
+        Row: {
+          attempt_count: number
+          claimed_at: string | null
+          connection_id: string
+          created_at: string
+          error_summary: string | null
+          events_conflicted: number
+          events_exported: number
+          events_imported: number
+          finished_at: string | null
+          household_id: string
+          id: string
+          next_attempt_at: string | null
+          started_at: string | null
+          status: string
+          trigger_kind: string
+        }
+        Insert: {
+          attempt_count?: number
+          claimed_at?: string | null
+          connection_id: string
+          created_at?: string
+          error_summary?: string | null
+          events_conflicted?: number
+          events_exported?: number
+          events_imported?: number
+          finished_at?: string | null
+          household_id: string
+          id?: string
+          next_attempt_at?: string | null
+          started_at?: string | null
+          status?: string
+          trigger_kind: string
+        }
+        Update: {
+          attempt_count?: number
+          claimed_at?: string | null
+          connection_id?: string
+          created_at?: string
+          error_summary?: string | null
+          events_conflicted?: number
+          events_exported?: number
+          events_imported?: number
+          finished_at?: string | null
+          household_id?: string
+          id?: string
+          next_attempt_at?: string | null
+          started_at?: string | null
+          status?: string
+          trigger_kind?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calendar_sync_runs_connection_id_fkey"
+            columns: ["connection_id"]
+            isOneToOne: false
+            referencedRelation: "calendar_external_connections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "calendar_sync_runs_household_id_fkey"
             columns: ["household_id"]
             isOneToOne: false
             referencedRelation: "households"
@@ -2766,6 +3626,119 @@ export type Database = {
             columns: ["household_id"]
             isOneToOne: false
             referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      household_calendar_memberships: {
+        Row: {
+          access_role: string
+          calendar_id: string
+          created_at: string
+          household_id: string
+          id: string
+          membership_id: string
+        }
+        Insert: {
+          access_role?: string
+          calendar_id: string
+          created_at?: string
+          household_id: string
+          id?: string
+          membership_id: string
+        }
+        Update: {
+          access_role?: string
+          calendar_id?: string
+          created_at?: string
+          household_id?: string
+          id?: string
+          membership_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "household_calendar_memberships_calendar_id_fkey"
+            columns: ["calendar_id"]
+            isOneToOne: false
+            referencedRelation: "household_calendars"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "household_calendar_memberships_calendar_id_household_id_fkey"
+            columns: ["calendar_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "household_calendars"
+            referencedColumns: ["id", "household_id"]
+          },
+          {
+            foreignKeyName: "household_calendar_memberships_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "household_calendar_memberships_membership_id_fkey"
+            columns: ["membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      household_calendars: {
+        Row: {
+          calendar_type: string
+          color_token: string | null
+          created_at: string
+          domain_source: string | null
+          household_id: string
+          id: string
+          is_archived: boolean
+          name: string
+          owner_membership_id: string | null
+          updated_at: string
+          visibility_default: string
+        }
+        Insert: {
+          calendar_type: string
+          color_token?: string | null
+          created_at?: string
+          domain_source?: string | null
+          household_id: string
+          id?: string
+          is_archived?: boolean
+          name: string
+          owner_membership_id?: string | null
+          updated_at?: string
+          visibility_default?: string
+        }
+        Update: {
+          calendar_type?: string
+          color_token?: string | null
+          created_at?: string
+          domain_source?: string | null
+          household_id?: string
+          id?: string
+          is_archived?: boolean
+          name?: string
+          owner_membership_id?: string | null
+          updated_at?: string
+          visibility_default?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "household_calendars_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "household_calendars_owner_membership_id_fkey"
+            columns: ["owner_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
             referencedColumns: ["id"]
           },
         ]
@@ -9297,12 +10270,40 @@ export type Database = {
         }
         Returns: undefined
       }
+      _calendar_connection_secrets: {
+        Args: { p_connection_id: string }
+        Returns: {
+          connection_id: string
+          household_id: string
+          owner_user_id: string
+          provider: string
+          refresh_token_ciphertext: string
+          refresh_token_nonce: string
+          sync_mode: string
+        }[]
+      }
+      _calendar_default_household_calendar_id: {
+        Args: { p_household_id: string }
+        Returns: string
+      }
       _calendar_exception_has_time_override: {
         Args: {
           p_all_day: boolean
           p_end_date_exclusive: string
           p_ends_at: string
           p_kind: string
+          p_start_date: string
+          p_starts_at: string
+        }
+        Returns: boolean
+      }
+      _calendar_material_fields_changed: {
+        Args: {
+          p_all_day: boolean
+          p_before: Database["public"]["Tables"]["calendar_events"]["Row"]
+          p_end_date_exclusive: string
+          p_ends_at: string
+          p_location: string
           p_start_date: string
           p_starts_at: string
         }
@@ -9914,12 +10915,26 @@ export type Database = {
         Args: { p_expense_id: string }
         Returns: boolean
       }
+      can_manage_calendar: { Args: { p_calendar_id: string }; Returns: boolean }
+      can_manage_calendar_event: {
+        Args: { p_event_id: string }
+        Returns: boolean
+      }
+      can_manage_external_calendar_connection: {
+        Args: { p_connection_id: string }
+        Returns: boolean
+      }
       can_manage_governance_document: {
         Args: { p_document_id: string }
         Returns: boolean
       }
       can_manage_transition_workflow: {
         Args: { p_workflow_id: string }
+        Returns: boolean
+      }
+      can_view_calendar: { Args: { p_calendar_id: string }; Returns: boolean }
+      can_view_calendar_event: {
+        Args: { p_event_id: string }
         Returns: boolean
       }
       can_view_chore_definition: {
@@ -9930,6 +10945,11 @@ export type Database = {
         Args: { p_occurrence_id: string }
         Returns: boolean
       }
+      can_view_event_availability: {
+        Args: { p_event_id: string }
+        Returns: boolean
+      }
+      can_view_event_details: { Args: { p_event_id: string }; Returns: boolean }
       can_view_expense: { Args: { p_expense_id: string }; Returns: boolean }
       can_view_governance_document: {
         Args: { p_document_id: string }
@@ -10061,6 +11081,32 @@ export type Database = {
         Returns: {
           event_id: string
         }[]
+      }
+      claim_calendar_sync_runs: {
+        Args: { p_limit?: number }
+        Returns: {
+          attempt_count: number
+          claimed_at: string | null
+          connection_id: string
+          created_at: string
+          error_summary: string | null
+          events_conflicted: number
+          events_exported: number
+          events_imported: number
+          finished_at: string | null
+          household_id: string
+          id: string
+          next_attempt_at: string | null
+          started_at: string | null
+          status: string
+          trigger_kind: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "calendar_sync_runs"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       claim_chore_horizon_extensions: {
         Args: { p_limit?: number }
@@ -10290,10 +11336,21 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      create_calendar_availability_override: {
+        Args: {
+          p_ends_at: string
+          p_household_id: string
+          p_note?: string
+          p_override_kind: string
+          p_starts_at: string
+        }
+        Returns: string
+      }
       create_calendar_event: {
         Args: {
           p_all_day?: boolean
           p_attendee_membership_ids?: string[]
+          p_calendar_id?: string
           p_category?: string
           p_client_idempotency_key?: string
           p_description?: string
@@ -10303,9 +11360,11 @@ export type Database = {
           p_guest_label?: string
           p_household_id: string
           p_location?: string
+          p_meeting_url?: string
           p_recurrence_count?: number
           p_recurrence_until?: string
           p_reminder_offsets_minutes?: number[]
+          p_resource_ids?: string[]
           p_rrule?: string
           p_start_date?: string
           p_starts_at?: string
@@ -10321,6 +11380,16 @@ export type Database = {
           p_label?: string
           p_scope?: string
           p_token_hash: string
+        }
+        Returns: string
+      }
+      create_calendar_resource: {
+        Args: {
+          p_capacity?: number
+          p_capacity_mode?: string
+          p_household_id: string
+          p_name: string
+          p_resource_kind?: string
         }
         Returns: string
       }
@@ -10798,6 +11867,10 @@ export type Database = {
         Args: { p_definition_id: string }
         Returns: string
       }
+      enqueue_calendar_sync_run: {
+        Args: { p_connection_id: string; p_trigger_kind?: string }
+        Returns: string
+      }
       enqueue_test_notification: { Args: never; Returns: string }
       ensure_default_shopping_list: {
         Args: { p_household_id: string }
@@ -11151,6 +12224,16 @@ export type Database = {
         Args: { p_event_id: string; p_occurrences: Json }
         Returns: number
       }
+      record_calendar_event_conflict: {
+        Args: {
+          p_conflict_class: string
+          p_conflict_kind: string
+          p_conflicting_event_id: string
+          p_event_id: string
+          p_summary: string
+        }
+        Returns: string
+      }
       record_maintenance_condition_change: {
         Args: {
           p_confirm?: boolean
@@ -11226,6 +12309,27 @@ export type Database = {
       }
       regenerate_calendar_feed: {
         Args: { p_feed_id: string; p_new_token_hash: string }
+        Returns: string
+      }
+      register_calendar_external_connection: {
+        Args: {
+          p_account_email: string
+          p_household_id: string
+          p_provider: string
+          p_refresh_token_ciphertext: string
+          p_refresh_token_nonce: string
+          p_scopes: string[]
+          p_sync_mode?: string
+        }
+        Returns: string
+      }
+      register_calendar_ics_import: {
+        Args: {
+          p_calendar_id: string
+          p_event_id: string
+          p_household_id: string
+          p_ics_uid: string
+        }
         Returns: string
       }
       reject_payment: {
@@ -11307,6 +12411,15 @@ export type Database = {
         Args: { p_area_id: string; p_note?: string; p_to_membership_id: string }
         Returns: string
       }
+      reserve_calendar_resource: {
+        Args: {
+          p_confirmed?: boolean
+          p_event_id: string
+          p_quantity?: number
+          p_resource_id: string
+        }
+        Returns: string
+      }
       resolve_dispute: {
         Args: {
           p_dispute_id: string
@@ -11354,6 +12467,7 @@ export type Database = {
           p_event_id: string
           p_guest_count?: number
           p_guest_note?: string
+          p_response_note?: string
           p_rsvp_status: string
         }
         Returns: string
@@ -11436,6 +12550,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      revoke_calendar_external_connection: {
+        Args: { p_connection_id: string }
+        Returns: undefined
       }
       revoke_calendar_feed: { Args: { p_feed_id: string }; Returns: string }
       revoke_household_invitation: {
@@ -11526,6 +12644,14 @@ export type Database = {
       }
       skip_chore_occurrence: {
         Args: { p_occurrence_id: string; p_reason: string }
+        Returns: string
+      }
+      split_calendar_event_series: {
+        Args: {
+          p_client_idempotency_key: string
+          p_event_id: string
+          p_split_starts_at: string
+        }
         Returns: string
       }
       start_chore_occurrence: {
@@ -11619,6 +12745,7 @@ export type Database = {
           p_event_id: string
           p_guest_label?: string
           p_location?: string
+          p_meeting_url?: string
           p_recurrence_count?: number
           p_recurrence_until?: string
           p_reminder_offsets_minutes?: number[]
@@ -11691,6 +12818,20 @@ export type Database = {
       }
       update_recipe: {
         Args: { p_patch: Json; p_recipe_id: string }
+        Returns: string
+      }
+      upsert_calendar_availability_rule: {
+        Args: {
+          p_end_minute: number
+          p_household_id: string
+          p_max_event_minutes?: number
+          p_min_notice_minutes?: number
+          p_rule_id?: string
+          p_rule_kind: string
+          p_start_minute: number
+          p_time_zone?: string
+          p_weekdays: number[]
+        }
         Returns: string
       }
       upsert_notification_preference: {

@@ -98,6 +98,16 @@ export const EVENT_CALENDAR_EVENT_CANCELLED = "calendar.event_cancelled" as cons
 export const EVENT_CALENDAR_REMINDER = "calendar.reminder" as const;
 export const EVENT_CALENDAR_RSVP_CHANGED = "calendar.rsvp_changed" as const;
 export const EVENT_CALENDAR_ATTENDEE_ADDED = "calendar.attendee_added" as const;
+export const EVENT_CALENDAR_INVITATION = "calendar.invitation" as const;
+export const EVENT_CALENDAR_EVENT_REQUIRES_RECONFIRM =
+  "calendar.event_requires_reconfirm" as const;
+export const EVENT_CALENDAR_CONFLICT_INTRODUCED =
+  "calendar.conflict_introduced" as const;
+export const EVENT_CALENDAR_AVAILABILITY_REQUEST =
+  "calendar.availability_request" as const;
+export const EVENT_CALENDAR_SYNC_FAILURE = "calendar.sync_failure" as const;
+export const EVENT_CALENDAR_EXTERNAL_AUTH_EXPIRED =
+  "calendar.external_auth_expired" as const;
 /** @deprecated Prefer EVENT_CALENDAR_EVENT_UPDATED */
 export const EVENT_CALENDAR_UPDATED = EVENT_CALENDAR_EVENT_UPDATED;
 export const EVENT_INVENTORY_ITEM_CREATED = "inventory.item_created" as const;
@@ -184,7 +194,7 @@ const REIMBURSEMENT_LINK = "/app/{householdId}/money/reimbursements/{entityId}";
 const DISPUTE_LINK = "/app/{householdId}/money/disputes/{entityId}";
 const EXPENSE_LINK = "/app/{householdId}/money/expenses/{entityId}";
 const APP_LINK = "/app/{householdId}";
-const CALENDAR_EVENT_LINK = "/app/{householdId}/calendar/events/{entityId}";
+const CALENDAR_EVENT_LINK = "/app/{householdId}/calendar/event/{entityId}";
 
 function entry(
   partial: Omit<CatalogEntry, "defaultChannels"> & {
@@ -540,6 +550,72 @@ export const NOTIFICATION_CATALOG: Readonly<Record<string, CatalogEntry>> = {
     actionOriented: false,
     privacy: "detailed_ok",
     active: false,
+  }),
+  [EVENT_CALENDAR_INVITATION]: entry({
+    eventType: EVENT_CALENDAR_INVITATION,
+    category: "calendar",
+    defaultUrgency: "normal",
+    recipientRule: "explicit",
+    deepLinkPattern: CALENDAR_EVENT_LINK,
+    digestAllowed: true,
+    actionOriented: true,
+    privacy: "generic_ok",
+    active: true,
+  }),
+  [EVENT_CALENDAR_EVENT_REQUIRES_RECONFIRM]: entry({
+    eventType: EVENT_CALENDAR_EVENT_REQUIRES_RECONFIRM,
+    category: "calendar",
+    defaultUrgency: "high",
+    recipientRule: "explicit",
+    deepLinkPattern: CALENDAR_EVENT_LINK,
+    digestAllowed: false,
+    actionOriented: true,
+    privacy: "generic_ok",
+    active: true,
+  }),
+  [EVENT_CALENDAR_CONFLICT_INTRODUCED]: entry({
+    eventType: EVENT_CALENDAR_CONFLICT_INTRODUCED,
+    category: "calendar",
+    defaultUrgency: "high",
+    recipientRule: "explicit",
+    deepLinkPattern: CALENDAR_EVENT_LINK,
+    digestAllowed: true,
+    actionOriented: true,
+    privacy: "generic_ok",
+    active: true,
+  }),
+  [EVENT_CALENDAR_AVAILABILITY_REQUEST]: entry({
+    eventType: EVENT_CALENDAR_AVAILABILITY_REQUEST,
+    category: "calendar",
+    defaultUrgency: "normal",
+    recipientRule: "explicit",
+    deepLinkPattern: `${APP_LINK}/calendar/availability`,
+    digestAllowed: true,
+    actionOriented: true,
+    privacy: "generic_ok",
+    active: true,
+  }),
+  [EVENT_CALENDAR_SYNC_FAILURE]: entry({
+    eventType: EVENT_CALENDAR_SYNC_FAILURE,
+    category: "calendar",
+    defaultUrgency: "high",
+    recipientRule: "self",
+    deepLinkPattern: `${APP_LINK}/settings/integrations/calendar`,
+    digestAllowed: true,
+    actionOriented: true,
+    privacy: "routing_only",
+    active: true,
+  }),
+  [EVENT_CALENDAR_EXTERNAL_AUTH_EXPIRED]: entry({
+    eventType: EVENT_CALENDAR_EXTERNAL_AUTH_EXPIRED,
+    category: "calendar",
+    defaultUrgency: "high",
+    recipientRule: "self",
+    deepLinkPattern: `${APP_LINK}/settings/integrations/calendar`,
+    digestAllowed: false,
+    actionOriented: true,
+    privacy: "routing_only",
+    active: true,
   }),
   [EVENT_INVENTORY_ITEM_CREATED]: entry({
     eventType: EVENT_INVENTORY_ITEM_CREATED,

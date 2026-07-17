@@ -37,6 +37,11 @@ export const CAPABILITIES = [
   "calendar.create",
   "calendar.respond",
   "calendar.manage_own",
+  "calendar.invite",
+  "calendar.manage_household",
+  "calendar.manage_resources",
+  "calendar.view_availability",
+  "calendar.manage_integrations",
   "calendar.coordinator_override",
   "chore.view",
   "chore.create",
@@ -102,6 +107,9 @@ const CALENDAR_MEMBER_CAPABILITIES = [
   "calendar.create",
   "calendar.respond",
   "calendar.manage_own",
+  "calendar.invite",
+  "calendar.view_availability",
+  "calendar.manage_integrations",
 ] as const satisfies readonly Capability[];
 
 /** Chore actions available to every active household member. */
@@ -183,6 +191,8 @@ const ROLE_CAPABILITIES: Record<HouseholdResponsibility, readonly Capability[]> 
     // Only the household coordinator may edit/cancel household-visible events
     // organized by someone else.
     "calendar.coordinator_override",
+    "calendar.manage_household",
+    "calendar.manage_resources",
     "chore.manage_rotation",
     "chore.coordinator_override",
     "responsibility.manage",

@@ -60,6 +60,8 @@ export type CalendarOccurrence = {
   isBusyProjection: boolean;
   cancelled: boolean;
   viewerRsvp: RsvpStatus | null;
+  sourceType: string | null;
+  calendarId: string | null;
 };
 
 export type CalendarEventDetail = {
@@ -88,6 +90,10 @@ export type CalendarEventDetail = {
   viewerMembershipId: string;
   viewerRsvp: RsvpStatus | null;
   viewerIsOrganizer: boolean;
+  sourceType: string | null;
+  lifecycleOwner: string | null;
+  isEditable: boolean;
+  canonicalDeepLink: string | null;
 };
 
 type AttendeeRow = {
@@ -147,7 +153,8 @@ export async function listOccurrencesInRange(
        start_date, end_date_exclusive, is_cancelled, exception_id,
        event:calendar_events!inner(
          id, title, description, location, category, visibility, status,
-         time_zone, organizer_membership_id, event_guest_count, guest_label
+         time_zone, organizer_membership_id, event_guest_count, guest_label,
+         source_type, calendar_id
        )`,
     )
     .eq("household_id", householdId)
@@ -215,6 +222,8 @@ export async function listOccurrencesInRange(
       organizer_membership_id: string;
       event_guest_count: number | null;
       guest_label: string | null;
+      source_type: string | null;
+      calendar_id: string | null;
     } | null;
     if (!event) continue;
 
@@ -264,6 +273,8 @@ export async function listOccurrencesInRange(
       isBusyProjection: busy,
       cancelled: event.status === "cancelled",
       viewerRsvp: index?.viewerRsvp ?? null,
+      sourceType: busy ? null : event.source_type,
+      calendarId: event.calendar_id,
     });
   }
 
@@ -311,7 +322,8 @@ export async function getEventDetail(
     .select(
       `id, household_id, title, description, location, category, visibility,
        status, all_day, starts_at, ends_at, start_date, end_date_exclusive,
-       time_zone, rrule, organizer_membership_id, event_guest_count, guest_label`,
+       time_zone, rrule, organizer_membership_id, event_guest_count, guest_label,
+       source_type, lifecycle_owner, is_editable, canonical_deep_link`,
     )
     .eq("id", eventId)
     .eq("household_id", householdId)
@@ -397,6 +409,16 @@ export async function getEventDetail(
     viewerMembershipId: membershipId,
     viewerRsvp: viewer?.rsvpStatus ?? null,
     viewerIsOrganizer: membershipId === event.organizer_membership_id,
+    sourceType: busy
+      ? null
+      : ((event.source_type as string | null) ?? null),
+    lifecycleOwner: (event.lifecycle_owner as string | null) ?? "householdos",
+    isEditable: busy
+      ? false
+      : ((event.is_editable as boolean | null) ?? true),
+    canonicalDeepLink: busy
+      ? null
+      : ((event.canonical_deep_link as string | null) ?? null),
   };
 }
 
