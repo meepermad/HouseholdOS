@@ -194,6 +194,20 @@ export default async function MoneyHubPage({
           </Link>
         ) : null}
         <Link
+          href={`/app/${householdId}/money/simplify`}
+          className="inline-flex min-h-11 items-center rounded-md border border-border bg-secondary px-4 py-2 text-sm text-secondary-foreground"
+          data-testid="money-simplify-balances"
+        >
+          Simplify balances
+        </Link>
+        <Link
+          href={`/app/${householdId}/money/opening-balances`}
+          className="inline-flex min-h-11 items-center rounded-md border border-border bg-secondary px-4 py-2 text-sm text-secondary-foreground"
+          data-testid="money-opening-balances"
+        >
+          Opening balances
+        </Link>
+        <Link
           href={`/app/${householdId}/money/expenses`}
           className="inline-flex min-h-11 items-center rounded-md border border-border bg-secondary px-4 py-2 text-sm text-secondary-foreground"
         >

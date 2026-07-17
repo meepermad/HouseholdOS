@@ -8370,6 +8370,228 @@ export type Database = {
         }
         Relationships: []
       }
+      opening_balance_approvals: {
+        Row: {
+          created_at: string
+          decision: string
+          entry_id: string
+          household_id: string
+          id: string
+          membership_id: string
+          note: string | null
+        }
+        Insert: {
+          created_at?: string
+          decision: string
+          entry_id: string
+          household_id: string
+          id?: string
+          membership_id: string
+          note?: string | null
+        }
+        Update: {
+          created_at?: string
+          decision?: string
+          entry_id?: string
+          household_id?: string
+          id?: string
+          membership_id?: string
+          note?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "opening_balance_approvals_entry_id_household_id_fkey"
+            columns: ["entry_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "opening_balance_entries"
+            referencedColumns: ["id", "household_id"]
+          },
+          {
+            foreignKeyName: "opening_balance_approvals_membership_id_fkey"
+            columns: ["membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      opening_balance_entries: {
+        Row: {
+          amount_cents: number
+          attachment_storage_path: string | null
+          client_idempotency_key: string | null
+          created_at: string
+          created_by_membership_id: string
+          creditor_membership_id: string
+          currency: string
+          debtor_membership_id: string
+          effective_date: string
+          explanation: string
+          household_id: string
+          id: string
+          obligation_id: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount_cents: number
+          attachment_storage_path?: string | null
+          client_idempotency_key?: string | null
+          created_at?: string
+          created_by_membership_id: string
+          creditor_membership_id: string
+          currency: string
+          debtor_membership_id: string
+          effective_date: string
+          explanation: string
+          household_id: string
+          id?: string
+          obligation_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount_cents?: number
+          attachment_storage_path?: string | null
+          client_idempotency_key?: string | null
+          created_at?: string
+          created_by_membership_id?: string
+          creditor_membership_id?: string
+          currency?: string
+          debtor_membership_id?: string
+          effective_date?: string
+          explanation?: string
+          household_id?: string
+          id?: string
+          obligation_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "opening_balance_entries_created_by_membership_id_fkey"
+            columns: ["created_by_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opening_balance_entries_creditor_membership_id_fkey"
+            columns: ["creditor_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opening_balance_entries_debtor_membership_id_fkey"
+            columns: ["debtor_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opening_balance_entries_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opening_balance_entries_obligation_id_fkey"
+            columns: ["obligation_id"]
+            isOneToOne: false
+            referencedRelation: "obligation_balances_v"
+            referencedColumns: ["obligation_id"]
+          },
+          {
+            foreignKeyName: "opening_balance_entries_obligation_id_fkey"
+            columns: ["obligation_id"]
+            isOneToOne: false
+            referencedRelation: "reimbursement_obligations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      opening_balance_events: {
+        Row: {
+          actor_membership_id: string | null
+          created_at: string
+          detail: Json
+          entry_id: string
+          event_type: string
+          household_id: string
+          id: string
+        }
+        Insert: {
+          actor_membership_id?: string | null
+          created_at?: string
+          detail?: Json
+          entry_id: string
+          event_type: string
+          household_id: string
+          id?: string
+        }
+        Update: {
+          actor_membership_id?: string | null
+          created_at?: string
+          detail?: Json
+          entry_id?: string
+          event_type?: string
+          household_id?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "opening_balance_events_actor_membership_id_fkey"
+            columns: ["actor_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opening_balance_events_entry_id_household_id_fkey"
+            columns: ["entry_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "opening_balance_entries"
+            referencedColumns: ["id", "household_id"]
+          },
+        ]
+      }
+      opening_balance_import_links: {
+        Row: {
+          created_at: string
+          entry_id: string
+          household_id: string
+          id: string
+          import_batch_id: string | null
+          import_row_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          entry_id: string
+          household_id: string
+          id?: string
+          import_batch_id?: string | null
+          import_row_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          entry_id?: string
+          household_id?: string
+          id?: string
+          import_batch_id?: string | null
+          import_row_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "opening_balance_import_links_entry_id_household_id_fkey"
+            columns: ["entry_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "opening_balance_entries"
+            referencedColumns: ["id", "household_id"]
+          },
+        ]
+      }
       pantry_items: {
         Row: {
           best_by: string | null
@@ -10136,7 +10358,7 @@ export type Database = {
           creditor_membership_id: string
           current_amount_cents: number
           debtor_membership_id: string
-          expense_id: string
+          expense_id: string | null
           household_id: string
           id: string
           obligation_kind: string
@@ -10153,7 +10375,7 @@ export type Database = {
           creditor_membership_id: string
           current_amount_cents: number
           debtor_membership_id: string
-          expense_id: string
+          expense_id?: string | null
           household_id: string
           id?: string
           obligation_kind?: string
@@ -10170,7 +10392,7 @@ export type Database = {
           creditor_membership_id?: string
           current_amount_cents?: number
           debtor_membership_id?: string
-          expense_id?: string
+          expense_id?: string | null
           household_id?: string
           id?: string
           obligation_kind?: string
@@ -10616,6 +10838,376 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "household_memberships"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      routed_settlement_approvals: {
+        Row: {
+          created_at: string
+          decision: string
+          household_id: string
+          id: string
+          membership_id: string
+          note: string | null
+          proposal_id: string
+          role: string
+        }
+        Insert: {
+          created_at?: string
+          decision: string
+          household_id: string
+          id?: string
+          membership_id: string
+          note?: string | null
+          proposal_id: string
+          role: string
+        }
+        Update: {
+          created_at?: string
+          decision?: string
+          household_id?: string
+          id?: string
+          membership_id?: string
+          note?: string | null
+          proposal_id?: string
+          role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "routed_settlement_approvals_membership_id_fkey"
+            columns: ["membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "routed_settlement_approvals_proposal_id_household_id_fkey"
+            columns: ["proposal_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "routed_settlement_proposals"
+            referencedColumns: ["id", "household_id"]
+          },
+        ]
+      }
+      routed_settlement_events: {
+        Row: {
+          actor_membership_id: string | null
+          created_at: string
+          detail: Json
+          event_type: string
+          household_id: string
+          id: string
+          proposal_id: string
+        }
+        Insert: {
+          actor_membership_id?: string | null
+          created_at?: string
+          detail?: Json
+          event_type: string
+          household_id: string
+          id?: string
+          proposal_id: string
+        }
+        Update: {
+          actor_membership_id?: string | null
+          created_at?: string
+          detail?: Json
+          event_type?: string
+          household_id?: string
+          id?: string
+          proposal_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "routed_settlement_events_actor_membership_id_fkey"
+            columns: ["actor_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "routed_settlement_events_proposal_id_household_id_fkey"
+            columns: ["proposal_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "routed_settlement_proposals"
+            referencedColumns: ["id", "household_id"]
+          },
+        ]
+      }
+      routed_settlement_legs: {
+        Row: {
+          amount_cents: number
+          created_at: string
+          household_id: string
+          id: string
+          leg_kind: string
+          obligation_id: string | null
+          proposal_id: string
+        }
+        Insert: {
+          amount_cents: number
+          created_at?: string
+          household_id: string
+          id?: string
+          leg_kind: string
+          obligation_id?: string | null
+          proposal_id: string
+        }
+        Update: {
+          amount_cents?: number
+          created_at?: string
+          household_id?: string
+          id?: string
+          leg_kind?: string
+          obligation_id?: string | null
+          proposal_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "routed_settlement_legs_obligation_id_fkey"
+            columns: ["obligation_id"]
+            isOneToOne: false
+            referencedRelation: "obligation_balances_v"
+            referencedColumns: ["obligation_id"]
+          },
+          {
+            foreignKeyName: "routed_settlement_legs_obligation_id_fkey"
+            columns: ["obligation_id"]
+            isOneToOne: false
+            referencedRelation: "reimbursement_obligations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "routed_settlement_legs_proposal_id_household_id_fkey"
+            columns: ["proposal_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "routed_settlement_proposals"
+            referencedColumns: ["id", "household_id"]
+          },
+        ]
+      }
+      routed_settlement_payment_links: {
+        Row: {
+          created_at: string
+          household_id: string
+          id: string
+          payment_id: string
+          proposal_id: string
+        }
+        Insert: {
+          created_at?: string
+          household_id: string
+          id?: string
+          payment_id: string
+          proposal_id: string
+        }
+        Update: {
+          created_at?: string
+          household_id?: string
+          id?: string
+          payment_id?: string
+          proposal_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "routed_settlement_payment_links_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "routed_settlement_payment_links_proposal_id_household_id_fkey"
+            columns: ["proposal_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "routed_settlement_proposals"
+            referencedColumns: ["id", "household_id"]
+          },
+        ]
+      }
+      routed_settlement_proposals: {
+        Row: {
+          amount_cents: number
+          balance_snapshot: Json
+          client_idempotency_key: string | null
+          created_at: string
+          created_by_membership_id: string
+          currency: string
+          expires_at: string | null
+          household_id: string
+          id: string
+          intermediary_membership_id: string
+          payer_membership_id: string
+          payment_id: string | null
+          recipient_membership_id: string
+          source_obligation_ab_id: string
+          source_obligation_bc_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount_cents: number
+          balance_snapshot?: Json
+          client_idempotency_key?: string | null
+          created_at?: string
+          created_by_membership_id: string
+          currency: string
+          expires_at?: string | null
+          household_id: string
+          id?: string
+          intermediary_membership_id: string
+          payer_membership_id: string
+          payment_id?: string | null
+          recipient_membership_id: string
+          source_obligation_ab_id: string
+          source_obligation_bc_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount_cents?: number
+          balance_snapshot?: Json
+          client_idempotency_key?: string | null
+          created_at?: string
+          created_by_membership_id?: string
+          currency?: string
+          expires_at?: string | null
+          household_id?: string
+          id?: string
+          intermediary_membership_id?: string
+          payer_membership_id?: string
+          payment_id?: string | null
+          recipient_membership_id?: string
+          source_obligation_ab_id?: string
+          source_obligation_bc_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "routed_settlement_proposals_created_by_membership_id_fkey"
+            columns: ["created_by_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "routed_settlement_proposals_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "routed_settlement_proposals_intermediary_membership_id_fkey"
+            columns: ["intermediary_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "routed_settlement_proposals_payer_membership_id_fkey"
+            columns: ["payer_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "routed_settlement_proposals_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "routed_settlement_proposals_recipient_membership_id_fkey"
+            columns: ["recipient_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "routed_settlement_proposals_source_obligation_ab_id_fkey"
+            columns: ["source_obligation_ab_id"]
+            isOneToOne: false
+            referencedRelation: "obligation_balances_v"
+            referencedColumns: ["obligation_id"]
+          },
+          {
+            foreignKeyName: "routed_settlement_proposals_source_obligation_ab_id_fkey"
+            columns: ["source_obligation_ab_id"]
+            isOneToOne: false
+            referencedRelation: "reimbursement_obligations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "routed_settlement_proposals_source_obligation_bc_id_fkey"
+            columns: ["source_obligation_bc_id"]
+            isOneToOne: false
+            referencedRelation: "obligation_balances_v"
+            referencedColumns: ["obligation_id"]
+          },
+          {
+            foreignKeyName: "routed_settlement_proposals_source_obligation_bc_id_fkey"
+            columns: ["source_obligation_bc_id"]
+            isOneToOne: false
+            referencedRelation: "reimbursement_obligations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      routed_settlement_reservations: {
+        Row: {
+          amount_cents: number
+          created_at: string
+          household_id: string
+          id: string
+          obligation_id: string
+          proposal_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount_cents: number
+          created_at?: string
+          household_id: string
+          id?: string
+          obligation_id: string
+          proposal_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount_cents?: number
+          created_at?: string
+          household_id?: string
+          id?: string
+          obligation_id?: string
+          proposal_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "routed_settlement_reservations_obligation_id_fkey"
+            columns: ["obligation_id"]
+            isOneToOne: false
+            referencedRelation: "obligation_balances_v"
+            referencedColumns: ["obligation_id"]
+          },
+          {
+            foreignKeyName: "routed_settlement_reservations_obligation_id_fkey"
+            columns: ["obligation_id"]
+            isOneToOne: false
+            referencedRelation: "reimbursement_obligations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "routed_settlement_reservations_proposal_id_household_id_fkey"
+            columns: ["proposal_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "routed_settlement_proposals"
+            referencedColumns: ["id", "household_id"]
           },
         ]
       }
@@ -11688,6 +12280,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      _mark_routed_stale_if_needed: {
+        Args: { p_proposal_id: string }
+        Returns: boolean
+      }
       _meal_active_membership: {
         Args: { p_household_id: string }
         Returns: string
@@ -11844,6 +12440,14 @@ export type Database = {
         }
         Returns: undefined
       }
+      _routed_available_cents: {
+        Args: { p_exclude_proposal_id?: string; p_obligation_id: string }
+        Returns: number
+      }
+      _routed_reserved_cents: {
+        Args: { p_obligation_id: string }
+        Returns: number
+      }
       _sanitize_delivery_error: { Args: { p_error: string }; Returns: string }
       _seed_transition_tasks: {
         Args: { p_household_id: string; p_type: string; p_workflow_id: string }
@@ -11935,6 +12539,10 @@ export type Database = {
         Args: { p_transfer_id: string }
         Returns: string
       }
+      accept_routed_settlement_recipient: {
+        Args: { p_decision: string; p_note?: string; p_proposal_id: string }
+        Returns: undefined
+      }
       acknowledge_governance_version: {
         Args: { p_comment?: string; p_version_id: string }
         Returns: string
@@ -12001,6 +12609,10 @@ export type Database = {
       approve_chore_reassignment: {
         Args: { p_request_id: string; p_resolution_note?: string }
         Returns: string
+      }
+      approve_routed_settlement_intermediary: {
+        Args: { p_decision: string; p_note?: string; p_proposal_id: string }
+        Returns: undefined
       }
       archive_governance_document: {
         Args: { p_document_id: string; p_reason?: string }
@@ -12136,6 +12748,10 @@ export type Database = {
       can_view_meal_plan: { Args: { p_meal_plan_id: string }; Returns: boolean }
       can_view_pantry_item: { Args: { p_item_id: string }; Returns: boolean }
       can_view_recipe: { Args: { p_recipe_id: string }; Returns: boolean }
+      can_view_routed_settlement: {
+        Args: { p_proposal_id: string }
+        Returns: boolean
+      }
       can_view_supply_item: { Args: { p_item_id: string }; Returns: boolean }
       can_view_transition_private_field: {
         Args: { p_field_id: string }
@@ -12178,6 +12794,10 @@ export type Database = {
         Returns: string
       }
       cancel_meal_plan: { Args: { p_meal_plan_id: string }; Returns: string }
+      cancel_opening_balance: {
+        Args: { p_entry_id: string }
+        Returns: undefined
+      }
       cancel_payment: {
         Args: { p_payment_id: string }
         Returns: {
@@ -12215,6 +12835,10 @@ export type Database = {
       cancel_recipe_import_draft: {
         Args: { p_draft_id: string }
         Returns: string
+      }
+      cancel_routed_settlement: {
+        Args: { p_proposal_id: string }
+        Returns: undefined
       }
       cancel_shopping_item: { Args: { p_item_id: string }; Returns: string }
       change_inventory_condition: {
@@ -12606,6 +13230,10 @@ export type Database = {
         Args: { p_idempotency_key: string; p_receipt_id: string }
         Returns: string
       }
+      confirm_routed_settlement: {
+        Args: { p_proposal_id: string }
+        Returns: undefined
+      }
       create_calendar_availability_override: {
         Args: {
           p_ends_at: string
@@ -12940,6 +13568,20 @@ export type Database = {
         }
         Returns: string
       }
+      create_opening_balance_entry: {
+        Args: {
+          p_amount_cents: number
+          p_attachment_storage_path?: string
+          p_creditor_membership_id: string
+          p_currency: string
+          p_debtor_membership_id: string
+          p_effective_date: string
+          p_explanation: string
+          p_household_id: string
+          p_idempotency_key?: string
+        }
+        Returns: string
+      }
       create_pantry_item: {
         Args: {
           p_best_by?: string
@@ -13045,6 +13687,19 @@ export type Database = {
           p_sections?: Json
           p_summary?: string
           p_title?: string
+        }
+        Returns: string
+      }
+      create_routed_settlement_proposal: {
+        Args: {
+          p_amount_cents: number
+          p_household_id: string
+          p_idempotency_key?: string
+          p_intermediary_membership_id: string
+          p_obligation_ab_id: string
+          p_obligation_bc_id: string
+          p_payer_membership_id: string
+          p_recipient_membership_id: string
         }
         Returns: string
       }
@@ -13808,6 +14463,10 @@ export type Database = {
         }
         Returns: string
       }
+      respond_opening_balance: {
+        Args: { p_decision: string; p_entry_id: string; p_note?: string }
+        Returns: undefined
+      }
       respond_to_calendar_event: {
         Args: {
           p_event_id: string
@@ -13896,6 +14555,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      reverse_routed_settlement: {
+        Args: { p_proposal_id: string; p_reason: string }
+        Returns: undefined
       }
       revoke_calendar_external_connection: {
         Args: { p_connection_id: string }
@@ -14012,6 +14675,10 @@ export type Database = {
         Args: { p_occurrence_id: string }
         Returns: string
       }
+      submit_opening_balance_for_confirmation: {
+        Args: { p_entry_id: string }
+        Returns: undefined
+      }
       submit_payment: {
         Args: {
           p_allocations: Json
@@ -14069,6 +14736,15 @@ export type Database = {
           p_private_note?: string
           p_share_identity_with_organizer?: boolean
           p_taste?: number
+        }
+        Returns: string
+      }
+      submit_routed_settlement_payment: {
+        Args: {
+          p_external_method: string
+          p_idempotency_key: string
+          p_proposal_id: string
+          p_public_note?: string
         }
         Returns: string
       }

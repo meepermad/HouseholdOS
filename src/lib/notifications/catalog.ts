@@ -96,6 +96,20 @@ export const EVENT_REFUND_OBLIGATION_CREATED =
 export const EVENT_EXPENSE_VOIDED = "expense.voided" as const;
 export const EVENT_EXPENSE_AMENDED = "expense.amended" as const;
 
+export const EVENT_SETTLEMENT_INTERMEDIARY_APPROVAL_REQUIRED =
+  "settlement.intermediary_approval_required" as const;
+export const EVENT_SETTLEMENT_RECIPIENT_ACCEPTANCE_REQUIRED =
+  "settlement.recipient_acceptance_required" as const;
+export const EVENT_SETTLEMENT_READY_TO_PAY = "settlement.ready_to_pay" as const;
+export const EVENT_SETTLEMENT_PAYMENT_SUBMITTED =
+  "settlement.payment_submitted" as const;
+export const EVENT_SETTLEMENT_PAYMENT_CONFIRMED =
+  "settlement.payment_confirmed" as const;
+export const EVENT_SETTLEMENT_ROUTE_REVERSED =
+  "settlement.route_reversed" as const;
+export const EVENT_OPENING_BALANCE_CONFIRMATION_REQUIRED =
+  "opening_balance.confirmation_required" as const;
+
 // --- Future reserved (documented; not emitted) ---
 
 export const EVENT_CHORE_ASSIGNED = "chore.assigned" as const;
@@ -358,6 +372,83 @@ export const NOTIFICATION_CATALOG: Readonly<Record<string, CatalogEntry>> = {
     deepLinkPattern: EXPENSE_LINK,
     digestAllowed: true,
     actionOriented: false,
+    privacy: "generic_ok",
+    active: true,
+  }),
+  [EVENT_SETTLEMENT_INTERMEDIARY_APPROVAL_REQUIRED]: entry({
+    eventType: EVENT_SETTLEMENT_INTERMEDIARY_APPROVAL_REQUIRED,
+    category: "payments",
+    defaultUrgency: "high",
+    recipientRule: "explicit",
+    deepLinkPattern: "/app/{householdId}/money/simplify/{entityId}",
+    digestAllowed: false,
+    actionOriented: true,
+    privacy: "generic_ok",
+    active: true,
+  }),
+  [EVENT_SETTLEMENT_RECIPIENT_ACCEPTANCE_REQUIRED]: entry({
+    eventType: EVENT_SETTLEMENT_RECIPIENT_ACCEPTANCE_REQUIRED,
+    category: "payments",
+    defaultUrgency: "high",
+    recipientRule: "explicit",
+    deepLinkPattern: "/app/{householdId}/money/simplify/{entityId}",
+    digestAllowed: false,
+    actionOriented: true,
+    privacy: "generic_ok",
+    active: true,
+  }),
+  [EVENT_SETTLEMENT_READY_TO_PAY]: entry({
+    eventType: EVENT_SETTLEMENT_READY_TO_PAY,
+    category: "payments",
+    defaultUrgency: "high",
+    recipientRule: "explicit",
+    deepLinkPattern: "/app/{householdId}/money/simplify/{entityId}",
+    digestAllowed: false,
+    actionOriented: true,
+    privacy: "generic_ok",
+    active: true,
+  }),
+  [EVENT_SETTLEMENT_PAYMENT_SUBMITTED]: entry({
+    eventType: EVENT_SETTLEMENT_PAYMENT_SUBMITTED,
+    category: "payments",
+    defaultUrgency: "high",
+    recipientRule: "explicit",
+    deepLinkPattern: "/app/{householdId}/money/simplify/{entityId}",
+    digestAllowed: false,
+    actionOriented: true,
+    privacy: "generic_ok",
+    active: true,
+  }),
+  [EVENT_SETTLEMENT_PAYMENT_CONFIRMED]: entry({
+    eventType: EVENT_SETTLEMENT_PAYMENT_CONFIRMED,
+    category: "payments",
+    defaultUrgency: "normal",
+    recipientRule: "explicit",
+    deepLinkPattern: "/app/{householdId}/money/simplify/{entityId}",
+    digestAllowed: true,
+    actionOriented: false,
+    privacy: "generic_ok",
+    active: true,
+  }),
+  [EVENT_SETTLEMENT_ROUTE_REVERSED]: entry({
+    eventType: EVENT_SETTLEMENT_ROUTE_REVERSED,
+    category: "payments",
+    defaultUrgency: "high",
+    recipientRule: "explicit",
+    deepLinkPattern: "/app/{householdId}/money/simplify/{entityId}",
+    digestAllowed: false,
+    actionOriented: false,
+    privacy: "generic_ok",
+    active: true,
+  }),
+  [EVENT_OPENING_BALANCE_CONFIRMATION_REQUIRED]: entry({
+    eventType: EVENT_OPENING_BALANCE_CONFIRMATION_REQUIRED,
+    category: "payments",
+    defaultUrgency: "high",
+    recipientRule: "explicit",
+    deepLinkPattern: "/app/{householdId}/money/opening-balances/{entityId}",
+    digestAllowed: false,
+    actionOriented: true,
     privacy: "generic_ok",
     active: true,
   }),

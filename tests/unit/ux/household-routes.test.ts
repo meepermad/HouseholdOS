@@ -34,6 +34,10 @@ describe("householdRoutes", () => {
     expect(householdRoutes.money.receiptNew(HID)).toBe(
       `/app/${HID}/money/receipts/new`,
     );
+    expect(householdRoutes.money.simplify(HID)).toBe(`/app/${HID}/money/simplify`);
+    expect(householdRoutes.money.openingBalances(HID)).toBe(
+      `/app/${HID}/money/opening-balances`,
+    );
     expect(householdRoutes.setup(HID)).toBe(`/app/${HID}/setup`);
     expect(householdRoutes.settings.import(HID)).toContain(HID);
     expect(householdRoutes.settings.export(HID)).toContain(HID);

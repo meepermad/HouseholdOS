@@ -261,7 +261,9 @@ Extends Phase 4 without replacing working calendar models:
 | Receipt authorization | `can_view_expense_receipt` / `can_edit_expense_receipt` — uploader, financial coordinator, or linked-expense creator/payer/allocation participant. Unrelated active members cannot see drafts, OCR payloads, line classifications, or signed URLs |
 | Duplicates | Advisory file/content/merchant-date-total signals — never silent merge |
 | Resource links | Optional pantry/supply/inventory/shopping suggestions after review; void/amend does not delete physical resources |
-| CSV import | Review-first batches; same-household RPCs; no opening-balance import |
+| CSV import | Review-first batches; same-household RPCs; opening-balance rows stay drafts until both parties confirm |
+| Opening balances | Pre-HouseholdOS debts via `opening_balance_entries`; both debtor and creditor must confirm (coordinator cannot bypass); confirmed entries create `obligation_kind = opening_balance` with null `expense_id` |
+| Routed settlements | One-intermediary A→B→C proposals under Money → Simplify balances; external A→C payment only; confirm atomically reduces both legs; reservations + stale revalidation |
 | Export | Coordinator async JSON/CSV archive via `EXPORT_WORKER_SECRET` worker; excludes secrets, push endpoints, feed tokens; not a full restore |
 | Document jobs | Receipt OCR claim/complete via `DOCUMENT_JOB_WORKER_SECRET` at `/api/internal/documents/process` |
 | Notifications worker | `/api/internal/notifications/dispatch` uses `NOTIFICATION_WORKER_SECRET` only |
@@ -271,4 +273,4 @@ Extends Phase 4 without replacing working calendar models:
 
 ## Out of scope (current)
 
-Actual bank/Venmo/Zelle/Plaid transfers, full offline sync, SMS, live email delivery (adapter boundary only until a provider is configured), chore photo evidence storage, public chore rankings or financial penalties for missed chores, barcode scanning, grocery delivery APIs, recipe-site crawling/indexing, paywall or anti-bot bypass, AI-generated recipes, portion claiming, automatic emergency-service contact, automatic landlord/vendor messaging, Apple Calendar two-way writeback, claiming live Google/Apple verification without credentials, opening-balance CSV import (no safe model yet), full database restore from export.
+Actual bank/Venmo/Zelle/Plaid transfers, full offline sync, SMS, live email delivery (adapter boundary only until a provider is configured), chore photo evidence storage, public chore rankings or financial penalties for missed chores, barcode scanning, grocery delivery APIs, recipe-site crawling/indexing, paywall or anti-bot bypass, AI-generated recipes, portion claiming, automatic emergency-service contact, automatic landlord/vendor messaging, Apple Calendar two-way writeback, claiming live Google/Apple verification without credentials, automatic opening-balance CSV confirm (imports stay drafts), full database restore from export.

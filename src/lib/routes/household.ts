@@ -82,6 +82,15 @@ export const householdRoutes = {
       `${base(householdId)}/money/disputes/${assertRouteSegment(disputeId, "dispute id")}`,
     reimbursements: (householdId: string, obligationId: string) =>
       `${base(householdId)}/money/reimbursements/${assertRouteSegment(obligationId, "obligation id")}`,
+    simplify: (householdId: string) => `${base(householdId)}/money/simplify`,
+    simplifyProposal: (householdId: string, proposalId: string) =>
+      `${base(householdId)}/money/simplify/${assertRouteSegment(proposalId, "proposal id")}`,
+    openingBalances: (householdId: string) =>
+      `${base(householdId)}/money/opening-balances`,
+    openingBalance: (householdId: string, entryId: string) =>
+      `${base(householdId)}/money/opening-balances/${assertRouteSegment(entryId, "entry id")}`,
+    openingBalanceNew: (householdId: string) =>
+      `${base(householdId)}/money/opening-balances/new`,
   },
 
   setup: (householdId: string) => `${base(householdId)}/setup`,
