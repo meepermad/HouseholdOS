@@ -1,4 +1,5 @@
 import { AppBackButton } from "@/components/app-back-button";
+import Link from "next/link";
 import { HouseHubTabs } from "@/components/house/HouseHubTabs";
 import { RecipeForm } from "@/components/recipes/RecipeForm";
 import { assertActiveMembership } from "@/lib/household-context";
@@ -18,7 +19,14 @@ export default async function NewRecipePage({
       <header>
         <h1 className="font-[family-name:var(--font-display)] text-3xl">New recipe</h1>
         <p className="mt-1 text-sm text-text-secondary">
-          Manual entry only. Source URLs are attribution — pages are not scraped.
+          Enter it manually, or{" "}
+          <Link
+            href={`/app/${householdId}/recipes/import`}
+            className="font-medium text-primary underline"
+          >
+            import a public recipe URL for review
+          </Link>
+          .
         </p>
       </header>
       <HouseHubTabs householdId={householdId} />

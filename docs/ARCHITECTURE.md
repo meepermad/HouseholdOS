@@ -171,6 +171,28 @@ Coordination-first meal planning on top of pantry, shopping, calendar, chores, a
 | Calendar | Optional `source_type=meal_plan`; category includes `meal_prep` |
 | Auth | RPCs with `householdos.meal_mutation`; actor from `auth.uid()` |
 
+## Secure recipe URL import (Phase 6.6)
+
+Recipe URL import is an authenticated, user-directed workflow, not a crawler.
+Server Actions validate active membership and `meal.create`, then a bounded
+server-only fetcher resolves DNS, rejects private/reserved destinations, pins
+the connection to the validated public address, and revalidates every redirect.
+It fetches one HTML page with no cookies or forwarded application headers.
+
+Extraction is standards-first: JSON-LD Recipe, limited recipe Microdata/RDFa,
+then a conservative HTML fallback. Results are stored in creator-only
+`recipe_import_drafts` for 24 hours. Raw HTML is parsed in memory and is never
+stored in the database, audit log, or client payload. The creator reviews and
+edits the draft before `save_imported_recipe` writes through the existing
+recipe lifecycle. Saved imports therefore use the same visibility, pantry
+matching, scaling, ranking, meal-plan, and shopping-preparation rules as manual
+recipes. Import alone never changes a shopping list.
+
+Source attribution remains on `recipes`; source images are references only and
+are not mirrored. Source refresh is manual and review-first. There is no
+scheduled refresh, site-wide discovery, bulk import, paywall bypass, or
+anti-bot evasion.
+
 ## Roadmap
 
 ```text
@@ -179,7 +201,8 @@ Phase 3.1 — Notification delivery: web push, preferences, quiet hours, digests
 Phase 4 — Shared HouseholdOS calendar, recurrence, reminders, secure iCalendar feed
 Phase 5 — Chores / responsibility rotations on calendar + notifications
 Phase 6 — Inventory, supplies, shopping lists, pantry
-Phase 6.5 — Recipes, meal requests, meal planning, meal-prep batches (current)
+Phase 6.5 — Recipes, meal requests, meal planning, meal-prep batches
+Phase 6.6 — Secure recipe URL import and review (current)
 Phase 7 — Maintenance requests, household issues, repair tracking, vendor appointments
 Later — LifeOS connector; optional Google/Apple calendar sync
 ```
@@ -188,4 +211,4 @@ Calendar stages remaining: LifeOS connector → optional two-way provider sync.
 
 ## Out of scope (current)
 
-Receipt OCR, actual bank/Venmo/Zelle/Plaid transfers, Google/Apple OAuth calendar sync, two-way calendar writeback, full offline sync, SMS, live email delivery (adapter boundary only until a provider is configured), chore photo evidence storage, public chore rankings or financial penalties for missed chores, barcode scanning, grocery delivery APIs, recipe website scraping, AI-generated recipes, portion claiming.
+Receipt OCR, actual bank/Venmo/Zelle/Plaid transfers, Google/Apple OAuth calendar sync, two-way calendar writeback, full offline sync, SMS, live email delivery (adapter boundary only until a provider is configured), chore photo evidence storage, public chore rankings or financial penalties for missed chores, barcode scanning, grocery delivery APIs, recipe-site crawling/indexing, paywall or anti-bot bypass, AI-generated recipes, portion claiming.

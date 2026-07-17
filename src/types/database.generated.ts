@@ -4433,6 +4433,116 @@ export type Database = {
           },
         ]
       }
+      recipe_import_drafts: {
+        Row: {
+          candidate_payloads: Json
+          canonical_url: string | null
+          completed_at: string | null
+          confidence_summary: Json
+          content_hash: string | null
+          created_at: string
+          expires_at: string
+          extracted_payload: Json | null
+          extraction_strategy: string | null
+          failure_category: string | null
+          household_id: string
+          id: string
+          parser_version: string
+          refresh_recipe_id: string | null
+          requested_by_membership_id: string
+          saved_recipe_id: string | null
+          source_author: string | null
+          source_hostname: string
+          source_image_url: string | null
+          source_title: string | null
+          source_url: string
+          status: string
+          updated_at: string
+          validation_warnings: Json
+        }
+        Insert: {
+          candidate_payloads?: Json
+          canonical_url?: string | null
+          completed_at?: string | null
+          confidence_summary?: Json
+          content_hash?: string | null
+          created_at?: string
+          expires_at?: string
+          extracted_payload?: Json | null
+          extraction_strategy?: string | null
+          failure_category?: string | null
+          household_id: string
+          id?: string
+          parser_version: string
+          refresh_recipe_id?: string | null
+          requested_by_membership_id: string
+          saved_recipe_id?: string | null
+          source_author?: string | null
+          source_hostname: string
+          source_image_url?: string | null
+          source_title?: string | null
+          source_url: string
+          status?: string
+          updated_at?: string
+          validation_warnings?: Json
+        }
+        Update: {
+          candidate_payloads?: Json
+          canonical_url?: string | null
+          completed_at?: string | null
+          confidence_summary?: Json
+          content_hash?: string | null
+          created_at?: string
+          expires_at?: string
+          extracted_payload?: Json | null
+          extraction_strategy?: string | null
+          failure_category?: string | null
+          household_id?: string
+          id?: string
+          parser_version?: string
+          refresh_recipe_id?: string | null
+          requested_by_membership_id?: string
+          saved_recipe_id?: string | null
+          source_author?: string | null
+          source_hostname?: string
+          source_image_url?: string | null
+          source_title?: string | null
+          source_url?: string
+          status?: string
+          updated_at?: string
+          validation_warnings?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recipe_import_drafts_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recipe_import_drafts_refresh_recipe_id_fkey"
+            columns: ["refresh_recipe_id"]
+            isOneToOne: false
+            referencedRelation: "recipes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recipe_import_drafts_requested_by_membership_id_fkey"
+            columns: ["requested_by_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recipe_import_drafts_saved_recipe_id_fkey"
+            columns: ["saved_recipe_id"]
+            isOneToOne: false
+            referencedRelation: "recipes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       recipe_ingredient_aliases: {
         Row: {
           alias_name: string
@@ -4473,7 +4583,9 @@ export type Database = {
           id: string
           ingredient_group: string | null
           normalized_name: string
+          original_imported_text: string | null
           pantry_match_behavior: string
+          parser_confidence: number | null
           preparation_note: string | null
           quantity: number | null
           quantity_mode: string
@@ -4482,6 +4594,7 @@ export type Database = {
           required: boolean
           sort_order: number
           substitution_notes: string | null
+          user_confirmed: boolean
         }
         Insert: {
           created_at?: string
@@ -4490,7 +4603,9 @@ export type Database = {
           id?: string
           ingredient_group?: string | null
           normalized_name: string
+          original_imported_text?: string | null
           pantry_match_behavior?: string
+          parser_confidence?: number | null
           preparation_note?: string | null
           quantity?: number | null
           quantity_mode?: string
@@ -4499,6 +4614,7 @@ export type Database = {
           required?: boolean
           sort_order?: number
           substitution_notes?: string | null
+          user_confirmed?: boolean
         }
         Update: {
           created_at?: string
@@ -4507,7 +4623,9 @@ export type Database = {
           id?: string
           ingredient_group?: string | null
           normalized_name?: string
+          original_imported_text?: string | null
           pantry_match_behavior?: string
+          parser_confidence?: number | null
           preparation_note?: string | null
           quantity?: number | null
           quantity_mode?: string
@@ -4516,6 +4634,7 @@ export type Database = {
           required?: boolean
           sort_order?: number
           substitution_notes?: string | null
+          user_confirmed?: boolean
         }
         Relationships: [
           {
@@ -4714,15 +4833,25 @@ export type Database = {
           difficulty: string
           household_id: string
           id: string
+          import_parser_version: string | null
+          imported_at: string | null
+          imported_content_hash: string | null
+          last_source_refresh_at: string | null
           name: string
           normalized_name: string
           prep_minutes: number | null
+          source_author: string | null
+          source_canonical_url: string | null
+          source_hostname: string | null
+          source_image_url: string | null
+          source_published_at: string | null
           source_type: string
           source_url: string | null
           tags: string[]
           total_minutes: number | null
           updated_at: string
           visibility: string
+          yield_text: string | null
         }
         Insert: {
           archived_at?: string | null
@@ -4736,15 +4865,25 @@ export type Database = {
           difficulty?: string
           household_id: string
           id?: string
+          import_parser_version?: string | null
+          imported_at?: string | null
+          imported_content_hash?: string | null
+          last_source_refresh_at?: string | null
           name: string
           normalized_name: string
           prep_minutes?: number | null
+          source_author?: string | null
+          source_canonical_url?: string | null
+          source_hostname?: string | null
+          source_image_url?: string | null
+          source_published_at?: string | null
           source_type?: string
           source_url?: string | null
           tags?: string[]
           total_minutes?: number | null
           updated_at?: string
           visibility?: string
+          yield_text?: string | null
         }
         Update: {
           archived_at?: string | null
@@ -4758,15 +4897,25 @@ export type Database = {
           difficulty?: string
           household_id?: string
           id?: string
+          import_parser_version?: string | null
+          imported_at?: string | null
+          imported_content_hash?: string | null
+          last_source_refresh_at?: string | null
           name?: string
           normalized_name?: string
           prep_minutes?: number | null
+          source_author?: string | null
+          source_canonical_url?: string | null
+          source_hostname?: string | null
+          source_image_url?: string | null
+          source_published_at?: string | null
           source_type?: string
           source_url?: string | null
           tags?: string[]
           total_minutes?: number | null
           updated_at?: string
           visibility?: string
+          yield_text?: string | null
         }
         Relationships: [
           {
@@ -6609,6 +6758,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      cancel_recipe_import_draft: {
+        Args: { p_draft_id: string }
+        Returns: string
+      }
       cancel_shopping_item: { Args: { p_item_id: string }; Returns: string }
       change_inventory_condition: {
         Args: {
@@ -6706,6 +6859,24 @@ export type Database = {
           p_subscription_id?: string
         }
         Returns: boolean
+      }
+      complete_recipe_import_draft: {
+        Args: {
+          p_candidates?: Json
+          p_canonical_url?: string
+          p_confidence?: Json
+          p_content_hash?: string
+          p_draft_id: string
+          p_failure_category?: string
+          p_payload?: Json
+          p_source_author?: string
+          p_source_image_url?: string
+          p_source_title?: string
+          p_status: string
+          p_strategy?: string
+          p_warnings?: Json
+        }
+        Returns: string
       }
       confirm_expense: {
         Args: {
@@ -7077,18 +7248,38 @@ export type Database = {
           p_base_servings?: number
           p_category?: string
           p_cook_minutes?: number
+          p_cuisine_label?: string
           p_description?: string
           p_difficulty?: string
           p_equipment?: Json
           p_household_id: string
+          p_import_parser_version?: string
+          p_imported_content_hash?: string
           p_ingredients?: Json
           p_name: string
           p_prep_minutes?: number
+          p_source_author?: string
+          p_source_canonical_url?: string
+          p_source_hostname?: string
+          p_source_image_url?: string
+          p_source_published_at?: string
+          p_source_type?: string
           p_source_url?: string
           p_steps?: Json
           p_tags?: string[]
           p_visibility?: string
           p_visibility_membership_ids?: string[]
+          p_yield_text?: string
+        }
+        Returns: string
+      }
+      create_recipe_import_draft: {
+        Args: {
+          p_household_id: string
+          p_parser_version: string
+          p_refresh_recipe_id?: string
+          p_source_hostname: string
+          p_source_url: string
         }
         Returns: string
       }
@@ -7249,6 +7440,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      expire_recipe_import_drafts: { Args: never; Returns: number }
       fail_notification_delivery: {
         Args: {
           p_claim_token: string
@@ -7708,6 +7900,15 @@ export type Database = {
       revoke_household_invitation: {
         Args: { p_household_id: string; p_invitation_id: string }
         Returns: undefined
+      }
+      save_imported_recipe: {
+        Args: {
+          p_draft_id: string
+          p_import_as_copy?: boolean
+          p_recipe: Json
+          p_visibility?: string
+        }
+        Returns: string
       }
       set_current_household: {
         Args: { p_household_id: string }

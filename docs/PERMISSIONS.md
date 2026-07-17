@@ -67,6 +67,7 @@ Enforced in:
 |---|---|---|---|
 | View visible recipes / meal plans | yes | yes | yes |
 | Create personal or household recipes / meal plans / requests | yes | yes | yes |
+| Import a public recipe URL for private review | yes | yes | yes |
 | Edit own recipe / organize own meal | yes | yes | yes |
 | Archive household-visible recipes | creator | creator or coordinator | creator |
 | Read/edit creator-only recipes of others | no | **no** | no |
@@ -75,6 +76,11 @@ Enforced in:
 | Update meal settings (staples / shopping-prep policy) | no | yes | no |
 
 Personal dietary preferences are owner-only. Meal organizers see aggregated constraint summaries unless a member opted to share identity. Meal expense suggestions do not grant financial authority — purchasers confirm through existing expense RPCs. Pantry matching never reveals unauthorized personal pantry quantities.
+
+Recipe import uses `meal.create`. An unfinished import draft is visible only to
+the active membership that requested it; household coordinators do not bypass
+this privacy boundary. Once approved, existing recipe visibility and RLS are
+authoritative.
 
 ## Calendar visibility
 

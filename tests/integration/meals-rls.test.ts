@@ -263,4 +263,67 @@ describe.skipIf(!hasSupabase)("Phase 6.5 meals RLS + RPCs", () => {
       Object.keys(batch.data ?? {}).some((k) => k.includes("portion")),
     ).toBe(false);
   });
+
+  describe("Phase 6.6 recipe import drafts", () => {
+    let householdB: string;
+
+    beforeAll(async () => {
+      const created = await bob.client.rpc("create_household_for_current_user", {
+        p_name: `MealsB-${runId}`,
+        p_acknowledge_reimbursement_policy: true,
+        p_idempotency_key: `${runId}-meals-b`,
+      } as never);
+      expect(created.error).toBeNull();
+      const row = Array.isArray(created.data) ? created.data[0] : created.data;
+      householdB = (row as { household_id: string }).household_id;
+    }, 60_000);
+
+    it("creator-only select; other household member cannot read draft", async () => {
+      const draft = await crpc<string>(alice.client, "create_recipe_import_draft", {
+        p_household_id: householdId,
+        p_source_url: "https://fixtures.example/recipes/lemon-pasta",
+        p_source_hostname: "fixtures.example",
+        p_parser_version: "6.6.0",
+      });
+      expect(draft.error).toBeNull();
+      expect(draft.data).toBeTruthy();
+
+      const aliceSees = await ctable(alice.client, "recipe_import_drafts")
+        .select("id,status,source_hostname")
+        .eq("id", draft.data)
+        .maybeSingle();
+      expect(aliceSees.data?.id).toBe(draft.data);
+      expect(aliceSees.data?.source_hostname).toBe("fixtures.example");
+
+      const bobSees = await ctable(bob.client, "recipe_import_drafts")
+        .select("id")
+        .eq("id", draft.data)
+        .maybeSingle();
+      expect(bobSees.data).toBeNull();
+    });
+
+    it("cross-household import draft creation is denied", async () => {
+      const denied = await crpc(alice.client, "create_recipe_import_draft", {
+        p_household_id: householdB,
+        p_source_url: "https://fixtures.example/recipes/chili",
+        p_source_hostname: "fixtures.example",
+        p_parser_version: "6.6.0",
+      });
+      expect(denied.error).not.toBeNull();
+
+      const bobDraft = await crpc<string>(bob.client, "create_recipe_import_draft", {
+        p_household_id: householdB,
+        p_source_url: "https://fixtures.example/recipes/chili",
+        p_source_hostname: "fixtures.example",
+        p_parser_version: "6.6.0",
+      });
+      expect(bobDraft.error).toBeNull();
+
+      const aliceLeak = await ctable(alice.client, "recipe_import_drafts")
+        .select("id")
+        .eq("id", bobDraft.data)
+        .maybeSingle();
+      expect(aliceLeak.data).toBeNull();
+    });
+  });
 });

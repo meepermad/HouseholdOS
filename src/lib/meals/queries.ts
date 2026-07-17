@@ -100,6 +100,56 @@ export async function getRecipe(householdId: string, recipeId: string) {
   };
 }
 
+export async function getRecipeImportDraft(
+  householdId: string,
+  draftId: string,
+) {
+  const supabase = await db();
+  const { data, error } = await supabase
+    .from("recipe_import_drafts")
+    .select("*")
+    .eq("household_id", householdId)
+    .eq("id", draftId)
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
+export async function findRecipeImportDuplicates(
+  householdId: string,
+  canonicalUrl: string | null,
+  contentHash: string | null,
+) {
+  if (!canonicalUrl && !contentHash) return [];
+  const supabase = await db();
+  const results: Array<Record<string, unknown>> = [];
+  if (canonicalUrl) {
+    const { data, error } = await supabase
+      .from("recipes")
+      .select("id,name,source_canonical_url,imported_content_hash,updated_at")
+      .eq("household_id", householdId)
+      .is("archived_at", null)
+      .eq("source_canonical_url", canonicalUrl);
+    if (error) throw error;
+    results.push(...(data ?? []));
+  }
+  if (contentHash) {
+    const { data, error } = await supabase
+      .from("recipes")
+      .select("id,name,source_canonical_url,imported_content_hash,updated_at")
+      .eq("household_id", householdId)
+      .is("archived_at", null)
+      .eq("imported_content_hash", contentHash);
+    if (error) throw error;
+    for (const row of data ?? []) {
+      if (!results.some((existing) => existing.id === row.id)) {
+        results.push(row);
+      }
+    }
+  }
+  return results;
+}
+
 export async function listMealPlansForWeek(
   householdId: string,
   weekStart: string,

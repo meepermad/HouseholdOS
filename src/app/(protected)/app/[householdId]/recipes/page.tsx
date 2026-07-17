@@ -33,6 +33,12 @@ export default async function RecipesPage({
         </div>
         <div className="flex flex-wrap gap-2">
           <Link
+            href={`/app/${householdId}/recipes/import`}
+            className="min-h-11 rounded-md border border-border px-3 py-2.5 text-sm font-medium"
+          >
+            Import URL
+          </Link>
+          <Link
             href={`/app/${householdId}/recipes/request`}
             className="min-h-11 rounded-md border border-border px-3 py-2.5 text-sm font-medium"
           >

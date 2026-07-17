@@ -134,6 +134,12 @@ House-resource audit and notification payloads must not include private purchase
 - `recipe.updated`
 - `recipe.archived`
 - `recipe.visibility_changed`
+- `recipe.import_requested`
+- `recipe.import_extracted`
+- `recipe.import_failed`
+- `recipe.import_saved`
+- `recipe.import_cancelled`
+- `recipe.source_refreshed`
 - `meal.settings_updated`
 - `meal.request_created`
 - `meal.planned`
@@ -147,6 +153,11 @@ House-resource audit and notification payloads must not include private purchase
 - `meal_batch.discarded`
 
 Meal audit payloads must not include guest dietary notes, private pantry quantities, or medical dietary explanations. Domain RPCs insert via `_meal_audit` (actor from `auth.uid()`).
+
+Recipe-import audit payloads contain only the source hostname, extraction
+strategy, result category, and saved recipe ID where applicable. They must not
+contain full source URLs, URL query parameters, raw HTML, ingredients,
+instructions, cookies, headers, or private draft payloads.
 
 ## Shape
 

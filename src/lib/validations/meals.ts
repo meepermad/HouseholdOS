@@ -17,6 +17,32 @@ export const createRecipeSchema = z.object({
   stepsJson: z.string().default("[]"),
 });
 
+export const requestRecipeImportSchema = z.object({
+  householdId: z.string().uuid(),
+  sourceUrl: z
+    .string()
+    .trim()
+    .min(8)
+    .max(2000)
+    .url("Enter a valid recipe URL."),
+  refreshRecipeId: z.string().uuid().optional().nullable(),
+});
+
+export const saveRecipeImportSchema = z.object({
+  householdId: z.string().uuid(),
+  draftId: z.string().uuid(),
+  recipeJson: z.string().min(2).max(250_000),
+  visibility: z
+    .enum(["household", "creator_only", "selected_members"])
+    .default("household"),
+  importAsCopy: z.boolean().default(false),
+});
+
+export const cancelRecipeImportSchema = z.object({
+  householdId: z.string().uuid(),
+  draftId: z.string().uuid(),
+});
+
 export const createMealPlanSchema = z.object({
   householdId: z.string().uuid(),
   mealType: z.enum([

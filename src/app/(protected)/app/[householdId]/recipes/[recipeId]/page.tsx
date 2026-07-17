@@ -2,6 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AppBackButton } from "@/components/app-back-button";
 import { HouseHubTabs } from "@/components/house/HouseHubTabs";
+import { ActionForm } from "@/components/action-form";
+import { refreshRecipeSourceAction } from "@/app/actions/recipe-import";
 import { assertActiveMembership } from "@/lib/household-context";
 import { getRecipe } from "@/lib/meals/queries";
 import { scaleIngredients } from "@/lib/meals/scale";
@@ -36,6 +38,10 @@ export default async function RecipeDetailPage({
     Number(recipe.base_servings),
     Number.isFinite(target) && target > 0 ? target : Number(recipe.base_servings),
   );
+  const sourceImage = safeSourceImage(
+    recipe.source_image_url,
+    recipe.source_hostname,
+  );
 
   return (
     <main className="space-y-5">
@@ -58,6 +64,60 @@ export default async function RecipeDetailPage({
         </Link>
       </header>
       <HouseHubTabs householdId={householdId} />
+
+      {recipe.source_type === "imported" && recipe.source_hostname ? (
+        <section
+          aria-label="Recipe source attribution"
+          className="grid gap-4 border-l-4 border-border pl-4 sm:grid-cols-[1fr_auto]"
+        >
+          <div>
+            <p className="font-medium">
+              Imported from {String(recipe.source_hostname)}
+            </p>
+            {recipe.source_author ? (
+              <p className="text-sm text-text-secondary">
+                Original recipe by {String(recipe.source_author)}
+              </p>
+            ) : null}
+            <a
+              href={String(recipe.source_canonical_url ?? recipe.source_url)}
+              rel="noopener noreferrer"
+              target="_blank"
+              className="mt-2 inline-block min-h-11 py-2.5 text-sm font-medium text-primary underline"
+            >
+              View source
+            </a>
+            {recipe.source_url ? (
+              <ActionForm
+                action={refreshRecipeSourceAction}
+                pendingLabel="Checking source…"
+                className="mt-1"
+              >
+                <input type="hidden" name="householdId" value={householdId} />
+                <input type="hidden" name="recipeId" value={recipeId} />
+                <input type="hidden" name="sourceUrl" value={String(recipe.source_url)} />
+                <button
+                  type="submit"
+                  className="min-h-11 text-sm font-medium text-text-secondary underline"
+                >
+                  Check source for updates
+                </button>
+              </ActionForm>
+            ) : null}
+          </div>
+          {sourceImage ? (
+            // The URL was SSRF-validated at import and must remain on the source host.
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={sourceImage}
+              alt=""
+              referrerPolicy="no-referrer"
+              loading="lazy"
+              className="h-28 w-40 object-cover"
+            />
+          ) : null}
+        </section>
+      ) : null}
 
       <form method="get" className="flex flex-wrap items-end gap-2">
         <label className="space-y-1 text-sm">
@@ -121,4 +181,24 @@ export default async function RecipeDetailPage({
       ) : null}
     </main>
   );
+}
+
+function safeSourceImage(value: unknown, expectedHostname: unknown) {
+  if (typeof value !== "string" || typeof expectedHostname !== "string") {
+    return null;
+  }
+  try {
+    const url = new URL(value);
+    if (
+      url.protocol !== "https:" ||
+      url.hostname.toLowerCase() !== expectedHostname.toLowerCase() ||
+      url.username ||
+      url.password
+    ) {
+      return null;
+    }
+    return url.toString();
+  } catch {
+    return null;
+  }
 }
