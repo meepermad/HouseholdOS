@@ -1,9 +1,12 @@
 import {
   Bell,
   CalendarDays,
+  Download,
   HeartPulse,
+  ListChecks,
   Moon,
   Package,
+  Upload,
   UserRound,
   UtensilsCrossed,
   Wrench,
@@ -70,6 +73,27 @@ export default async function SettingsHubPage({
             Household
           </h2>
           <SettingsList ariaLabel="Household settings">
+            <SettingsRow
+              href={`/app/${householdId}/setup`}
+              label="Setup checklist"
+              description="Optional guided household launch"
+              icon={ListChecks}
+              testId="settings-row-setup"
+            />
+            <SettingsRow
+              href={`${base}/import`}
+              label="Import data"
+              description="Review-first CSV import"
+              icon={Upload}
+              testId="settings-row-import"
+            />
+            <SettingsRow
+              href={`${base}/export`}
+              label="Export household"
+              description="Coordinator backup archive"
+              icon={Download}
+              testId="settings-row-export"
+            />
             <SettingsRow
               href={`${base}/household`}
               label="Household"

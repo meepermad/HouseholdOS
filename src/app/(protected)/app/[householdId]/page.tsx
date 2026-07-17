@@ -6,6 +6,8 @@ import { loadHomeActionCenter } from "@/lib/home/action-center";
 import { QUICK_ADD_ACTIONS } from "@/lib/nav-items";
 import { EmptyState } from "@/components/ui/empty-state";
 import { can } from "@/lib/permissions";
+import { SetupReminderCard } from "@/components/setup/SetupReminderCard";
+import { loadSetupReminder } from "@/lib/setup/queries";
 
 export const dynamic = "force-dynamic";
 
@@ -21,6 +23,7 @@ export default async function HouseholdHomePage({
     membershipId: ctx.membershipId,
     userId: ctx.userId,
   });
+  const setupReminder = await loadSetupReminder(householdId);
 
   const net = data.money.youAreOwedCents - data.money.youOweCents;
 
@@ -34,6 +37,10 @@ export default async function HouseholdHomePage({
           What needs attention in your household today.
         </p>
       </section>
+
+      {setupReminder ? (
+        <SetupReminderCard householdId={householdId} progress={setupReminder} />
+      ) : null}
 
       <section className="space-y-2" aria-labelledby="needs-attention-heading">
         <h2

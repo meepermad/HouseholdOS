@@ -12,6 +12,7 @@ import { loadExpenseBundle, recalculateBundle } from "@/lib/expenses/load-bundle
 import { listActiveMemberOptions } from "@/lib/expenses/queries";
 import { can } from "@/lib/permissions";
 import { createClient } from "@/lib/supabase/server";
+import { CommentThread } from "@/components/comments/CommentThread";
 
 export const dynamic = "force-dynamic";
 
@@ -336,6 +337,13 @@ export default async function ExpenseDetailPage({
       {calc && !calc.ok ? (
         <p className="text-xs text-slate-500">Historical note: preview calc unavailable.</p>
       ) : null}
+
+      <CommentThread
+        householdId={householdId}
+        parentType="expense"
+        parentId={expenseId}
+        comments={[]}
+      />
     </main>
   );
 }

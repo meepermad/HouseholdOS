@@ -151,6 +151,22 @@ export default async function MoneyHubPage({
       <div className="flex flex-wrap gap-2">
         {can(ctx.roles, "expense.create") ? (
           <Link
+            href={`/app/${householdId}/money/receipts/new`}
+            className="inline-flex min-h-11 items-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
+            data-testid="money-scan-receipt"
+          >
+            Scan receipt
+          </Link>
+        ) : null}
+        <Link
+          href={`/app/${householdId}/money/receipts`}
+          className="inline-flex min-h-11 items-center rounded-md border border-border bg-secondary px-4 py-2 text-sm text-secondary-foreground"
+          data-testid="money-receipt-drafts"
+        >
+          Receipt drafts
+        </Link>
+        {can(ctx.roles, "expense.create") ? (
+          <Link
             href={`/app/${householdId}/money/expenses/new`}
             className="inline-flex min-h-11 items-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
           >

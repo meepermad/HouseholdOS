@@ -252,6 +252,19 @@ Extends Phase 4 without replacing working calendar models:
 | Google | OAuth + encrypted refresh tokens + sync mappings; two-way opt-in for native events; mock-verified unless live credentials exist |
 | Attachments | Private `calendar-attachments` bucket; signed URLs only |
 
+## Launch phase — setup, receipts, import/export, comments
+
+| Concern | Approach |
+|---|---|
+| Setup wizard | Optional `household_setup_progress`; skippable steps; Home reminder until dismissed/completed; starter templates call existing RPCs |
+| Receipts | Private `expense-receipts` bucket; review-first OCR via `ReceiptExtractionAdapter` (OpenAI / fixture / disabled); draft expense only after confirm; integer cents |
+| Duplicates | Advisory file/content/merchant-date-total signals — never silent merge |
+| Resource links | Optional pantry/supply/inventory/shopping suggestions after review; void/amend does not delete physical resources |
+| CSV import | Review-first batches; same-household RPCs; no opening-balance import |
+| Export | Coordinator async JSON/CSV archive; excludes secrets, push endpoints, feed tokens; not a full restore |
+| Comments | Polymorphic `record_comments` on selected parents; append-oriented; cannot change financial/governance state |
+| Receipt retention | Soft-delete (`deleted_at`); removed members lose access via active-member RLS; do not put receipt content in notification payloads |
+
 ## Out of scope (current)
 
-Receipt OCR, actual bank/Venmo/Zelle/Plaid transfers, full offline sync, SMS, live email delivery (adapter boundary only until a provider is configured), chore photo evidence storage, public chore rankings or financial penalties for missed chores, barcode scanning, grocery delivery APIs, recipe-site crawling/indexing, paywall or anti-bot bypass, AI-generated recipes, portion claiming, automatic emergency-service contact, automatic landlord/vendor messaging, Apple Calendar two-way writeback, claiming live Google/Apple verification without credentials.
+Actual bank/Venmo/Zelle/Plaid transfers, full offline sync, SMS, live email delivery (adapter boundary only until a provider is configured), chore photo evidence storage, public chore rankings or financial penalties for missed chores, barcode scanning, grocery delivery APIs, recipe-site crawling/indexing, paywall or anti-bot bypass, AI-generated recipes, portion claiming, automatic emergency-service contact, automatic landlord/vendor messaging, Apple Calendar two-way writeback, claiming live Google/Apple verification without credentials, opening-balance CSV import (no safe model yet), full database restore from export.

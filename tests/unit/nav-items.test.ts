@@ -58,6 +58,9 @@ describe("nav items growth rules", () => {
   });
 
   it("exposes quick-add deep links", () => {
+    expect(QUICK_ADD_ACTIONS.find((a) => a.key === "receipt")?.href("h1")).toBe(
+      "/app/h1/money/receipts/new",
+    );
     expect(QUICK_ADD_ACTIONS.find((a) => a.key === "guest")?.href("h1")).toBe(
       "/app/h1/guests/new",
     );

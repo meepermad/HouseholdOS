@@ -28,6 +28,8 @@ HouseholdOS validates environment variables with Zod. Missing or malformed value
 | `VAPID_SUBJECT` | For push send | `mailto:` or `https://` contact for VAPID. |
 | `EMAIL_NOTIFICATIONS_ENABLED` | No | Default `false`. Email adapter stays disabled until fully configured. |
 | `EMAIL_PROVIDER` / `EMAIL_API_KEY` / `EMAIL_FROM` | Optional | Reserved for a future provider integration. |
+| `RECEIPT_OCR_PROVIDER` | No | `openai` \| `fixture` \| `disabled`. Default: `openai` when `OPENAI_API_KEY` is set, otherwise disabled/manual. |
+| `OPENAI_API_KEY` | For receipt OCR | Server-only. Never `NEXT_PUBLIC_*`. When unset, receipt upload + manual review remain available. |
 
 \*Ordinary household queries use the cookie-based authenticated server client and remain subject to RLS.
 

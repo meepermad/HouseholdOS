@@ -70,6 +70,12 @@ export const householdRoutes = {
     index: (householdId: string) => `${base(householdId)}/money`,
     expensesNew: (householdId: string) =>
       `${base(householdId)}/money/expenses/new`,
+    receipts: (householdId: string) =>
+      `${base(householdId)}/money/receipts`,
+    receiptNew: (householdId: string) =>
+      `${base(householdId)}/money/receipts/new`,
+    receipt: (householdId: string, receiptId: string) =>
+      `${base(householdId)}/money/receipts/${assertRouteSegment(receiptId, "receipt id")}`,
     payments: (householdId: string, paymentId: string) =>
       `${base(householdId)}/money/payments/${assertRouteSegment(paymentId, "payment id")}`,
     disputes: (householdId: string, disputeId: string) =>
@@ -77,6 +83,8 @@ export const householdRoutes = {
     reimbursements: (householdId: string, obligationId: string) =>
       `${base(householdId)}/money/reimbursements/${assertRouteSegment(obligationId, "obligation id")}`,
   },
+
+  setup: (householdId: string) => `${base(householdId)}/setup`,
 
   house: {
     index: (householdId: string) => `${base(householdId)}/house`,
@@ -110,6 +118,8 @@ export const householdRoutes = {
     profile: (householdId: string) => `${base(householdId)}/settings/profile`,
     calendar: (householdId: string) =>
       `${base(householdId)}/settings/calendar`,
+    import: (householdId: string) => `${base(householdId)}/settings/import`,
+    export: (householdId: string) => `${base(householdId)}/settings/export`,
   },
 
   search: (householdId: string) => `${base(householdId)}/search`,

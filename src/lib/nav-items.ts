@@ -302,6 +302,11 @@ export type QuickAddAction = {
 
 export const QUICK_ADD_ACTIONS: readonly QuickAddAction[] = [
   {
+    key: "receipt",
+    label: "Scan receipt",
+    href: (id) => householdRoutes.money.receiptNew(id),
+  },
+  {
     key: "expense",
     label: "Add expense",
     href: (id) => householdRoutes.money.expensesNew(id),

@@ -31,6 +31,12 @@ describe("householdRoutes", () => {
     expect(householdRoutes.home(HID)).toContain(HID);
     expect(householdRoutes.chores.index(HID)).toContain(HID);
     expect(householdRoutes.money.index(HID)).toContain(HID);
+    expect(householdRoutes.money.receiptNew(HID)).toBe(
+      `/app/${HID}/money/receipts/new`,
+    );
+    expect(householdRoutes.setup(HID)).toBe(`/app/${HID}/setup`);
+    expect(householdRoutes.settings.import(HID)).toContain(HID);
+    expect(householdRoutes.settings.export(HID)).toContain(HID);
     expect(householdRoutes.house.index(HID)).toContain(HID);
     expect(householdRoutes.maintenance.index(HID)).toContain(HID);
     expect(householdRoutes.governance.index(HID)).toContain(HID);
