@@ -3,13 +3,17 @@ import { notFound } from "next/navigation";
 import { AppBackButton } from "@/components/app-back-button";
 import { HouseHubTabs } from "@/components/house/HouseHubTabs";
 import { ActionForm } from "@/components/action-form";
+import { RecipeFeedbackPrompt } from "@/components/recipes/RecipeFeedbackPrompt";
 import {
   cancelMealPlanAction,
   markMealPreparedAction,
   respondToMealAction,
 } from "@/app/actions/meals";
 import { assertActiveMembership } from "@/lib/household-context";
-import { getMealPlan } from "@/lib/meals/queries";
+import {
+  getMealPlan,
+  getPendingRecipeFeedbackForMeal,
+} from "@/lib/meals/queries";
 import { estimateServings } from "@/lib/meals/serving-estimate";
 
 export const dynamic = "force-dynamic";
@@ -20,10 +24,15 @@ export default async function MealDetailPage({
   params: Promise<{ householdId: string; mealId: string }>;
 }) {
   const { householdId, mealId } = await params;
-  await assertActiveMembership(householdId);
+  const ctx = await assertActiveMembership(householdId);
   const detail = await getMealPlan(householdId, mealId);
   if (!detail) notFound();
   const { plan, attendees, ingredients } = detail;
+  const pendingFeedback = await getPendingRecipeFeedbackForMeal(
+    householdId,
+    mealId,
+    ctx.membershipId,
+  );
 
   const estimate = estimateServings({
     attendees: attendees.map((a: { attendance_status: string; guest_count: number }) => ({
@@ -39,6 +48,15 @@ export default async function MealDetailPage({
     organizerTarget: Number(plan.target_servings),
   });
 
+  const feedbackRecipe = pendingFeedback?.recipes as
+    | { id: string; name: string }
+    | { id: string; name: string }[]
+    | null
+    | undefined;
+  const feedbackRecipeName = Array.isArray(feedbackRecipe)
+    ? feedbackRecipe[0]?.name
+    : feedbackRecipe?.name;
+
   return (
     <main className="space-y-5">
       <AppBackButton fallbackHref={`/app/${householdId}/meals`} />
@@ -49,6 +67,14 @@ export default async function MealDetailPage({
         </p>
       </header>
       <HouseHubTabs householdId={householdId} />
+
+      {pendingFeedback ? (
+        <RecipeFeedbackPrompt
+          householdId={householdId}
+          feedbackRequestId={String(pendingFeedback.id)}
+          recipeName={feedbackRecipeName}
+        />
+      ) : null}
 
       <section className="rounded-md border border-border p-4 space-y-2" aria-labelledby="servings-heading">
         <h2 id="servings-heading" className="font-semibold">Serving estimate</h2>

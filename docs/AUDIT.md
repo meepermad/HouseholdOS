@@ -159,6 +159,35 @@ strategy, result category, and saved recipe ID where applicable. They must not
 contain full source URLs, URL query parameters, raw HTML, ingredients,
 instructions, cookies, headers, or private draft payloads.
 
+## Event types (Phase 7A recommendations)
+
+- `recipe.preference_set`
+- `recipe.preference_cleared`
+- `recipe.feedback_requested`
+- `recipe.feedback_submitted`
+- `recipe.feedback_dismissed`
+- `meal.recommendation_run`
+- `meal.recommendation_inputs_changed`
+
+Preference/feedback audit payloads must not include preference signals, numeric ratings, private notes, or preference author identity.
+
+## Event types (Phase 7B maintenance)
+
+- `maintenance.reported`
+- `maintenance.triaged`
+- `maintenance.assigned`
+- `maintenance.waiting_status_changed`
+- `maintenance.comment_added`
+- `maintenance.resolved`
+- `maintenance.closed`
+- `maintenance.reopened`
+- `maintenance.cancelled`
+- `maintenance.appointment_scheduled`
+- `maintenance.evidence_added`
+- `maintenance.expense_linked`
+
+Maintenance audit payloads must not include raw storage paths, private evidence URLs, or private comment bodies beyond redacted flags.
+
 ## Shape
 
 | Column | Purpose |

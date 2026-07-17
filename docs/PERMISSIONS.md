@@ -82,6 +82,21 @@ the active membership that requested it; household coordinators do not bypass
 this privacy boundary. Once approved, existing recipe visibility and RLS are
 authoritative.
 
+Personal recipe preference and feedback rows are owner-only. Recommendation
+scoring may use attendee preferences internally, but organizers receive
+anonymized explanations only. Coordinators do not bypass preference privacy.
+
+## Maintenance
+
+| Capability | member | household_coordinator | financial_coordinator |
+|---|---|---|---|
+| `maintenance.view` | yes | yes | yes |
+| `maintenance.create` | yes | yes | yes |
+| `maintenance.manage_own` | yes | yes | yes |
+| `maintenance.coordinator_override` | no | yes | **no** |
+
+Maintenance expense links require same-household expenses and existing financial permissions. Linking does not confirm or allocate an expense. Private evidence is limited to viewers authorized for the request; raw storage paths are not placed in notifications.
+
 ## Calendar visibility
 
 | Visibility | Who sees full details | Others see |

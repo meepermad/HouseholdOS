@@ -1,4 +1,41 @@
 import { z } from "zod";
+import {
+  MEAL_TYPES,
+  PREFERENCE_SCOPES,
+  PREFERENCE_SIGNALS,
+  PREFERENCE_FIT_SUMMARIES,
+  RANKING_MODES,
+} from "@/lib/meals/types";
+
+const uuid = z.string().uuid();
+
+/** Accept uuid[] from arrays, JSON strings, or comma-separated form fields. */
+function parseStringList(value: unknown): string[] {
+  if (value == null || value === "") return [];
+  if (Array.isArray(value)) {
+    return value.map((v) => String(v).trim()).filter(Boolean);
+  }
+  if (typeof value !== "string") return [];
+  const trimmed = value.trim();
+  if (!trimmed) return [];
+  if (trimmed.startsWith("[")) {
+    try {
+      const parsed = JSON.parse(trimmed) as unknown;
+      if (Array.isArray(parsed)) {
+        return parsed.map((v) => String(v).trim()).filter(Boolean);
+      }
+    } catch {
+      /* fall through to comma split */
+    }
+  }
+  return trimmed
+    .split(",")
+    .map((part) => part.trim())
+    .filter(Boolean);
+}
+
+const stringListSchema = z.preprocess(parseStringList, z.array(z.string()));
+const uuidListSchema = z.preprocess(parseStringList, z.array(uuid).max(40));
 
 export const createRecipeSchema = z.object({
   householdId: z.string().uuid(),
@@ -63,15 +100,13 @@ export const createMealPlanSchema = z.object({
 
 export const createMealRequestSchema = z.object({
   householdId: z.string().uuid(),
-  mealType: z
-    .enum([
-      "shared_household",
-      "guest_inclusive",
-      "personal",
-      "open_household",
-      "meal_prep",
-    ])
-    .default("shared_household"),
+  mealType: z.enum(MEAL_TYPES).default("shared_household"),
+  rankingMode: z.enum(RANKING_MODES).default("best_overall"),
+  preferenceScope: z.enum(PREFERENCE_SCOPES).default("attendees"),
+  attendeeMembershipIds: uuidListSchema.default([]),
+  guestConstraintLabels: stringListSchema.default([]),
+  strictTimeLimit: z.boolean().default(false),
+  dietaryConstraint: z.string().trim().max(200).optional().nullable(),
   targetDate: z.string().optional().nullable(),
   guestCount: z.coerce.number().int().min(0).max(20).default(0),
   desiredServings: z.coerce.number().positive().optional().nullable(),
@@ -90,7 +125,43 @@ export const acceptMealRequestSchema = z.object({
   mealDate: z.string().optional().nullable(),
   targetServings: z.coerce.number().positive().optional().nullable(),
   linkCalendar: z.boolean().default(false),
+  attendeeMembershipIds: uuidListSchema.default([]),
 });
+
+export const setRecipePreferenceSchema = z.object({
+  householdId: z.string().uuid(),
+  recipeId: z.string().uuid(),
+  preferenceSignal: z.enum(PREFERENCE_SIGNALS),
+  isFavorite: z.boolean().optional().nullable(),
+  privateNote: z.string().trim().max(500).optional().nullable(),
+  shareIdentityWithOrganizer: z.boolean().default(false),
+});
+
+export const clearRecipePreferenceSchema = z.object({
+  householdId: z.string().uuid(),
+  recipeId: z.string().uuid(),
+});
+
+export const submitRecipeFeedbackSchema = z.object({
+  householdId: z.string().uuid(),
+  feedbackRequestId: z.string().uuid(),
+  preferenceSignal: z.enum(PREFERENCE_SIGNALS),
+  isFavorite: z.boolean().default(false),
+  privateNote: z.string().trim().max(500).optional().nullable(),
+  shareIdentityWithOrganizer: z.boolean().default(false),
+});
+
+export const dismissRecipeFeedbackSchema = z.object({
+  householdId: z.string().uuid(),
+  feedbackRequestId: z.string().uuid(),
+});
+
+export const recalculateMealRecommendationSchema = z.object({
+  householdId: z.string().uuid(),
+  mealRequestId: z.string().uuid(),
+});
+
+export const preferenceFitSummarySchema = z.enum(PREFERENCE_FIT_SUMMARIES);
 
 export const respondMealSchema = z.object({
   householdId: z.string().uuid(),

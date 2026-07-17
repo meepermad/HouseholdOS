@@ -3,9 +3,17 @@ import { HouseHubTabs } from "@/components/house/HouseHubTabs";
 import { RecipeRecommendationCard } from "@/components/recipes/RecipeRecommendationCard";
 import { RecipeRequestForm } from "@/components/recipes/RecipeRequestForm";
 import { assertActiveMembership } from "@/lib/household-context";
-import { getMealRequest } from "@/lib/meals/queries";
+import {
+  getMealRequest,
+  listHouseholdMembersForMeals,
+} from "@/lib/meals/queries";
 
 export const dynamic = "force-dynamic";
+
+function asStringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value.map(String).filter(Boolean);
+}
 
 export default async function RecipeRequestPage({
   params,
@@ -17,9 +25,10 @@ export default async function RecipeRequestPage({
   const { householdId } = await params;
   const sp = await searchParams;
   await assertActiveMembership(householdId);
-  const detail = sp.requestId
-    ? await getMealRequest(householdId, sp.requestId)
-    : null;
+  const [detail, members] = await Promise.all([
+    sp.requestId ? getMealRequest(householdId, sp.requestId) : null,
+    listHouseholdMembersForMeals(householdId),
+  ]);
 
   return (
     <main className="space-y-5">
@@ -29,12 +38,15 @@ export default async function RecipeRequestPage({
           Recipe request
         </h1>
         <p className="mt-1 text-sm text-text-secondary">
-          Rank existing household recipes against pantry constraints. No AI recipe generation.
+          Rank existing household recipes against pantry and preference constraints.
+          No AI recipe generation.
         </p>
       </header>
       <HouseHubTabs householdId={householdId} />
 
-      {!detail ? <RecipeRequestForm householdId={householdId} /> : null}
+      {!detail ? (
+        <RecipeRequestForm householdId={householdId} members={members} />
+      ) : null}
 
       {detail ? (
         <section className="space-y-4">
@@ -47,9 +59,8 @@ export default async function RecipeRequestPage({
                 | { id: string; name: string }
                 | null
                 | undefined;
-              const reasons = Array.isArray(row.explanation)
-                ? (row.explanation as string[])
-                : [];
+              const reasons = asStringArray(row.explanation);
+              const warnings = asStringArray(row.warnings);
               return (
                 <RecipeRecommendationCard
                   key={String(row.id)}
@@ -59,6 +70,12 @@ export default async function RecipeRequestPage({
                   name={recipe?.name ?? "Recipe"}
                   score={Number(row.score)}
                   reasons={reasons}
+                  warnings={warnings}
+                  preferenceFit={
+                    row.preference_fit_summary
+                      ? String(row.preference_fit_summary)
+                      : null
+                  }
                   missingRequired={Number(row.missing_required)}
                 />
               );

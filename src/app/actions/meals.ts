@@ -8,13 +8,18 @@ import { can, type Capability } from "@/lib/permissions";
 import { toPublicErrorMessage } from "@/lib/errors";
 import {
   acceptMealRequestSchema,
+  clearRecipePreferenceSchema,
   confirmShoppingPrepSchema,
   createMealPlanSchema,
   createMealRequestSchema,
   createRecipeSchema,
+  dismissRecipeFeedbackSchema,
   markPreparedSchema,
   mealSettingsSchema,
+  recalculateMealRecommendationSchema,
   respondMealSchema,
+  setRecipePreferenceSchema,
+  submitRecipeFeedbackSchema,
   updateBatchRemainingSchema,
 } from "@/lib/validations/meals";
 
@@ -24,6 +29,30 @@ const str = (value: FormDataEntryValue | null) => String(value ?? "").trim();
 const optional = (value: FormDataEntryValue | null) => str(value) || null;
 const bool = (value: FormDataEntryValue | null) =>
   value === "true" || value === "on";
+
+function stringListFromForm(formData: FormData, name: string): string[] {
+  const all = formData.getAll(name).map((v) => String(v).trim()).filter(Boolean);
+  if (all.length > 1) return all;
+  const single = all[0] ?? str(formData.get(name));
+  if (!single) return [];
+  if (single.startsWith("[")) {
+    try {
+      const parsed = JSON.parse(single) as unknown;
+      if (Array.isArray(parsed)) {
+        return parsed.map((v) => String(v).trim()).filter(Boolean);
+      }
+    } catch {
+      /* fall through */
+    }
+  }
+  if (single.includes(",")) {
+    return single
+      .split(",")
+      .map((part) => part.trim())
+      .filter(Boolean);
+  }
+  return [single];
+}
 
 function invalidate(householdId: string) {
   revalidatePath(`/app/${householdId}/meals`);
@@ -150,6 +179,12 @@ export async function createMealRequestAction(
     const parsed = createMealRequestSchema.safeParse({
       householdId: str(formData.get("householdId")),
       mealType: str(formData.get("mealType")) || "shared_household",
+      rankingMode: str(formData.get("rankingMode")) || "best_overall",
+      preferenceScope: str(formData.get("preferenceScope")) || "attendees",
+      attendeeMembershipIds: stringListFromForm(formData, "attendeeMembershipIds"),
+      guestConstraintLabels: stringListFromForm(formData, "guestConstraintLabels"),
+      strictTimeLimit: bool(formData.get("strictTimeLimit")),
+      dietaryConstraint: optional(formData.get("dietaryConstraint")),
       targetDate: optional(formData.get("targetDate")),
       guestCount: str(formData.get("guestCount")) || "0",
       desiredServings: optional(formData.get("desiredServings")),
@@ -178,6 +213,13 @@ export async function createMealRequestAction(
         value: d.prioritizeIngredient,
       });
     }
+    if (d.dietaryConstraint) {
+      constraints.push({
+        constraint_type: "dietary",
+        value: d.dietaryConstraint,
+      });
+    }
+    const guestConstraints = d.guestConstraintLabels.map((label) => ({ label }));
     const { data, error } = await supabase.rpc("create_meal_request", {
       p_household_id: d.householdId,
       p_meal_type: d.mealType,
@@ -189,6 +231,11 @@ export async function createMealRequestAction(
       p_pantry_only: d.pantryOnly,
       p_note: d.note,
       p_constraints: constraints,
+      p_ranking_mode: d.rankingMode,
+      p_preference_scope: d.preferenceScope,
+      p_attendee_membership_ids: d.attendeeMembershipIds,
+      p_guest_constraints: guestConstraints,
+      p_strict_time_limit: d.strictTimeLimit,
     });
     if (error) return { ok: false, error: error.message };
     invalidate(d.householdId);
@@ -213,22 +260,180 @@ export async function acceptMealRequestAction(
       mealDate: optional(formData.get("mealDate")),
       targetServings: optional(formData.get("targetServings")),
       linkCalendar: bool(formData.get("linkCalendar")),
+      attendeeMembershipIds: stringListFromForm(formData, "attendeeMembershipIds"),
     });
     if (!parsed.success) {
       return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid" };
     }
     const d = parsed.data;
     const { supabase } = await context(d.householdId, "meal.create");
-    const { data, error } = await supabase.rpc("accept_meal_request_result", {
+    const { data, error } = await supabase.rpc("accept_recipe_recommendation", {
       p_meal_request_id: d.mealRequestId,
       p_recipe_id: d.recipeId,
       p_meal_date: d.mealDate,
-      p_target_servings: d.targetServings,
+      p_desired_servings: d.targetServings,
       p_link_calendar: d.linkCalendar,
+      p_attendee_membership_ids: d.attendeeMembershipIds,
     });
     if (error) return { ok: false, error: error.message };
     invalidate(d.householdId);
     redirect(`/app/${d.householdId}/meals/${data}/shopping`);
+  } catch (error) {
+    if ((error as { digest?: string })?.digest?.startsWith("NEXT_REDIRECT")) {
+      throw error;
+    }
+    return { ok: false, error: toPublicErrorMessage(error) };
+  }
+}
+
+export async function setRecipePreferenceAction(
+  _prev: ActionResult | null,
+  formData: FormData,
+): Promise<ActionResult> {
+  try {
+    const parsed = setRecipePreferenceSchema.safeParse({
+      householdId: str(formData.get("householdId")),
+      recipeId: str(formData.get("recipeId")),
+      preferenceSignal: str(formData.get("preferenceSignal")),
+      isFavorite:
+        formData.get("isFavorite") == null
+          ? null
+          : bool(formData.get("isFavorite")),
+      privateNote: optional(formData.get("privateNote")),
+      shareIdentityWithOrganizer: bool(
+        formData.get("shareIdentityWithOrganizer"),
+      ),
+    });
+    if (!parsed.success) {
+      return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid" };
+    }
+    const d = parsed.data;
+    const { supabase } = await context(d.householdId, "meal.manage_own");
+    const { error } = await supabase.rpc("set_recipe_preference", {
+      p_recipe_id: d.recipeId,
+      p_preference_signal: d.preferenceSignal,
+      p_is_favorite: d.isFavorite,
+      p_private_note: d.privateNote,
+      p_share_identity_with_organizer: d.shareIdentityWithOrganizer,
+    });
+    if (error) return { ok: false, error: error.message };
+    invalidate(d.householdId);
+    return { ok: true, message: "Preference saved." };
+  } catch (error) {
+    return { ok: false, error: toPublicErrorMessage(error) };
+  }
+}
+
+export async function clearRecipePreferenceAction(
+  _prev: ActionResult | null,
+  formData: FormData,
+): Promise<ActionResult> {
+  try {
+    const parsed = clearRecipePreferenceSchema.safeParse({
+      householdId: str(formData.get("householdId")),
+      recipeId: str(formData.get("recipeId")),
+    });
+    if (!parsed.success) {
+      return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid" };
+    }
+    const d = parsed.data;
+    const { supabase } = await context(d.householdId, "meal.manage_own");
+    const { error } = await supabase.rpc("clear_recipe_preference", {
+      p_recipe_id: d.recipeId,
+    });
+    if (error) return { ok: false, error: error.message };
+    invalidate(d.householdId);
+    return { ok: true, message: "Preference cleared." };
+  } catch (error) {
+    return { ok: false, error: toPublicErrorMessage(error) };
+  }
+}
+
+export async function submitRecipeFeedbackAction(
+  _prev: ActionResult | null,
+  formData: FormData,
+): Promise<ActionResult> {
+  try {
+    const parsed = submitRecipeFeedbackSchema.safeParse({
+      householdId: str(formData.get("householdId")),
+      feedbackRequestId: str(formData.get("feedbackRequestId")),
+      preferenceSignal: str(formData.get("preferenceSignal")),
+      isFavorite: bool(formData.get("isFavorite")),
+      privateNote: optional(formData.get("privateNote")),
+      shareIdentityWithOrganizer: bool(
+        formData.get("shareIdentityWithOrganizer"),
+      ),
+    });
+    if (!parsed.success) {
+      return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid" };
+    }
+    const d = parsed.data;
+    const { supabase } = await context(d.householdId, "meal.manage_own");
+    const { error } = await supabase.rpc("submit_recipe_feedback", {
+      p_feedback_request_id: d.feedbackRequestId,
+      p_preference_signal: d.preferenceSignal,
+      p_is_favorite: d.isFavorite,
+      p_private_note: d.privateNote,
+      p_share_identity_with_organizer: d.shareIdentityWithOrganizer,
+    });
+    if (error) return { ok: false, error: error.message };
+    invalidate(d.householdId);
+    return { ok: true, message: "Thanks for the feedback." };
+  } catch (error) {
+    return { ok: false, error: toPublicErrorMessage(error) };
+  }
+}
+
+export async function dismissRecipeFeedbackAction(
+  _prev: ActionResult | null,
+  formData: FormData,
+): Promise<ActionResult> {
+  try {
+    const parsed = dismissRecipeFeedbackSchema.safeParse({
+      householdId: str(formData.get("householdId")),
+      feedbackRequestId: str(formData.get("feedbackRequestId")),
+    });
+    if (!parsed.success) {
+      return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid" };
+    }
+    const d = parsed.data;
+    const { supabase } = await context(d.householdId, "meal.manage_own");
+    const { error } = await supabase.rpc("dismiss_recipe_feedback", {
+      p_feedback_request_id: d.feedbackRequestId,
+    });
+    if (error) return { ok: false, error: error.message };
+    invalidate(d.householdId);
+    return { ok: true, message: "Feedback dismissed." };
+  } catch (error) {
+    return { ok: false, error: toPublicErrorMessage(error) };
+  }
+}
+
+export async function recalculateMealRecommendationAction(
+  _prev: ActionResult | null,
+  formData: FormData,
+): Promise<ActionResult> {
+  try {
+    const parsed = recalculateMealRecommendationSchema.safeParse({
+      householdId: str(formData.get("householdId")),
+      mealRequestId: str(formData.get("mealRequestId")),
+    });
+    if (!parsed.success) {
+      return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid" };
+    }
+    const d = parsed.data;
+    const { supabase } = await context(d.householdId, "meal.create");
+    const { error } = await supabase.rpc(
+      "recalculate_meal_recommendation_context",
+      {
+        p_meal_request_id: d.mealRequestId,
+      },
+    );
+    if (error) return { ok: false, error: error.message };
+    invalidate(d.householdId);
+    redirect(
+      `/app/${d.householdId}/recipes/request?requestId=${d.mealRequestId}`,
+    );
   } catch (error) {
     if ((error as { digest?: string })?.digest?.startsWith("NEXT_REDIRECT")) {
       throw error;

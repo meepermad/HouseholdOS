@@ -28,6 +28,10 @@ Set in the Vercel project (Production + Preview as appropriate):
 
 - `NEXT_PUBLIC_VAPID_PUBLIC_KEY` (pair with `VAPID_PRIVATE_KEY`)
 
+**Storage**
+
+- Private Supabase Storage bucket `maintenance-evidence` is created by Phase 7B migrations (JPEG/PNG/WebP/PDF, 8 MiB). No public object URLs; app uses signed access for authorized viewers.
+
 Never set the secret key, worker secret, VAPID private key, or email API key as `NEXT_PUBLIC_*`.
 
 ## Calendar feeds

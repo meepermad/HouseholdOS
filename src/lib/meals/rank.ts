@@ -1,4 +1,17 @@
+/**
+ * Backward-compatible ranking facade over Phase 7A scoring.
+ * Prefer scoreRecipes() for new code.
+ */
+
 import type { IngredientMatchResult } from "./match";
+import {
+  scoreRecipes,
+  type MemberPreferenceInput,
+  type RankingMode,
+  type RecipeHistorySignals,
+  type ScoreableRecipe,
+  type PreferenceScope,
+} from "./scoring";
 import type { RecipeCategory } from "./types";
 
 export type RankableRecipe = {
@@ -15,6 +28,16 @@ export type RankableRecipe = {
   /** Ingredient ids that conflict with exclude list. */
   excludedIngredientHits?: number;
   requiredIngredientCount: number;
+  prepMinutes?: number | null;
+  requiredEquipment?: readonly string[];
+  availableEquipment?: readonly string[];
+  dietaryConflictHits?: number;
+  optionalIngredientCount?: number;
+  mealPrepSuitable?: boolean;
+  guestScalable?: boolean;
+  isNewlyImported?: boolean;
+  servingScaleFactor?: number;
+  maxReasonableScaleFactor?: number;
 };
 
 export type RankRequestConstraints = {
@@ -24,6 +47,14 @@ export type RankRequestConstraints = {
   prioritizeIngredientNames?: readonly string[];
   excludeIngredientNames?: readonly string[];
   pantryOnly?: boolean;
+  rankingMode?: RankingMode;
+  preferenceScope?: PreferenceScope;
+  strictTimeLimit?: boolean;
+  mealType?: string | null;
+  targetServings?: number | null;
+  /** Attendee preferences keyed by recipe id (optional; favorites also on recipe). */
+  preferencesByRecipe?: ReadonlyMap<string, readonly MemberPreferenceInput[]>;
+  historyByRecipe?: ReadonlyMap<string, RecipeHistorySignals>;
 };
 
 export type RankExplanation = {
@@ -37,15 +68,58 @@ export type RankExplanation = {
 
 export type RankedRecipe = RankExplanation & {
   recipe: RankableRecipe;
+  warnings?: string[];
+  preferenceFit?: string;
+  components?: Array<{ key: string; contribution: number }>;
 };
 
-const MAX_CANDIDATES = 100;
+function toScoreable(recipe: RankableRecipe): ScoreableRecipe {
+  return {
+    id: recipe.id,
+    name: recipe.name,
+    category: recipe.category,
+    totalMinutes: recipe.totalMinutes,
+    prepMinutes: recipe.prepMinutes ?? null,
+    baseServings: recipe.baseServings,
+    requiredEquipment: recipe.requiredEquipment ?? [],
+    availableEquipment: recipe.availableEquipment ?? [],
+    excludedIngredientHits: recipe.excludedIngredientHits ?? 0,
+    dietaryConflictHits: recipe.dietaryConflictHits ?? 0,
+    requiredIngredientCount: recipe.requiredIngredientCount,
+    optionalIngredientCount: recipe.optionalIngredientCount ?? 0,
+    mealPrepSuitable: recipe.mealPrepSuitable ?? recipe.category === "meal_prep",
+    guestScalable: recipe.guestScalable ?? true,
+    isNewlyImported: recipe.isNewlyImported ?? false,
+    servingScaleFactor: recipe.servingScaleFactor ?? 1,
+    maxReasonableScaleFactor: recipe.maxReasonableScaleFactor ?? 4,
+  };
+}
 
-function daysSince(iso: string | null | undefined, now: Date): number | null {
-  if (!iso) return null;
-  const then = new Date(iso);
-  if (Number.isNaN(then.getTime())) return null;
-  return Math.floor((now.getTime() - then.getTime()) / (1000 * 60 * 60 * 24));
+function legacyPrefsForRecipe(
+  recipe: RankableRecipe,
+): MemberPreferenceInput[] {
+  const prefs: MemberPreferenceInput[] = [];
+  if (recipe.isFavorite) {
+    prefs.push({
+      membershipId: "self",
+      isAttending: true,
+      signal: "favorite",
+      isFavorite: true,
+    });
+  } else if (recipe.personalRating != null) {
+    const signal =
+      recipe.personalRating >= 4
+        ? "would_make_again"
+        : recipe.personalRating <= 2
+          ? "would_not_choose_again"
+          : "okay";
+    prefs.push({
+      membershipId: "self",
+      isAttending: true,
+      signal,
+    });
+  }
+  return prefs;
 }
 
 /**
@@ -58,140 +132,92 @@ export function rankRecipes(
   constraints: RankRequestConstraints = {},
   now = new Date(),
 ): RankedRecipe[] {
-  const limited = recipes.slice(0, MAX_CANDIDATES);
-  const results: RankedRecipe[] = [];
+  // Soft category filter (legacy behavior)
+  let filtered = [...recipes];
+  if (constraints.categories && constraints.categories.length > 0) {
+    filtered = filtered.filter((r) =>
+      constraints.categories!.includes(r.category),
+    );
+  }
+  if (constraints.pantryOnly) {
+    // Applied via maxMissingRequired = 0
+  }
 
-  for (const recipe of limited) {
-    const matches = matchesByRecipe.get(recipe.id) ?? [];
-    const requiredMatches = matches.filter((m) => {
-      // optional_missing is not required
-      return m.status !== "optional_missing";
+  const preferencesByRecipe = new Map<string, MemberPreferenceInput[]>();
+  const historyByRecipe = new Map<string, RecipeHistorySignals>();
+
+  for (const recipe of filtered) {
+    const fromConstraint = constraints.preferencesByRecipe?.get(recipe.id);
+    preferencesByRecipe.set(
+      recipe.id,
+      fromConstraint ? [...fromConstraint] : legacyPrefsForRecipe(recipe),
+    );
+    const hist = constraints.historyByRecipe?.get(recipe.id);
+    historyByRecipe.set(recipe.id, {
+      timesPrepared: recipe.timesPrepared ?? hist?.timesPrepared ?? 0,
+      lastPreparedAt: recipe.lastPreparedAt ?? hist?.lastPreparedAt ?? null,
+      recentCategoryCount: hist?.recentCategoryCount ?? 0,
+      usedForMealPrep: hist?.usedForMealPrep,
+      shoppingRequirementHigh: hist?.shoppingRequirementHigh,
+      preparationCancelled: hist?.preparationCancelled,
+      leftoverOutcomeApproximate: hist?.leftoverOutcomeApproximate,
+      successfulForGuests: hist?.successfulForGuests,
+      consumedUseSoon: hist?.consumedUseSoon,
+      feedbackSubmittedCount: hist?.feedbackSubmittedCount,
     });
+  }
 
-    const missingRequired = requiredMatches.filter(
-      (m) =>
-        m.status === "missing" ||
-        m.status === "personal_unavailable",
-    ).length;
-    const useSoonCount = matches.filter((m) => m.status === "use_soon").length;
-    const availableish = matches.filter((m) =>
-      [
-        "available",
-        "probably_available",
-        "use_soon",
-        "assumed_available",
-        "quantity_unknown",
-        "low",
-      ].includes(m.status),
-    ).length;
-    const denom = Math.max(1, recipe.requiredIngredientCount);
-    const pantryCoverageRatio = availableish / denom;
+  const scored = scoreRecipes({
+    recipes: filtered.map(toScoreable),
+    matchesByRecipe,
+    preferencesByRecipe,
+    historyByRecipe,
+    context: {
+      mode: constraints.rankingMode ?? "best_overall",
+      preferenceScope: constraints.preferenceScope ?? "attendees",
+      maxTotalMinutes: constraints.maxTotalMinutes ?? null,
+      strictTimeLimit: constraints.strictTimeLimit ?? false,
+      maxMissingRequired: constraints.pantryOnly
+        ? 0
+        : (constraints.maxMissingIngredients ?? null),
+      targetServings: constraints.targetServings ?? null,
+      mealType: constraints.mealType ?? null,
+      guestConstraints: [],
+      excludeIngredients: constraints.excludeIngredientNames ?? [],
+      now,
+    },
+  });
 
-    // Soft filters
-    if (
-      constraints.maxTotalMinutes != null &&
-      recipe.totalMinutes != null &&
-      recipe.totalMinutes > constraints.maxTotalMinutes
-    ) {
-      continue;
-    }
-    if (
-      constraints.maxMissingIngredients != null &&
-      missingRequired > constraints.maxMissingIngredients
-    ) {
-      continue;
-    }
-    if (
-      constraints.categories &&
-      constraints.categories.length > 0 &&
-      !constraints.categories.includes(recipe.category)
-    ) {
-      continue;
-    }
-    if (constraints.pantryOnly && missingRequired > 0) {
-      continue;
-    }
-    if ((recipe.excludedIngredientHits ?? 0) > 0) {
-      continue;
-    }
-
-    let score = 0;
-    const reasons: string[] = [];
-
-    score += Math.round(pantryCoverageRatio * 40);
-    if (pantryCoverageRatio >= 0.75) {
-      reasons.push("Strong pantry coverage");
-    }
-
-    score += Math.max(0, 20 - missingRequired * 5);
-    if (missingRequired === 0) {
-      reasons.push("No required ingredients missing");
-    } else if (missingRequired === 1) {
-      reasons.push("Missing only one required ingredient");
-    } else {
-      reasons.push(`Missing ${missingRequired} required ingredients`);
-    }
-
-    score += useSoonCount * 8;
-    if (useSoonCount > 0) {
-      reasons.push(
-        `Uses ${useSoonCount} ingredient${useSoonCount === 1 ? "" : "s"} marked “use soon”`,
-      );
-    }
-
-    if (recipe.totalMinutes != null) {
-      score += Math.max(0, 15 - Math.floor(recipe.totalMinutes / 10));
-      reasons.push(`Estimated total time: ${recipe.totalMinutes} minutes`);
-    }
-
-    if (constraints.categories?.includes(recipe.category)) {
-      score += 10;
-      reasons.push(`Matches requested category (${recipe.category})`);
-    }
-
-    if (recipe.isFavorite) {
-      score += 12;
-      reasons.push("Marked as a favorite");
-    }
-
-    if (recipe.personalRating != null) {
-      score += recipe.personalRating * 2;
-    }
-    if (recipe.householdRating != null) {
-      score += recipe.householdRating;
-    }
-
-    const since = daysSince(recipe.lastPreparedAt, now);
-    if (since !== null && since < 7) {
-      score -= 15;
-      reasons.push("Recently cooked (slight penalty)");
-    }
-
+  const byId = new Map(filtered.map((r) => [r.id, r]));
+  return scored.map((s) => {
+    const recipe = byId.get(s.recipeId)!;
+    const reasons = [...s.reasons];
     if (constraints.prioritizeIngredientNames?.length) {
       reasons.push(
         `Prioritizes pantry items: ${constraints.prioritizeIngredientNames.slice(0, 3).join(", ")}`,
       );
-      score += 5;
     }
-
-    if (reasons.length === 0) {
-      reasons.push("Eligible household recipe");
+    if (
+      constraints.categories?.includes(recipe.category) &&
+      !reasons.some((r) => /category/i.test(r))
+    ) {
+      reasons.push(`Matches requested category (${recipe.category})`);
     }
-
-    results.push({
-      recipeId: recipe.id,
+    return {
+      recipeId: s.recipeId,
       recipe,
-      score,
+      score: s.totalScore,
       reasons,
-      missingRequired,
-      useSoonCount,
-      pantryCoverageRatio,
-    });
-  }
-
-  return results.sort((a, b) => {
-    if (b.score !== a.score) return b.score - a.score;
-    return a.recipe.name.localeCompare(b.recipe.name);
+      missingRequired: s.missingRequired,
+      useSoonCount: s.useSoonCount,
+      pantryCoverageRatio: s.pantryCoverageRatio,
+      warnings: s.warnings,
+      preferenceFit: s.preferenceFit,
+      components: s.components.map((c) => ({
+        key: c.key,
+        contribution: c.contribution,
+      })),
+    };
   });
 }
 

@@ -202,13 +202,28 @@ Phase 4 — Shared HouseholdOS calendar, recurrence, reminders, secure iCalendar
 Phase 5 — Chores / responsibility rotations on calendar + notifications
 Phase 6 — Inventory, supplies, shopping lists, pantry
 Phase 6.5 — Recipes, meal requests, meal planning, meal-prep batches
-Phase 6.6 — Secure recipe URL import and review (current)
-Phase 7 — Maintenance requests, household issues, repair tracking, vendor appointments
+Phase 6.6 — Secure recipe URL import and review
+Phase 7 — Preference-aware recipe recommendations + maintenance / repair coordination (current)
+Phase 8 — Household agreements, policies, approvals, acknowledgments, move-in/out, document retention
 Later — LifeOS connector; optional Google/Apple calendar sync
 ```
 
 Calendar stages remaining: LifeOS connector → optional two-way provider sync.
 
+## Phase 7A — Preference-aware recommendations
+
+Deterministic, versioned scoring (`SCORING_VERSION = "1"`) ranks visible recipes for a meal request using pantry coverage, use-soon utilization, attendee-scoped preferences, time, equipment, serving scalability, meal-prep/guest fit, and repetition penalties. Modes adjust weights only (`best_overall`, `use_what_we_have`, `use_food_soon`, `household_favorite`, `fastest`, `fewest_missing_items`, `meal_prep_friendly`, `guest_friendly`, `something_different`).
+
+Personal ratings stay owner-private; organizers see anonymized explanations. Accepted plans are not auto-replaced when inputs change. Optional post-meal feedback is dismissible.
+
+Key tables: `recipe_recommendation_runs`, `recipe_recommendation_results`, `recipe_recommendation_score_components`, `recipe_feedback_requests`, `recipe_feedback_responses`, `meal_request_attendees`, `recipe_prep_history`.
+
+## Phase 7B — Maintenance
+
+Separate domain (never mixed into meal/recipe tables): requests, assignments, append-only events, actions, chore/calendar/expense/inventory links, vendors, quotes, warranty claims, and private evidence (`maintenance-evidence` bucket; JPEG/PNG/WebP/PDF; signed URLs only).
+
+Lifecycle is RPC-enforced. Emergency guidance is deterministic and never claims emergency services were contacted. `financial_coordinator` does not receive `maintenance.coordinator_override`.
+
 ## Out of scope (current)
 
-Receipt OCR, actual bank/Venmo/Zelle/Plaid transfers, Google/Apple OAuth calendar sync, two-way calendar writeback, full offline sync, SMS, live email delivery (adapter boundary only until a provider is configured), chore photo evidence storage, public chore rankings or financial penalties for missed chores, barcode scanning, grocery delivery APIs, recipe-site crawling/indexing, paywall or anti-bot bypass, AI-generated recipes, portion claiming.
+Receipt OCR, actual bank/Venmo/Zelle/Plaid transfers, Google/Apple OAuth calendar sync, two-way calendar writeback, full offline sync, SMS, live email delivery (adapter boundary only until a provider is configured), chore photo evidence storage, public chore rankings or financial penalties for missed chores, barcode scanning, grocery delivery APIs, recipe-site crawling/indexing, paywall or anti-bot bypass, AI-generated recipes, portion claiming, automatic emergency-service contact, automatic landlord/vendor messaging.

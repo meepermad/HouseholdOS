@@ -132,3 +132,18 @@ export const MEAL_VISIBILITIES = [
   "creator_only",
 ] as const;
 export type MealVisibility = (typeof MEAL_VISIBILITIES)[number];
+
+export {
+  PREFERENCE_SIGNALS,
+  RANKING_MODES,
+  PREFERENCE_SCOPES,
+  PREFERENCE_FIT_SUMMARIES,
+  SCORE_COMPONENT_KEYS,
+} from "./scoring/types";
+export type {
+  PreferenceSignal,
+  RankingMode,
+  PreferenceScope,
+  PreferenceFitSummary,
+  ScoreComponentKey,
+} from "./scoring/types";

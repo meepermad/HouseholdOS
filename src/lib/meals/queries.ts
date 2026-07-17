@@ -287,3 +287,43 @@ export async function getMealRequest(householdId: string, requestId: string) {
   if (!request) return null;
   return { request, results: results ?? [] };
 }
+
+export async function listHouseholdMembersForMeals(householdId: string) {
+  const supabase = await db();
+  const { data, error } = await supabase
+    .from("household_memberships")
+    .select("id, profiles(display_name, email)")
+    .eq("household_id", householdId)
+    .eq("status", "active")
+    .order("created_at");
+  if (error) throw error;
+  return (data ?? []).map((row: Record<string, unknown>) => {
+    const profile = row.profiles as
+      | { display_name: string | null; email: string | null }
+      | { display_name: string | null; email: string | null }[]
+      | null;
+    const p = Array.isArray(profile) ? profile[0] : profile;
+    return {
+      id: row.id as string,
+      displayName: p?.display_name || p?.email || String(row.id).slice(0, 8),
+    };
+  });
+}
+
+export async function getPendingRecipeFeedbackForMeal(
+  householdId: string,
+  mealPlanId: string,
+  membershipId: string,
+) {
+  const supabase = await db();
+  const { data, error } = await supabase
+    .from("recipe_feedback_requests")
+    .select("id, recipe_id, status, recipes(id, name)")
+    .eq("household_id", householdId)
+    .eq("meal_plan_id", mealPlanId)
+    .eq("membership_id", membershipId)
+    .eq("status", "pending")
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+}

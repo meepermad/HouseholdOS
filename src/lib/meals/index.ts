@@ -90,6 +90,46 @@ export type {
 } from "./rank";
 
 export {
+  SCORING_VERSION,
+  BASE_WEIGHTS,
+  resolveModeWeights,
+  scoreRecipes,
+  scoreRecipesIncludingExcluded,
+  explainScoredRecipe,
+  preferenceFitLabel,
+  evaluateHardExclusion,
+  aggregatePreferences,
+  projectPrivatePreferenceExplanations,
+  selectRelevantPreferences,
+  shouldRecalculateRecommendations,
+  acceptedPlanRecalcNotice,
+  MATERIAL_RECALC_TRIGGERS,
+  PREFERENCE_SIGNALS,
+  RANKING_MODES,
+  PREFERENCE_SCOPES,
+  PREFERENCE_FIT_SUMMARIES,
+  SCORE_COMPONENT_KEYS,
+} from "./scoring";
+export type {
+  GuestConstraintInput,
+  MemberPreferenceInput,
+  PreferenceAggregate,
+  PreferenceFitSummary,
+  PreferenceScope,
+  PreferenceSignal,
+  RankingMode,
+  RecipeHistorySignals,
+  ScoreComponent,
+  ScoreComponentKey,
+  ScoreRequestContext,
+  ScoreRecipesInput,
+  ScoreableRecipe,
+  ScoredRecipeResult,
+  RecommendationRecalcTrigger,
+  AcceptedPlanRecalcNotice,
+} from "./scoring";
+
+export {
   projectDietaryConstraintsForOrganizer,
   sanitizeDietaryForNotification,
 } from "./dietary-privacy";

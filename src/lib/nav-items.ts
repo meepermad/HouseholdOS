@@ -101,6 +101,15 @@ export const HOUSEHOLD_NAV_ITEMS: readonly HouseholdNavItem[] = [
     surface: "more",
   },
   {
+    key: "maintenance",
+    label: "Maintenance",
+    mark: "⚒",
+    href: (id) => `/app/${id}/maintenance`,
+    match: (pathname, id) => pathname.startsWith(`/app/${id}/maintenance`),
+    enabled: true,
+    surface: "more",
+  },
+  {
     key: "records",
     label: "Records",
     mark: "☰",

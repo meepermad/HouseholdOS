@@ -2389,6 +2389,994 @@ export type Database = {
           },
         ]
       }
+      maintenance_actions: {
+        Row: {
+          assignee_membership_id: string | null
+          completed_at: string | null
+          created_at: string
+          created_by_membership_id: string
+          description: string | null
+          household_id: string
+          id: string
+          request_id: string
+          status: string
+          title: string
+        }
+        Insert: {
+          assignee_membership_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          created_by_membership_id: string
+          description?: string | null
+          household_id: string
+          id?: string
+          request_id: string
+          status?: string
+          title: string
+        }
+        Update: {
+          assignee_membership_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          created_by_membership_id?: string
+          description?: string | null
+          household_id?: string
+          id?: string
+          request_id?: string
+          status?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_actions_assignee_membership_id_fkey"
+            columns: ["assignee_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_actions_created_by_membership_id_fkey"
+            columns: ["created_by_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_actions_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_actions_request_id_household_id_fkey"
+            columns: ["request_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "maintenance_requests"
+            referencedColumns: ["id", "household_id"]
+          },
+        ]
+      }
+      maintenance_assignments: {
+        Row: {
+          assigned_at: string
+          assigned_by_membership_id: string
+          household_id: string
+          id: string
+          is_primary: boolean
+          membership_id: string
+          request_id: string
+          unassigned_at: string | null
+        }
+        Insert: {
+          assigned_at?: string
+          assigned_by_membership_id: string
+          household_id: string
+          id?: string
+          is_primary?: boolean
+          membership_id: string
+          request_id: string
+          unassigned_at?: string | null
+        }
+        Update: {
+          assigned_at?: string
+          assigned_by_membership_id?: string
+          household_id?: string
+          id?: string
+          is_primary?: boolean
+          membership_id?: string
+          request_id?: string
+          unassigned_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_assignments_assigned_by_membership_id_fkey"
+            columns: ["assigned_by_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_assignments_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_assignments_membership_id_fkey"
+            columns: ["membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_assignments_request_id_household_id_fkey"
+            columns: ["request_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "maintenance_requests"
+            referencedColumns: ["id", "household_id"]
+          },
+        ]
+      }
+      maintenance_attachments: {
+        Row: {
+          created_at: string
+          deleted_at: string | null
+          file_name: string
+          household_id: string
+          id: string
+          mime_type: string
+          request_id: string
+          size_bytes: number
+          storage_path: string
+          uploaded_by_membership_id: string
+        }
+        Insert: {
+          created_at?: string
+          deleted_at?: string | null
+          file_name: string
+          household_id: string
+          id?: string
+          mime_type: string
+          request_id: string
+          size_bytes: number
+          storage_path: string
+          uploaded_by_membership_id: string
+        }
+        Update: {
+          created_at?: string
+          deleted_at?: string | null
+          file_name?: string
+          household_id?: string
+          id?: string
+          mime_type?: string
+          request_id?: string
+          size_bytes?: number
+          storage_path?: string
+          uploaded_by_membership_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_attachments_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_attachments_request_id_household_id_fkey"
+            columns: ["request_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "maintenance_requests"
+            referencedColumns: ["id", "household_id"]
+          },
+          {
+            foreignKeyName: "maintenance_attachments_uploaded_by_membership_id_fkey"
+            columns: ["uploaded_by_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      maintenance_calendar_links: {
+        Row: {
+          appointment_kind: string
+          calendar_event_id: string
+          cancelled_at: string | null
+          created_at: string
+          created_by_membership_id: string
+          household_id: string
+          id: string
+          request_id: string
+        }
+        Insert: {
+          appointment_kind?: string
+          calendar_event_id: string
+          cancelled_at?: string | null
+          created_at?: string
+          created_by_membership_id: string
+          household_id: string
+          id?: string
+          request_id: string
+        }
+        Update: {
+          appointment_kind?: string
+          calendar_event_id?: string
+          cancelled_at?: string | null
+          created_at?: string
+          created_by_membership_id?: string
+          household_id?: string
+          id?: string
+          request_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_calendar_links_calendar_event_id_fkey"
+            columns: ["calendar_event_id"]
+            isOneToOne: true
+            referencedRelation: "calendar_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_calendar_links_created_by_membership_id_fkey"
+            columns: ["created_by_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_calendar_links_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_calendar_links_request_id_household_id_fkey"
+            columns: ["request_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "maintenance_requests"
+            referencedColumns: ["id", "household_id"]
+          },
+        ]
+      }
+      maintenance_chore_links: {
+        Row: {
+          chore_definition_id: string | null
+          chore_occurrence_id: string | null
+          created_at: string
+          created_by_membership_id: string
+          household_id: string
+          id: string
+          request_id: string
+          unlinked_at: string | null
+        }
+        Insert: {
+          chore_definition_id?: string | null
+          chore_occurrence_id?: string | null
+          created_at?: string
+          created_by_membership_id: string
+          household_id: string
+          id?: string
+          request_id: string
+          unlinked_at?: string | null
+        }
+        Update: {
+          chore_definition_id?: string | null
+          chore_occurrence_id?: string | null
+          created_at?: string
+          created_by_membership_id?: string
+          household_id?: string
+          id?: string
+          request_id?: string
+          unlinked_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_chore_links_chore_definition_id_household_id_fkey"
+            columns: ["chore_definition_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "chore_definitions"
+            referencedColumns: ["id", "household_id"]
+          },
+          {
+            foreignKeyName: "maintenance_chore_links_chore_occurrence_id_household_id_fkey"
+            columns: ["chore_occurrence_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "chore_occurrences"
+            referencedColumns: ["id", "household_id"]
+          },
+          {
+            foreignKeyName: "maintenance_chore_links_created_by_membership_id_fkey"
+            columns: ["created_by_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_chore_links_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_chore_links_request_id_household_id_fkey"
+            columns: ["request_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "maintenance_requests"
+            referencedColumns: ["id", "household_id"]
+          },
+        ]
+      }
+      maintenance_contact_events: {
+        Row: {
+          contact_id: string
+          created_at: string
+          event_kind: string
+          follow_up_at: string | null
+          household_id: string
+          id: string
+          notes: string | null
+          recorded_by_membership_id: string
+          reference_number: string | null
+          request_id: string
+        }
+        Insert: {
+          contact_id: string
+          created_at?: string
+          event_kind: string
+          follow_up_at?: string | null
+          household_id: string
+          id?: string
+          notes?: string | null
+          recorded_by_membership_id: string
+          reference_number?: string | null
+          request_id: string
+        }
+        Update: {
+          contact_id?: string
+          created_at?: string
+          event_kind?: string
+          follow_up_at?: string | null
+          household_id?: string
+          id?: string
+          notes?: string | null
+          recorded_by_membership_id?: string
+          reference_number?: string | null
+          request_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_contact_events_contact_id_household_id_fkey"
+            columns: ["contact_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "maintenance_external_contacts"
+            referencedColumns: ["id", "household_id"]
+          },
+          {
+            foreignKeyName: "maintenance_contact_events_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_contact_events_recorded_by_membership_id_fkey"
+            columns: ["recorded_by_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_contact_events_request_id_household_id_fkey"
+            columns: ["request_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "maintenance_requests"
+            referencedColumns: ["id", "household_id"]
+          },
+        ]
+      }
+      maintenance_events: {
+        Row: {
+          actor_membership_id: string
+          body: string | null
+          created_at: string
+          event_type: string
+          household_id: string
+          id: string
+          payload: Json
+          request_id: string
+        }
+        Insert: {
+          actor_membership_id: string
+          body?: string | null
+          created_at?: string
+          event_type: string
+          household_id: string
+          id?: string
+          payload?: Json
+          request_id: string
+        }
+        Update: {
+          actor_membership_id?: string
+          body?: string | null
+          created_at?: string
+          event_type?: string
+          household_id?: string
+          id?: string
+          payload?: Json
+          request_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_events_actor_membership_id_fkey"
+            columns: ["actor_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_events_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_events_request_id_household_id_fkey"
+            columns: ["request_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "maintenance_requests"
+            referencedColumns: ["id", "household_id"]
+          },
+        ]
+      }
+      maintenance_expense_links: {
+        Row: {
+          created_at: string
+          created_by_membership_id: string
+          expense_id: string
+          expense_item_id: string | null
+          household_id: string
+          id: string
+          link_kind: string
+          request_id: string
+          unlinked_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by_membership_id: string
+          expense_id: string
+          expense_item_id?: string | null
+          household_id: string
+          id?: string
+          link_kind?: string
+          request_id: string
+          unlinked_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by_membership_id?: string
+          expense_id?: string
+          expense_item_id?: string | null
+          household_id?: string
+          id?: string
+          link_kind?: string
+          request_id?: string
+          unlinked_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_expense_links_created_by_membership_id_fkey"
+            columns: ["created_by_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_expense_links_expense_id_household_id_fkey"
+            columns: ["expense_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "expenses"
+            referencedColumns: ["id", "household_id"]
+          },
+          {
+            foreignKeyName: "maintenance_expense_links_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_expense_links_request_id_household_id_fkey"
+            columns: ["request_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "maintenance_requests"
+            referencedColumns: ["id", "household_id"]
+          },
+        ]
+      }
+      maintenance_external_contacts: {
+        Row: {
+          active: boolean
+          contact_type: string
+          created_at: string
+          created_by_membership_id: string
+          display_name: string
+          email: string | null
+          household_id: string
+          id: string
+          last_contacted_at: string | null
+          notes: string | null
+          organization: string | null
+          phone: string | null
+          preferred: boolean
+          service_categories: string[]
+          updated_at: string
+          website: string | null
+        }
+        Insert: {
+          active?: boolean
+          contact_type: string
+          created_at?: string
+          created_by_membership_id: string
+          display_name: string
+          email?: string | null
+          household_id: string
+          id?: string
+          last_contacted_at?: string | null
+          notes?: string | null
+          organization?: string | null
+          phone?: string | null
+          preferred?: boolean
+          service_categories?: string[]
+          updated_at?: string
+          website?: string | null
+        }
+        Update: {
+          active?: boolean
+          contact_type?: string
+          created_at?: string
+          created_by_membership_id?: string
+          display_name?: string
+          email?: string | null
+          household_id?: string
+          id?: string
+          last_contacted_at?: string | null
+          notes?: string | null
+          organization?: string | null
+          phone?: string | null
+          preferred?: boolean
+          service_categories?: string[]
+          updated_at?: string
+          website?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_external_contacts_created_by_membership_id_fkey"
+            columns: ["created_by_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_external_contacts_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      maintenance_inventory_links: {
+        Row: {
+          created_at: string
+          created_by_membership_id: string
+          household_id: string
+          id: string
+          inventory_item_id: string
+          request_id: string
+          unlinked_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by_membership_id: string
+          household_id: string
+          id?: string
+          inventory_item_id: string
+          request_id: string
+          unlinked_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by_membership_id?: string
+          household_id?: string
+          id?: string
+          inventory_item_id?: string
+          request_id?: string
+          unlinked_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_inventory_links_created_by_membership_id_fkey"
+            columns: ["created_by_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_inventory_links_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_inventory_links_inventory_item_id_household_id_fkey"
+            columns: ["inventory_item_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id", "household_id"]
+          },
+          {
+            foreignKeyName: "maintenance_inventory_links_request_id_household_id_fkey"
+            columns: ["request_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "maintenance_requests"
+            referencedColumns: ["id", "household_id"]
+          },
+        ]
+      }
+      maintenance_quotes: {
+        Row: {
+          amount_cents: number
+          contact_id: string | null
+          created_at: string
+          currency: string
+          expires_at: string | null
+          household_id: string
+          id: string
+          notes: string | null
+          recorded_by_membership_id: string
+          request_id: string
+          status: string
+        }
+        Insert: {
+          amount_cents: number
+          contact_id?: string | null
+          created_at?: string
+          currency?: string
+          expires_at?: string | null
+          household_id: string
+          id?: string
+          notes?: string | null
+          recorded_by_membership_id: string
+          request_id: string
+          status?: string
+        }
+        Update: {
+          amount_cents?: number
+          contact_id?: string | null
+          created_at?: string
+          currency?: string
+          expires_at?: string | null
+          household_id?: string
+          id?: string
+          notes?: string | null
+          recorded_by_membership_id?: string
+          request_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_quotes_contact_id_household_id_fkey"
+            columns: ["contact_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "maintenance_external_contacts"
+            referencedColumns: ["id", "household_id"]
+          },
+          {
+            foreignKeyName: "maintenance_quotes_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_quotes_recorded_by_membership_id_fkey"
+            columns: ["recorded_by_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_quotes_request_id_household_id_fkey"
+            columns: ["request_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "maintenance_requests"
+            referencedColumns: ["id", "household_id"]
+          },
+        ]
+      }
+      maintenance_request_participants: {
+        Row: {
+          created_at: string
+          household_id: string
+          id: string
+          membership_id: string
+          request_id: string
+          role: string
+        }
+        Insert: {
+          created_at?: string
+          household_id: string
+          id?: string
+          membership_id: string
+          request_id: string
+          role?: string
+        }
+        Update: {
+          created_at?: string
+          household_id?: string
+          id?: string
+          membership_id?: string
+          request_id?: string
+          role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_request_participants_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_request_participants_membership_id_fkey"
+            columns: ["membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_request_participants_request_id_household_id_fkey"
+            columns: ["request_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "maintenance_requests"
+            referencedColumns: ["id", "household_id"]
+          },
+        ]
+      }
+      maintenance_requests: {
+        Row: {
+          cancelled_at: string | null
+          category: string
+          closed_at: string | null
+          created_at: string
+          currently_active: boolean
+          decision_outcome: string | null
+          description: string | null
+          estimated_cost_cents: number | null
+          first_noticed_at: string | null
+          hazard_flags: string[]
+          household_id: string
+          id: string
+          immediate_mitigation: string | null
+          inventory_item_id: string | null
+          landlord_involvement: boolean
+          landlord_workflow_status: string | null
+          linked_as_recurrence_of: string | null
+          location_id: string | null
+          primary_coordinator_membership_id: string | null
+          quoted_cost_cents: number | null
+          reporter_membership_id: string
+          resolution_notes: string | null
+          resolved_at: string | null
+          responsibility_area_id: string | null
+          severity: string
+          status: string
+          stop_use: boolean
+          suggested_coordinator_membership_id: string | null
+          title: string
+          updated_at: string
+          visibility: string
+        }
+        Insert: {
+          cancelled_at?: string | null
+          category: string
+          closed_at?: string | null
+          created_at?: string
+          currently_active?: boolean
+          decision_outcome?: string | null
+          description?: string | null
+          estimated_cost_cents?: number | null
+          first_noticed_at?: string | null
+          hazard_flags?: string[]
+          household_id: string
+          id?: string
+          immediate_mitigation?: string | null
+          inventory_item_id?: string | null
+          landlord_involvement?: boolean
+          landlord_workflow_status?: string | null
+          linked_as_recurrence_of?: string | null
+          location_id?: string | null
+          primary_coordinator_membership_id?: string | null
+          quoted_cost_cents?: number | null
+          reporter_membership_id: string
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          responsibility_area_id?: string | null
+          severity?: string
+          status?: string
+          stop_use?: boolean
+          suggested_coordinator_membership_id?: string | null
+          title: string
+          updated_at?: string
+          visibility?: string
+        }
+        Update: {
+          cancelled_at?: string | null
+          category?: string
+          closed_at?: string | null
+          created_at?: string
+          currently_active?: boolean
+          decision_outcome?: string | null
+          description?: string | null
+          estimated_cost_cents?: number | null
+          first_noticed_at?: string | null
+          hazard_flags?: string[]
+          household_id?: string
+          id?: string
+          immediate_mitigation?: string | null
+          inventory_item_id?: string | null
+          landlord_involvement?: boolean
+          landlord_workflow_status?: string | null
+          linked_as_recurrence_of?: string | null
+          location_id?: string | null
+          primary_coordinator_membership_id?: string | null
+          quoted_cost_cents?: number | null
+          reporter_membership_id?: string
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          responsibility_area_id?: string | null
+          severity?: string
+          status?: string
+          stop_use?: boolean
+          suggested_coordinator_membership_id?: string | null
+          title?: string
+          updated_at?: string
+          visibility?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_requests_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_requests_inventory_item_id_household_id_fkey"
+            columns: ["inventory_item_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id", "household_id"]
+          },
+          {
+            foreignKeyName: "maintenance_requests_linked_as_recurrence_of_household_id_fkey"
+            columns: ["linked_as_recurrence_of", "household_id"]
+            isOneToOne: false
+            referencedRelation: "maintenance_requests"
+            referencedColumns: ["id", "household_id"]
+          },
+          {
+            foreignKeyName: "maintenance_requests_location_id_household_id_fkey"
+            columns: ["location_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "household_locations"
+            referencedColumns: ["id", "household_id"]
+          },
+          {
+            foreignKeyName: "maintenance_requests_primary_coordinator_membership_id_fkey"
+            columns: ["primary_coordinator_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_requests_reporter_membership_id_fkey"
+            columns: ["reporter_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_requests_responsibility_area_id_household_id_fkey"
+            columns: ["responsibility_area_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "responsibility_areas"
+            referencedColumns: ["id", "household_id"]
+          },
+          {
+            foreignKeyName: "maintenance_requests_suggested_coordinator_membership_id_fkey"
+            columns: ["suggested_coordinator_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      maintenance_warranty_claims: {
+        Row: {
+          claim_reference: string | null
+          created_at: string
+          follow_up_at: string | null
+          household_id: string
+          id: string
+          inventory_item_id: string | null
+          notes: string | null
+          recorded_by_membership_id: string
+          request_id: string
+          status: string
+        }
+        Insert: {
+          claim_reference?: string | null
+          created_at?: string
+          follow_up_at?: string | null
+          household_id: string
+          id?: string
+          inventory_item_id?: string | null
+          notes?: string | null
+          recorded_by_membership_id: string
+          request_id: string
+          status?: string
+        }
+        Update: {
+          claim_reference?: string | null
+          created_at?: string
+          follow_up_at?: string | null
+          household_id?: string
+          id?: string
+          inventory_item_id?: string | null
+          notes?: string | null
+          recorded_by_membership_id?: string
+          request_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_warranty_claims_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_warranty_claims_inventory_item_id_household_id_fkey"
+            columns: ["inventory_item_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id", "household_id"]
+          },
+          {
+            foreignKeyName: "maintenance_warranty_claims_recorded_by_membership_id_fkey"
+            columns: ["recorded_by_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_warranty_claims_request_id_household_id_fkey"
+            columns: ["request_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "maintenance_requests"
+            referencedColumns: ["id", "household_id"]
+          },
+        ]
+      }
       meal_attendees: {
         Row: {
           attendance_status: string
@@ -3035,6 +4023,52 @@ export type Database = {
           },
         ]
       }
+      meal_request_attendees: {
+        Row: {
+          created_at: string
+          household_id: string
+          id: string
+          meal_request_id: string
+          membership_id: string
+        }
+        Insert: {
+          created_at?: string
+          household_id: string
+          id?: string
+          meal_request_id: string
+          membership_id: string
+        }
+        Update: {
+          created_at?: string
+          household_id?: string
+          id?: string
+          meal_request_id?: string
+          membership_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meal_request_attendees_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meal_request_attendees_meal_request_id_household_id_fkey"
+            columns: ["meal_request_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "meal_requests"
+            referencedColumns: ["id", "household_id"]
+          },
+          {
+            foreignKeyName: "meal_request_attendees_membership_id_fkey"
+            columns: ["membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       meal_request_constraints: {
         Row: {
           constraint_type: string
@@ -3077,6 +4111,45 @@ export type Database = {
           },
         ]
       }
+      meal_request_guest_constraints: {
+        Row: {
+          created_at: string
+          household_id: string
+          id: string
+          label: string
+          meal_request_id: string
+        }
+        Insert: {
+          created_at?: string
+          household_id: string
+          id?: string
+          label: string
+          meal_request_id: string
+        }
+        Update: {
+          created_at?: string
+          household_id?: string
+          id?: string
+          label?: string
+          meal_request_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meal_request_guest_constraint_meal_request_id_household_id_fkey"
+            columns: ["meal_request_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "meal_requests"
+            referencedColumns: ["id", "household_id"]
+          },
+          {
+            foreignKeyName: "meal_request_guest_constraints_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       meal_request_results: {
         Row: {
           created_at: string
@@ -3085,9 +4158,13 @@ export type Database = {
           id: string
           meal_request_id: string
           missing_required: number
+          pantry_coverage_ratio: number | null
+          preference_fit_summary: string
           rank_position: number
           recipe_id: string
+          recommendation_run_id: string | null
           score: number
+          warnings: Json
         }
         Insert: {
           created_at?: string
@@ -3096,9 +4173,13 @@ export type Database = {
           id?: string
           meal_request_id: string
           missing_required?: number
+          pantry_coverage_ratio?: number | null
+          preference_fit_summary?: string
           rank_position: number
           recipe_id: string
+          recommendation_run_id?: string | null
           score?: number
+          warnings?: Json
         }
         Update: {
           created_at?: string
@@ -3107,9 +4188,13 @@ export type Database = {
           id?: string
           meal_request_id?: string
           missing_required?: number
+          pantry_coverage_ratio?: number | null
+          preference_fit_summary?: string
           rank_position?: number
           recipe_id?: string
+          recommendation_run_id?: string | null
           score?: number
+          warnings?: Json
         }
         Relationships: [
           {
@@ -3146,13 +4231,18 @@ export type Database = {
           guest_count: number
           household_id: string
           id: string
+          inputs_changed_at: string | null
+          last_recommendation_run_id: string | null
           max_missing_ingredients: number | null
           max_prep_minutes: number | null
           max_total_minutes: number | null
           meal_type: string
           note: string | null
           pantry_only: boolean
+          preference_scope: string
+          ranking_mode: string
           status: string
+          strict_time_limit: boolean
           target_date: string | null
           updated_at: string
         }
@@ -3166,13 +4256,18 @@ export type Database = {
           guest_count?: number
           household_id: string
           id?: string
+          inputs_changed_at?: string | null
+          last_recommendation_run_id?: string | null
           max_missing_ingredients?: number | null
           max_prep_minutes?: number | null
           max_total_minutes?: number | null
           meal_type?: string
           note?: string | null
           pantry_only?: boolean
+          preference_scope?: string
+          ranking_mode?: string
           status?: string
+          strict_time_limit?: boolean
           target_date?: string | null
           updated_at?: string
         }
@@ -3186,13 +4281,18 @@ export type Database = {
           guest_count?: number
           household_id?: string
           id?: string
+          inputs_changed_at?: string | null
+          last_recommendation_run_id?: string | null
           max_missing_ingredients?: number | null
           max_prep_minutes?: number | null
           max_total_minutes?: number | null
           meal_type?: string
           note?: string | null
           pantry_only?: boolean
+          preference_scope?: string
+          ranking_mode?: string
           status?: string
+          strict_time_limit?: boolean
           target_date?: string | null
           updated_at?: string
         }
@@ -3217,6 +4317,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "households"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meal_requests_last_recommendation_run_id_fkey"
+            columns: ["last_recommendation_run_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "recipe_recommendation_runs"
+            referencedColumns: ["id", "household_id"]
           },
         ]
       }
@@ -4433,6 +5540,144 @@ export type Database = {
           },
         ]
       }
+      recipe_feedback_requests: {
+        Row: {
+          dismissed_at: string | null
+          household_id: string
+          id: string
+          meal_plan_id: string
+          membership_id: string
+          recipe_id: string
+          requested_at: string
+          responded_at: string | null
+          status: string
+        }
+        Insert: {
+          dismissed_at?: string | null
+          household_id: string
+          id?: string
+          meal_plan_id: string
+          membership_id: string
+          recipe_id: string
+          requested_at?: string
+          responded_at?: string | null
+          status?: string
+        }
+        Update: {
+          dismissed_at?: string | null
+          household_id?: string
+          id?: string
+          meal_plan_id?: string
+          membership_id?: string
+          recipe_id?: string
+          requested_at?: string
+          responded_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recipe_feedback_requests_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recipe_feedback_requests_meal_plan_id_household_id_fkey"
+            columns: ["meal_plan_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "meal_plans"
+            referencedColumns: ["id", "household_id"]
+          },
+          {
+            foreignKeyName: "recipe_feedback_requests_membership_id_fkey"
+            columns: ["membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recipe_feedback_requests_recipe_id_household_id_fkey"
+            columns: ["recipe_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "recipes"
+            referencedColumns: ["id", "household_id"]
+          },
+        ]
+      }
+      recipe_feedback_responses: {
+        Row: {
+          cost: number | null
+          created_at: string
+          ease: number | null
+          feedback_request_id: string
+          guest_friendliness: number | null
+          household_id: string
+          id: string
+          is_favorite: boolean
+          meal_prep_usefulness: number | null
+          membership_id: string
+          preference_signal: string
+          private_note: string | null
+          share_identity_with_organizer: boolean
+          taste: number | null
+        }
+        Insert: {
+          cost?: number | null
+          created_at?: string
+          ease?: number | null
+          feedback_request_id: string
+          guest_friendliness?: number | null
+          household_id: string
+          id?: string
+          is_favorite?: boolean
+          meal_prep_usefulness?: number | null
+          membership_id: string
+          preference_signal: string
+          private_note?: string | null
+          share_identity_with_organizer?: boolean
+          taste?: number | null
+        }
+        Update: {
+          cost?: number | null
+          created_at?: string
+          ease?: number | null
+          feedback_request_id?: string
+          guest_friendliness?: number | null
+          household_id?: string
+          id?: string
+          is_favorite?: boolean
+          meal_prep_usefulness?: number | null
+          membership_id?: string
+          preference_signal?: string
+          private_note?: string | null
+          share_identity_with_organizer?: boolean
+          taste?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recipe_feedback_responses_feedback_request_id_fkey"
+            columns: ["feedback_request_id"]
+            isOneToOne: true
+            referencedRelation: "recipe_feedback_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recipe_feedback_responses_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recipe_feedback_responses_membership_id_fkey"
+            columns: ["membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       recipe_import_drafts: {
         Row: {
           candidate_payloads: Json
@@ -4653,6 +5898,260 @@ export type Database = {
           },
         ]
       }
+      recipe_prep_history: {
+        Row: {
+          created_at: string
+          household_id: string
+          id: string
+          last_consumed_use_soon: boolean
+          last_leftover_approximate: boolean
+          last_meal_type: string | null
+          last_preparation_cancelled: boolean
+          last_prepared_at: string | null
+          last_shopping_requirement_high: boolean
+          last_successful_for_guests: boolean | null
+          last_used_for_meal_prep: boolean
+          recent_category_count: number
+          recipe_id: string
+          times_prepared: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          household_id: string
+          id?: string
+          last_consumed_use_soon?: boolean
+          last_leftover_approximate?: boolean
+          last_meal_type?: string | null
+          last_preparation_cancelled?: boolean
+          last_prepared_at?: string | null
+          last_shopping_requirement_high?: boolean
+          last_successful_for_guests?: boolean | null
+          last_used_for_meal_prep?: boolean
+          recent_category_count?: number
+          recipe_id: string
+          times_prepared?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          household_id?: string
+          id?: string
+          last_consumed_use_soon?: boolean
+          last_leftover_approximate?: boolean
+          last_meal_type?: string | null
+          last_preparation_cancelled?: boolean
+          last_prepared_at?: string | null
+          last_shopping_requirement_high?: boolean
+          last_successful_for_guests?: boolean | null
+          last_used_for_meal_prep?: boolean
+          recent_category_count?: number
+          recipe_id?: string
+          times_prepared?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recipe_prep_history_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recipe_prep_history_recipe_id_household_id_fkey"
+            columns: ["recipe_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "recipes"
+            referencedColumns: ["id", "household_id"]
+          },
+        ]
+      }
+      recipe_recommendation_results: {
+        Row: {
+          created_at: string
+          excluded: boolean
+          explanation: Json
+          hard_exclusion_reason: string | null
+          household_id: string
+          id: string
+          missing_required: number
+          pantry_coverage_summary: Json
+          preference_fit_summary: string
+          rank_position: number | null
+          recipe_id: string
+          run_id: string
+          total_score: number
+          warnings: Json
+        }
+        Insert: {
+          created_at?: string
+          excluded?: boolean
+          explanation?: Json
+          hard_exclusion_reason?: string | null
+          household_id: string
+          id?: string
+          missing_required?: number
+          pantry_coverage_summary?: Json
+          preference_fit_summary?: string
+          rank_position?: number | null
+          recipe_id: string
+          run_id: string
+          total_score?: number
+          warnings?: Json
+        }
+        Update: {
+          created_at?: string
+          excluded?: boolean
+          explanation?: Json
+          hard_exclusion_reason?: string | null
+          household_id?: string
+          id?: string
+          missing_required?: number
+          pantry_coverage_summary?: Json
+          preference_fit_summary?: string
+          rank_position?: number | null
+          recipe_id?: string
+          run_id?: string
+          total_score?: number
+          warnings?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recipe_recommendation_results_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recipe_recommendation_results_recipe_id_household_id_fkey"
+            columns: ["recipe_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "recipes"
+            referencedColumns: ["id", "household_id"]
+          },
+          {
+            foreignKeyName: "recipe_recommendation_results_run_id_household_id_fkey"
+            columns: ["run_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "recipe_recommendation_runs"
+            referencedColumns: ["id", "household_id"]
+          },
+        ]
+      }
+      recipe_recommendation_runs: {
+        Row: {
+          candidate_count: number
+          created_at: string
+          household_id: string
+          id: string
+          input_snapshot_hash: string
+          meal_request_id: string
+          preference_scope: string
+          ranking_mode: string
+          requested_by_membership_id: string
+          scoring_version: string
+          status: string
+        }
+        Insert: {
+          candidate_count?: number
+          created_at?: string
+          household_id: string
+          id?: string
+          input_snapshot_hash?: string
+          meal_request_id: string
+          preference_scope?: string
+          ranking_mode: string
+          requested_by_membership_id: string
+          scoring_version?: string
+          status?: string
+        }
+        Update: {
+          candidate_count?: number
+          created_at?: string
+          household_id?: string
+          id?: string
+          input_snapshot_hash?: string
+          meal_request_id?: string
+          preference_scope?: string
+          ranking_mode?: string
+          requested_by_membership_id?: string
+          scoring_version?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recipe_recommendation_runs_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recipe_recommendation_runs_meal_request_id_household_id_fkey"
+            columns: ["meal_request_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "meal_requests"
+            referencedColumns: ["id", "household_id"]
+          },
+          {
+            foreignKeyName: "recipe_recommendation_runs_requested_by_membership_id_fkey"
+            columns: ["requested_by_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recipe_recommendation_score_components: {
+        Row: {
+          component_key: string
+          contribution: number
+          created_at: string
+          household_id: string
+          id: string
+          result_id: string
+          value: number
+          weight: number
+        }
+        Insert: {
+          component_key: string
+          contribution?: number
+          created_at?: string
+          household_id: string
+          id?: string
+          result_id: string
+          value?: number
+          weight?: number
+        }
+        Update: {
+          component_key?: string
+          contribution?: number
+          created_at?: string
+          household_id?: string
+          id?: string
+          result_id?: string
+          value?: number
+          weight?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recipe_recommendation_score_components_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recipe_recommendation_score_components_result_id_fkey"
+            columns: ["result_id"]
+            isOneToOne: false
+            referencedRelation: "recipe_recommendation_results"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       recipe_steps: {
         Row: {
           created_at: string
@@ -4709,43 +6208,67 @@ export type Database = {
       }
       recipe_user_preferences: {
         Row: {
+          cost: number | null
           created_at: string
+          ease: number | null
+          guest_friendliness: number | null
           household_id: string
           household_rating: number | null
           id: string
           is_favorite: boolean
           last_prepared_at: string | null
+          meal_prep_usefulness: number | null
           membership_id: string
           personal_rating: number | null
+          preference_signal: string
+          private_note: string | null
           recipe_id: string
+          share_identity_with_organizer: boolean
+          taste: number | null
           times_prepared: number
           updated_at: string
           would_make_again: boolean | null
         }
         Insert: {
+          cost?: number | null
           created_at?: string
+          ease?: number | null
+          guest_friendliness?: number | null
           household_id: string
           household_rating?: number | null
           id?: string
           is_favorite?: boolean
           last_prepared_at?: string | null
+          meal_prep_usefulness?: number | null
           membership_id: string
           personal_rating?: number | null
+          preference_signal?: string
+          private_note?: string | null
           recipe_id: string
+          share_identity_with_organizer?: boolean
+          taste?: number | null
           times_prepared?: number
           updated_at?: string
           would_make_again?: boolean | null
         }
         Update: {
+          cost?: number | null
           created_at?: string
+          ease?: number | null
+          guest_friendliness?: number | null
           household_id?: string
           household_rating?: number | null
           id?: string
           is_favorite?: boolean
           last_prepared_at?: string | null
+          meal_prep_usefulness?: number | null
           membership_id?: string
           personal_rating?: number | null
+          preference_signal?: string
+          private_note?: string | null
           recipe_id?: string
+          share_identity_with_organizer?: boolean
+          taste?: number | null
           times_prepared?: number
           updated_at?: string
           would_make_again?: boolean | null
@@ -6447,6 +7970,48 @@ export type Database = {
         Args: { p_occurrence_id: string }
         Returns: string
       }
+      _maintenance_active_membership: {
+        Args: { p_household_id: string }
+        Returns: string
+      }
+      _maintenance_append_event: {
+        Args: {
+          p_actor: string
+          p_body?: string
+          p_event_type: string
+          p_household_id: string
+          p_payload?: Json
+          p_request_id: string
+        }
+        Returns: undefined
+      }
+      _maintenance_audit: {
+        Args: {
+          p_after?: Json
+          p_before?: Json
+          p_entity_id: string
+          p_entity_type: string
+          p_event_type: string
+          p_household_id: string
+        }
+        Returns: undefined
+      }
+      _maintenance_cancel_reminders: {
+        Args: { p_request_id: string }
+        Returns: undefined
+      }
+      _maintenance_notify: {
+        Args: {
+          p_actor_membership_id: string
+          p_body: string
+          p_entity_id: string
+          p_event_type: string
+          p_household_id: string
+          p_memberships: string[]
+          p_title: string
+        }
+        Returns: undefined
+      }
       _meal_active_membership: {
         Args: { p_household_id: string }
         Returns: string
@@ -6514,6 +8079,15 @@ export type Database = {
       _raise_if_submitted_payments: {
         Args: { p_expense_id: string }
         Returns: undefined
+      }
+      _recommendation_base_weight: { Args: { p_key: string }; Returns: number }
+      _recommendation_mode_mult: {
+        Args: { p_key: string; p_mode: string }
+        Returns: number
+      }
+      _recommendation_weight: {
+        Args: { p_key: string; p_mode: string }
+        Returns: number
       }
       _reconcile_calendar_reminders: {
         Args: { p_event_id: string }
@@ -6603,6 +8177,10 @@ export type Database = {
         Args: { p_obligation_id: string }
         Returns: undefined
       }
+      _test_cleanup_maintenance_household: {
+        Args: { p_household_id: string }
+        Returns: undefined
+      }
       _test_cleanup_meal_household: {
         Args: { p_household_id: string }
         Returns: undefined
@@ -6635,8 +8213,33 @@ export type Database = {
         }
         Returns: string
       }
+      accept_recipe_recommendation: {
+        Args: {
+          p_attendee_membership_ids?: string[]
+          p_desired_servings?: number
+          p_link_calendar?: boolean
+          p_meal_date: string
+          p_meal_request_id: string
+          p_recipe_id: string
+        }
+        Returns: string
+      }
       accept_responsibility_transfer: {
         Args: { p_transfer_id: string }
+        Returns: string
+      }
+      add_maintenance_attachment: {
+        Args: {
+          p_file_name: string
+          p_mime_type: string
+          p_request_id: string
+          p_size_bytes: number
+          p_storage_path: string
+        }
+        Returns: string
+      }
+      add_maintenance_comment: {
+        Args: { p_body: string; p_request_id: string }
         Returns: string
       }
       approve_chore_reassignment: {
@@ -6657,6 +8260,14 @@ export type Database = {
           p_membership_id: string
           p_occurrence_id: string
           p_role?: string
+        }
+        Returns: string
+      }
+      assign_maintenance_request: {
+        Args: {
+          p_is_primary?: boolean
+          p_membership_id: string
+          p_request_id: string
         }
         Returns: string
       }
@@ -6698,6 +8309,10 @@ export type Database = {
       }
       can_view_expense: { Args: { p_expense_id: string }; Returns: boolean }
       can_view_inventory_item: { Args: { p_item_id: string }; Returns: boolean }
+      can_view_maintenance_request: {
+        Args: { p_request_id: string }
+        Returns: boolean
+      }
       can_view_meal_batch: { Args: { p_batch_id: string }; Returns: boolean }
       can_view_meal_plan: { Args: { p_meal_plan_id: string }; Returns: boolean }
       can_view_pantry_item: { Args: { p_item_id: string }; Returns: boolean }
@@ -6721,6 +8336,14 @@ export type Database = {
       }
       cancel_chore_occurrence: {
         Args: { p_occurrence_id: string; p_reason?: string }
+        Returns: string
+      }
+      cancel_maintenance_appointment: {
+        Args: { p_calendar_link_id: string }
+        Returns: string
+      }
+      cancel_maintenance_request: {
+        Args: { p_note?: string; p_request_id: string }
         Returns: string
       }
       cancel_meal_plan: { Args: { p_meal_plan_id: string }; Returns: string }
@@ -6782,6 +8405,10 @@ export type Database = {
         }
         Returns: string
       }
+      change_maintenance_waiting_status: {
+        Args: { p_request_id: string; p_status: string }
+        Returns: string
+      }
       change_membership_roles: {
         Args: {
           p_household_id: string
@@ -6804,6 +8431,10 @@ export type Database = {
       }
       claim_chore_occurrence: {
         Args: { p_occurrence_id: string }
+        Returns: string
+      }
+      claim_maintenance_request: {
+        Args: { p_request_id: string }
         Returns: string
       }
       claim_notification_deliveries: {
@@ -6846,6 +8477,14 @@ export type Database = {
       cleanup_test_household_data: {
         Args: { p_test_run_id: string }
         Returns: number
+      }
+      clear_recipe_preference: {
+        Args: { p_recipe_id: string }
+        Returns: string
+      }
+      close_maintenance_request: {
+        Args: { p_request_id: string }
+        Returns: string
       }
       complete_chore_occurrence: {
         Args: { p_completion_note?: string; p_occurrence_id: string }
@@ -7164,6 +8803,50 @@ export type Database = {
         }
         Returns: string
       }
+      create_maintenance_action: {
+        Args: {
+          p_assignee_membership_id?: string
+          p_description?: string
+          p_request_id: string
+          p_title: string
+        }
+        Returns: string
+      }
+      create_maintenance_contact: {
+        Args: {
+          p_contact_type: string
+          p_display_name: string
+          p_email?: string
+          p_household_id: string
+          p_notes?: string
+          p_organization?: string
+          p_phone?: string
+          p_preferred?: boolean
+          p_website?: string
+        }
+        Returns: string
+      }
+      create_maintenance_request: {
+        Args: {
+          p_category?: string
+          p_currently_active?: boolean
+          p_description?: string
+          p_first_noticed_at?: string
+          p_hazard_flags?: string[]
+          p_household_id: string
+          p_immediate_mitigation?: string
+          p_inventory_item_id?: string
+          p_landlord_involvement?: boolean
+          p_location_id?: string
+          p_participant_membership_ids?: string[]
+          p_severity?: string
+          p_stop_use?: boolean
+          p_suggested_coordinator_membership_id?: string
+          p_title: string
+          p_visibility?: string
+        }
+        Returns: string
+      }
       create_meal_plan: {
         Args: {
           p_attendee_membership_ids?: string[]
@@ -7189,8 +8872,10 @@ export type Database = {
       }
       create_meal_request: {
         Args: {
+          p_attendee_membership_ids?: string[]
           p_constraints?: Json
           p_desired_servings?: number
+          p_guest_constraints?: Json
           p_guest_count?: number
           p_household_id: string
           p_max_missing_ingredients?: number
@@ -7198,6 +8883,9 @@ export type Database = {
           p_meal_type?: string
           p_note?: string
           p_pantry_only?: boolean
+          p_preference_scope?: string
+          p_ranking_mode?: string
+          p_strict_time_limit?: boolean
           p_target_date?: string
         }
         Returns: string
@@ -7391,6 +9079,10 @@ export type Database = {
         Args: { p_meal_request_id: string }
         Returns: string
       }
+      dismiss_recipe_feedback: {
+        Args: { p_feedback_request_id: string }
+        Returns: string
+      }
       dispose_inventory_item: {
         Args: { p_disposition?: string; p_item_id: string; p_status: string }
         Returns: string
@@ -7484,6 +9176,10 @@ export type Database = {
         Args: { p_household_id: string }
         Returns: Json
       }
+      get_recipe_recommendation_results: {
+        Args: { p_meal_request_id: string }
+        Returns: Json
+      }
       has_responsibility: {
         Args: { p_household_id: string; p_roles: string[] }
         Returns: boolean
@@ -7502,6 +9198,26 @@ export type Database = {
       leave_household: {
         Args: { p_household_id: string; p_reason?: string }
         Returns: undefined
+      }
+      link_maintenance_chore: {
+        Args: {
+          p_chore_definition_id?: string
+          p_chore_occurrence_id?: string
+          p_request_id: string
+        }
+        Returns: string
+      }
+      link_maintenance_expense: {
+        Args: {
+          p_expense_id: string
+          p_link_kind?: string
+          p_request_id: string
+        }
+        Returns: string
+      }
+      link_maintenance_inventory: {
+        Args: { p_inventory_item_id: string; p_request_id: string }
+        Returns: string
       }
       link_resource_to_expense_item: {
         Args: {
@@ -7664,6 +9380,10 @@ export type Database = {
         }
         Returns: string
       }
+      recalculate_meal_recommendation_context: {
+        Args: { p_meal_request_id: string }
+        Returns: string
+      }
       recalculate_meal_shopping_prep: {
         Args: { p_meal_plan_id: string }
         Returns: string
@@ -7671,6 +9391,40 @@ export type Database = {
       reconcile_calendar_event_occurrences: {
         Args: { p_event_id: string; p_occurrences: Json }
         Returns: number
+      }
+      record_maintenance_condition_change: {
+        Args: {
+          p_confirm?: boolean
+          p_inventory_item_id: string
+          p_new_condition: string
+          p_request_id: string
+        }
+        Returns: string
+      }
+      record_maintenance_contact_event: {
+        Args: {
+          p_contact_id: string
+          p_event_kind: string
+          p_follow_up_at?: string
+          p_notes?: string
+          p_reference_number?: string
+          p_request_id: string
+        }
+        Returns: string
+      }
+      record_maintenance_mitigation: {
+        Args: { p_mitigation: string; p_request_id: string }
+        Returns: string
+      }
+      record_maintenance_quote: {
+        Args: {
+          p_amount_cents: number
+          p_contact_id?: string
+          p_expires_at?: string
+          p_notes?: string
+          p_request_id: string
+        }
+        Returns: string
       }
       record_notification_worker_heartbeat: {
         Args: {
@@ -7757,12 +9511,20 @@ export type Database = {
         }
         Returns: undefined
       }
+      remove_maintenance_attachment: {
+        Args: { p_attachment_id: string }
+        Returns: string
+      }
       rename_household_location: {
         Args: { p_location_id: string; p_name: string }
         Returns: string
       }
       reopen_chore_occurrence: {
         Args: { p_occurrence_id: string; p_reason: string }
+        Returns: string
+      }
+      reopen_maintenance_request: {
+        Args: { p_note?: string; p_request_id: string }
         Returns: string
       }
       request_chore_reassignment: {
@@ -7773,6 +9535,10 @@ export type Database = {
           p_suggested_membership_id?: string
         }
         Returns: string
+      }
+      request_recipe_feedback: {
+        Args: { p_meal_plan_id: string }
+        Returns: number
       }
       request_responsibility_transfer: {
         Args: { p_area_id: string; p_note?: string; p_to_membership_id: string }
@@ -7811,6 +9577,14 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      resolve_maintenance_request: {
+        Args: {
+          p_decision_outcome?: string
+          p_request_id: string
+          p_resolution_notes?: string
+        }
+        Returns: string
       }
       respond_to_calendar_event: {
         Args: {
@@ -7901,12 +9675,28 @@ export type Database = {
         Args: { p_household_id: string; p_invitation_id: string }
         Returns: undefined
       }
+      run_recipe_recommendation: {
+        Args: { p_meal_request_id: string }
+        Returns: string
+      }
       save_imported_recipe: {
         Args: {
           p_draft_id: string
           p_import_as_copy?: boolean
           p_recipe: Json
           p_visibility?: string
+        }
+        Returns: string
+      }
+      schedule_maintenance_appointment: {
+        Args: {
+          p_all_day?: boolean
+          p_appointment_kind?: string
+          p_ends_at: string
+          p_location?: string
+          p_request_id: string
+          p_starts_at: string
+          p_title: string
         }
         Returns: string
       }
@@ -7928,6 +9718,21 @@ export type Database = {
       }
       set_recipe_favorite: {
         Args: { p_is_favorite: boolean; p_recipe_id: string }
+        Returns: string
+      }
+      set_recipe_preference: {
+        Args: {
+          p_cost?: number
+          p_ease?: number
+          p_guest_friendliness?: number
+          p_is_favorite?: boolean
+          p_meal_prep_usefulness?: number
+          p_preference_signal: string
+          p_private_note?: string
+          p_recipe_id: string
+          p_share_identity_with_organizer?: boolean
+          p_taste?: number
+        }
         Returns: string
       }
       set_recipe_visibility: {
@@ -7991,7 +9796,31 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      submit_recipe_feedback: {
+        Args: {
+          p_cost?: number
+          p_ease?: number
+          p_feedback_request_id: string
+          p_guest_friendliness?: number
+          p_is_favorite?: boolean
+          p_meal_prep_usefulness?: number
+          p_preference_signal: string
+          p_private_note?: string
+          p_share_identity_with_organizer?: boolean
+          p_taste?: number
+        }
+        Returns: string
+      }
       touch_supply_stock_check: { Args: { p_item_id: string }; Returns: string }
+      triage_maintenance_request: {
+        Args: {
+          p_note?: string
+          p_primary_coordinator_membership_id?: string
+          p_request_id: string
+          p_severity?: string
+        }
+        Returns: string
+      }
       unlink_resource_from_expense_item: {
         Args: { p_link_id: string }
         Returns: string

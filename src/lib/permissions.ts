@@ -56,6 +56,10 @@ export const CAPABILITIES = [
   "meal.create",
   "meal.manage_own",
   "meal.settings",
+  "maintenance.view",
+  "maintenance.create",
+  "maintenance.manage_own",
+  "maintenance.coordinator_override",
 ] as const;
 
 export type Capability = (typeof CAPABILITIES)[number];
@@ -114,6 +118,13 @@ const MEAL_MEMBER_CAPABILITIES = [
   "meal.manage_own",
 ] as const satisfies readonly Capability[];
 
+/** Maintenance — member baseline (financial_coordinator does not get override). */
+const MAINTENANCE_MEMBER_CAPABILITIES = [
+  "maintenance.view",
+  "maintenance.create",
+  "maintenance.manage_own",
+] as const satisfies readonly Capability[];
+
 const ROLE_CAPABILITIES: Record<HouseholdResponsibility, readonly Capability[]> = {
   member: [
     "household.view",
@@ -125,6 +136,7 @@ const ROLE_CAPABILITIES: Record<HouseholdResponsibility, readonly Capability[]> 
     ...CHORE_MEMBER_CAPABILITIES,
     ...RESOURCE_MEMBER_CAPABILITIES,
     ...MEAL_MEMBER_CAPABILITIES,
+    ...MAINTENANCE_MEMBER_CAPABILITIES,
   ],
   household_coordinator: [
     "household.view",
@@ -143,6 +155,7 @@ const ROLE_CAPABILITIES: Record<HouseholdResponsibility, readonly Capability[]> 
     ...CHORE_MEMBER_CAPABILITIES,
     ...RESOURCE_MEMBER_CAPABILITIES,
     ...MEAL_MEMBER_CAPABILITIES,
+    ...MAINTENANCE_MEMBER_CAPABILITIES,
     "meal.settings",
     // Only the household coordinator may edit/cancel household-visible events
     // organized by someone else.
@@ -151,6 +164,7 @@ const ROLE_CAPABILITIES: Record<HouseholdResponsibility, readonly Capability[]> 
     "chore.coordinator_override",
     "responsibility.manage",
     "resource.coordinator_override",
+    "maintenance.coordinator_override",
   ],
   financial_coordinator: [
     "household.view",
@@ -163,6 +177,7 @@ const ROLE_CAPABILITIES: Record<HouseholdResponsibility, readonly Capability[]> 
     ...CHORE_MEMBER_CAPABILITIES,
     ...RESOURCE_MEMBER_CAPABILITIES,
     ...MEAL_MEMBER_CAPABILITIES,
+    ...MAINTENANCE_MEMBER_CAPABILITIES,
   ],
 };
 
