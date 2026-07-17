@@ -34,21 +34,29 @@ export function Field({
   htmlFor,
   hint,
   error,
+  required,
   children,
 }: {
   label: string;
   htmlFor?: string;
   hint?: string;
   error?: string;
+  required?: boolean;
   children: React.ReactNode;
 }) {
   return (
-    <div className="space-y-1">
+    <div className="space-y-1.5">
       <label htmlFor={htmlFor} className="block text-sm font-medium text-text-primary">
         {label}
+        {required ? (
+          <span className="text-destructive" aria-hidden>
+            {" "}
+            *
+          </span>
+        ) : null}
       </label>
-      {children}
       {hint ? <p className="text-xs text-text-muted">{hint}</p> : null}
+      {children}
       {error ? (
         <p className="text-sm text-destructive" role="alert">
           {error}

@@ -38,6 +38,10 @@ Enforced in:
 | Manage rotations / household recurring systems | no***** | yes***** | no |
 | Coordinator chore override | no***** | yes***** | no |
 | Manage responsibility areas / transfers | limited****** | yes | no |
+| Guest notices / away status / polls (member-scoped) | yes | yes | yes |
+| Emergency card view | yes******* | yes | yes |
+| Emergency card edit | no | yes | no |
+| Global search | yes (RLS) | yes (RLS) | yes (RLS) |
 | View / create house resources (inventory, supplies, pantry, shopping) | yes******* | yes | yes |
 | Update stock / claim shopping / link expense items | yes******* | yes | yes******* |
 | Coordinator resource override (communal + ownership transfer) | no******* | yes | no |
@@ -159,3 +163,4 @@ Only the payment **sender and recipient** may select `payment_private_details` (
 - Audit events are append-only for ordinary users.
 - Confirmed expenses are immutable except via `confirm_expense` / `void_expense` / amendment RPCs.
 - Payments, allocations, waivers, and reversals are RPC-only writes.
+- ******* Emergency card visibility may be restricted to coordinators; Wi-Fi and similar fields are never placed in notification payloads or public caches.

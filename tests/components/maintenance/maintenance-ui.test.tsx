@@ -26,13 +26,15 @@ describe("MaintenanceCard", () => {
 });
 
 describe("MaintenanceReportForm", () => {
-  it("shows emergency disclaimer when hazard selected", async () => {
+  it("shows emergency disclaimer when hazard selected after safety step", async () => {
     const { userEvent } = await import("@testing-library/user-event");
     const user = userEvent.setup();
     render(
       <MaintenanceReportForm householdId="11111111-1111-1111-1111-111111111111" />,
     );
-    await user.click(screen.getByLabelText(/gas odor/i));
+    await user.click(screen.getAllByRole("button", { name: /^Continue$/i })[0]!);
+    await user.click(screen.getByRole("radio", { name: /^Yes$/i }));
+    await user.click(screen.getByRole("checkbox", { name: /Gas odor/i }));
     expect(
       screen.getByText(/does not contact emergency services/i),
     ).toBeInTheDocument();

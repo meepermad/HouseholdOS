@@ -22,22 +22,34 @@ async function BalanceCards({
 }) {
   const balances = await getBalancesForMembership(householdId, membershipId);
   return (
-      <section className="grid grid-cols-1 gap-3 text-center sm:grid-cols-3">
-      <div className="rounded-md border border-border bg-surface p-4">
-        <p className="text-xs text-text-muted">You owe</p>
-        <p className="mt-1 text-lg font-semibold tabular-nums" aria-label={`You owe ${formatMoney(balances.youOwe)}`}>
+    <section
+      className="grid grid-cols-3 gap-2 rounded-md border border-border bg-surface px-3 py-3 text-center"
+      data-testid="money-balance-summary"
+    >
+      <div>
+        <p className="text-[0.65rem] uppercase tracking-wide text-text-muted">You owe</p>
+        <p
+          className="mt-1 text-sm font-semibold tabular-nums"
+          aria-label={`You owe ${formatMoney(balances.youOwe)}`}
+        >
           {formatMoney(balances.youOwe)}
         </p>
       </div>
-      <div className="rounded-md border border-border bg-surface p-4">
-        <p className="text-xs text-text-muted">You are owed</p>
-        <p className="mt-1 text-lg font-semibold tabular-nums" aria-label={`You are owed ${formatMoney(balances.youAreOwed)}`}>
+      <div>
+        <p className="text-[0.65rem] uppercase tracking-wide text-text-muted">You are owed</p>
+        <p
+          className="mt-1 text-sm font-semibold tabular-nums"
+          aria-label={`You are owed ${formatMoney(balances.youAreOwed)}`}
+        >
           {formatMoney(balances.youAreOwed)}
         </p>
       </div>
-      <div className="rounded-md border border-border bg-surface p-4">
-        <p className="text-xs text-text-muted">Net</p>
-        <p className="mt-1 text-lg font-semibold tabular-nums" aria-label={`Net ${formatMoney(balances.net)}`}>
+      <div>
+        <p className="text-[0.65rem] uppercase tracking-wide text-text-muted">Net</p>
+        <p
+          className="mt-1 text-sm font-semibold tabular-nums"
+          aria-label={`Net ${formatMoney(balances.net)}`}
+        >
           {formatMoney(balances.net)}
         </p>
       </div>
@@ -107,7 +119,7 @@ export default async function MoneyHubPage({
     <main className="space-y-6">
       <AppBackButton fallbackHref={`/app/${householdId}`} />
       <header className="space-y-2">
-        <h1 className="font-[family-name:var(--font-display)] text-3xl font-semibold tracking-tight">
+        <h1 className="font-[family-name:var(--font-display)] text-2xl font-semibold tracking-tight">
           Money
         </h1>
         <p className="text-sm text-text-secondary">

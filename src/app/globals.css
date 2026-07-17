@@ -108,12 +108,27 @@
 }
 
 body {
-  background:
-    radial-gradient(circle at top left, color-mix(in srgb, var(--accent-soft) 70%, transparent) 0%, transparent 40%),
-    linear-gradient(180deg, var(--background) 0%, color-mix(in srgb, var(--background) 85%, var(--surface-secondary)) 100%);
+  background: linear-gradient(
+    180deg,
+    var(--background) 0%,
+    color-mix(in srgb, var(--background) 92%, var(--surface-secondary)) 100%
+  );
   color: var(--text-primary);
   font-family: var(--font-source-sans), system-ui, sans-serif;
   min-height: 100dvh;
+}
+
+/* Soft page accent — avoid a floating glow that clips through cards */
+.app-page-accent {
+  background: radial-gradient(
+    ellipse 80% 40% at 50% -10%,
+    color-mix(in srgb, var(--accent-soft) 45%, transparent),
+    transparent 70%
+  );
+}
+
+.app-form-route {
+  background: var(--background);
 }
 
 a {

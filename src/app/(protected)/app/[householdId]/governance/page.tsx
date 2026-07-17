@@ -62,60 +62,85 @@ export default async function GovernanceDashboardPage({
       </p>
 
       <nav className="flex flex-wrap gap-2 text-sm">
-        {[
-          ["Active", "active"],
-          ["Drafts", "drafts"],
-          ["Approvals", "approvals"],
-          ["Acknowledgments", "acknowledgments"],
-          ["Transitions", "transitions"],
-          ["Settings", "settings"],
-        ].map(([label, path]) => (
+        {(
+          [
+            ["Overview", ""],
+            ["Documents", "active"],
+            ["Requests", "approvals"],
+          ] as const
+        ).map(([label, path]) => (
           <Link
-            key={path}
+            key={label}
             href={
-              path === "settings"
-                ? `/app/${householdId}/settings/governance`
-                : `/app/${householdId}/governance/${path}`
+              path
+                ? `/app/${householdId}/governance/${path}`
+                : `/app/${householdId}/governance`
             }
             className="min-h-11 rounded-md border border-border px-3 py-2"
           >
             {label}
           </Link>
         ))}
+        <Link
+          href={`/app/${householdId}/governance/templates`}
+          className="min-h-11 rounded-md border border-border px-3 py-2"
+        >
+          Templates
+        </Link>
       </nav>
 
       <section className="space-y-3">
         <h2 className="text-lg font-semibold">Needs your attention</h2>
-        <div className="grid gap-3 md:grid-cols-2">
-          <Link
-            href={`/app/${householdId}/governance/approvals`}
-            className="rounded-md border border-border p-4"
-          >
-            <p className="font-medium">Pending approvals</p>
-            <p className="text-2xl font-semibold">{approvals.length}</p>
-          </Link>
-          <Link
-            href={`/app/${householdId}/governance/acknowledgments`}
-            className="rounded-md border border-border p-4"
-          >
-            <p className="font-medium">Pending acknowledgments</p>
-            <p className="text-2xl font-semibold">{acks.length}</p>
-          </Link>
-          <Link
-            href={`/app/${householdId}/governance/transitions`}
-            className="rounded-md border border-border p-4"
-          >
-            <p className="font-medium">Active transitions</p>
-            <p className="text-2xl font-semibold">{activeTransitions.length}</p>
-          </Link>
-          <Link
-            href={`/app/${householdId}/governance/drafts`}
-            className="rounded-md border border-border p-4"
-          >
-            <p className="font-medium">Your drafts</p>
-            <p className="text-2xl font-semibold">{drafts.length}</p>
-          </Link>
-        </div>
+        {approvals.length +
+          acks.length +
+          activeTransitions.length +
+          drafts.length ===
+        0 ? (
+          <p className="text-sm text-text-secondary" data-testid="governance-caught-up">
+            You have no governance actions requiring attention.
+          </p>
+        ) : (
+          <div className="grid gap-3 md:grid-cols-2">
+            {approvals.length > 0 ? (
+              <Link
+                href={`/app/${householdId}/governance/approvals`}
+                className="rounded-md border border-border p-4"
+              >
+                <p className="font-medium">Pending approvals</p>
+                <p className="text-2xl font-semibold">{approvals.length}</p>
+              </Link>
+            ) : null}
+            {acks.length > 0 ? (
+              <Link
+                href={`/app/${householdId}/governance/acknowledgments`}
+                className="rounded-md border border-border p-4"
+              >
+                <p className="font-medium">Pending acknowledgments</p>
+                <p className="text-2xl font-semibold">{acks.length}</p>
+              </Link>
+            ) : null}
+            {activeTransitions.length > 0 ? (
+              <Link
+                href={`/app/${householdId}/governance/transitions`}
+                className="rounded-md border border-border p-4"
+              >
+                <p className="font-medium">Active transitions</p>
+                <p className="text-2xl font-semibold">
+                  {activeTransitions.length}
+                </p>
+              </Link>
+            ) : null}
+            {drafts.length > 0 ? (
+              <Link
+                href={`/app/${householdId}/governance/drafts`}
+                className="rounded-md border border-border p-4"
+              >
+                <p className="font-medium">Drafts needing work</p>
+                <p className="text-2xl font-semibold">{drafts.length}</p>
+              </Link>
+            ) : null}
+          </div>
+        )}
       </section>
 
       <section className="space-y-3">

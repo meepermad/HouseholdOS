@@ -283,12 +283,5 @@ export async function getNotificationPrivacyPreview(
   return quiet.previewMode ?? "generic";
 }
 
-/** Categories exposed in preference / filter UIs (DB-constrained set). */
-export const PREFERENCE_CATEGORIES = [
-  "payments",
-  "disputes",
-  "membership",
-  "chores",
-  "calendar",
-  "system",
-] as const satisfies readonly NotificationCategory[];
+/** @deprecated Import from `@/lib/notifications/catalog` instead. */
+export { PREFERENCE_CATEGORIES } from "@/lib/notifications/catalog";

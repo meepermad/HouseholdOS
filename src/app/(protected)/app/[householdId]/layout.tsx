@@ -1,4 +1,4 @@
-import { ShellHeader } from "@/components/shell-header";
+import { AppHeader } from "@/components/shell/app-header";
 import { HouseholdNav } from "@/components/household-nav";
 import { HouseholdSwitcher } from "@/components/household-switcher";
 import { AppBadgeSync } from "@/components/notifications/app-badge-sync";
@@ -9,6 +9,7 @@ import {
   listAuthorizedHouseholdIds,
 } from "@/lib/household-context";
 import { countUnreadNotifications } from "@/lib/notifications/queries";
+import { getNavBadgeCounts } from "@/lib/shell/nav-badges";
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 
@@ -82,6 +83,13 @@ export default async function HouseholdLayout({
     logServerError("household_layout_unread_count", error, { householdId });
   }
 
+  let badgeCounts = {};
+  try {
+    badgeCounts = await getNavBadgeCounts(householdId, ctx.membershipId);
+  } catch (error) {
+    logServerError("household_layout_badge_counts", error, { householdId });
+  }
+
   return (
     <div className="safe-px mx-auto flex min-h-dvh w-full max-w-5xl flex-col lg:flex-row">
       <AppBadgeSync count={unreadCount} />
@@ -103,38 +111,42 @@ export default async function HouseholdLayout({
           householdId={householdId}
           variant="sidebar"
           unreadCount={unreadCount}
+          badgeCounts={badgeCounts}
         />
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
         <div className="lg:hidden">
-          <ShellHeader
+          <AppHeader
             householdName={household.name}
             householdId={householdId}
-            unreadCount={unreadCount}
-          />
-          <HouseholdSwitcher
-            householdId={householdId}
             households={householdOptions}
+            unreadCount={unreadCount}
           />
           <HouseholdNav
             householdId={householdId}
             variant="top"
             unreadCount={unreadCount}
+            badgeCounts={badgeCounts}
           />
         </div>
         <div className="hidden border-b border-border lg:block">
-          <ShellHeader
+          <AppHeader
             householdName={household.name}
             householdId={householdId}
+            households={householdOptions}
             unreadCount={unreadCount}
+            showBrand
           />
         </div>
-        <div className="app-main-pad flex-1 px-4 py-6 md:px-6">{children}</div>
+        <div className="app-main-pad flex-1 px-4 py-4 md:px-6 md:py-6">
+          {children}
+        </div>
         <HouseholdNav
           householdId={householdId}
           variant="bottom"
           unreadCount={unreadCount}
+          badgeCounts={badgeCounts}
         />
       </div>
     </div>

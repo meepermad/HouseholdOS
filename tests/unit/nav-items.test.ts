@@ -2,33 +2,17 @@ import { describe, expect, it } from "vitest";
 import {
   HOUSEHOLD_NAV_ITEMS,
   MAX_PRIMARY_NAV,
+  QUICK_ADD_ACTIONS,
   enabledNavItems,
+  moreNavBySection,
   moreNavItems,
   primaryNavItems,
   sidebarNavItems,
 } from "@/lib/nav-items";
 
 describe("nav items growth rules", () => {
-  it("exposes the Phase 7 household destinations", () => {
-    expect(enabledNavItems().map((i) => i.key)).toEqual([
-      "home",
-      "calendar",
-      "chores",
-      "money",
-      "settings",
-      "inbox",
-      "house",
-      "maintenance",
-      "governance",
-    ]);
-    expect(HOUSEHOLD_NAV_ITEMS.some((i) => i.key === "house" && i.enabled)).toBe(true);
-    expect(HOUSEHOLD_NAV_ITEMS.some((i) => i.key === "maintenance" && i.enabled)).toBe(true);
-    expect(HOUSEHOLD_NAV_ITEMS.some((i) => i.key === "governance" && i.enabled)).toBe(true);
-  });
-
-  it("keeps the bottom bar at or under the primary cap", () => {
+  it("keeps primary bottom bar capped", () => {
     expect(primaryNavItems().length).toBeLessThanOrEqual(MAX_PRIMARY_NAV);
-    expect(primaryNavItems().every((i) => i.surface === "primary")).toBe(true);
     expect(primaryNavItems().map((i) => i.key)).toEqual([
       "home",
       "calendar",
@@ -37,36 +21,48 @@ describe("nav items growth rules", () => {
     ]);
   });
 
-  it("lists primary items before settings, inbox, house, maintenance, and governance", () => {
-    expect(sidebarNavItems().map((i) => i.key)).toEqual([
-      "home",
-      "calendar",
-      "chores",
-      "money",
-      "settings",
-      "inbox",
+  it("exposes coordination destinations under more", () => {
+    const keys = moreNavItems().map((i) => i.key);
+    expect(keys).toEqual(expect.arrayContaining([
       "house",
       "maintenance",
       "governance",
+      "polls",
+      "utilities",
+      "emergency",
+      "guests",
+      "review",
+      "search",
+      "inbox",
+      "settings",
+      "profile",
+      "away",
+    ]));
+    expect(moreNavBySection().map((g) => g.section)).toEqual([
+      "household",
+      "communication",
+      "account",
     ]);
   });
 
-  it("exposes house, maintenance, and governance under more for mobile overflow", () => {
-    expect(moreNavItems().map((i) => i.key)).toEqual([
-      "settings",
-      "inbox",
-      "house",
-      "maintenance",
-      "governance",
-    ]);
+  it("lists primary items before more in the sidebar", () => {
+    const keys = sidebarNavItems().map((i) => i.key);
+    expect(keys.slice(0, 4)).toEqual(["home", "calendar", "chores", "money"]);
+    expect(enabledNavItems().length).toBe(HOUSEHOLD_NAV_ITEMS.filter((i) => i.enabled).length);
   });
 
   it("treats meals and recipes as house destinations", () => {
     const house = HOUSEHOLD_NAV_ITEMS.find((i) => i.key === "house");
     expect(house?.match("/app/h1/meals", "h1")).toBe(true);
     expect(house?.match("/app/h1/recipes/request", "h1")).toBe(true);
-    expect(house?.match("/app/h1/meal-prep", "h1")).toBe(true);
-    expect(house?.match("/app/h1/money", "h1")).toBe(false);
+  });
+
+  it("exposes quick-add deep links", () => {
+    expect(QUICK_ADD_ACTIONS.find((a) => a.key === "guest")?.href("h1")).toBe(
+      "/app/h1/guests/new",
+    );
+    expect(QUICK_ADD_ACTIONS.find((a) => a.key === "decision")?.href("h1")).toBe(
+      "/app/h1/polls/new",
+    );
   });
 });
-

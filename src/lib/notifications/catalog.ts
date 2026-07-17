@@ -34,6 +34,27 @@ export type RecipientRule =
   | "self"
   | "explicit";
 
+/** Categories exposed in preference / inbox filter UIs. */
+export const PREFERENCE_CATEGORIES = [
+  "payments",
+  "disputes",
+  "membership",
+  "chores",
+  "calendar",
+  "system",
+] as const satisfies readonly NotificationCategory[];
+
+/** Broader inbox filter set (UI-only; still uses DB category values). */
+export const INBOX_FILTER_CATEGORIES = [
+  "payments",
+  "disputes",
+  "membership",
+  "chores",
+  "calendar",
+  "maintenance",
+  "system",
+] as const satisfies readonly NotificationCategory[];
+
 export type CatalogEntry = {
   eventType: string;
   category: NotificationCategory;

@@ -35,15 +35,18 @@ HouseholdOS is a private, mobile-first household management PWA. Identity, multi
 
 ## Application shell
 
-- Mobile: fixed bottom nav with notch/home-indicator safe areas (`viewport-fit=cover`, `shell-top`, `app-main-pad`, `safe-pb`)
+- Mobile: compact sticky `AppHeader` (household name opens switcher; Account opens sheet) plus fixed bottom nav with notch/home-indicator safe areas (`viewport-fit=cover`, `shell-top`, `app-main-pad`, `safe-pb`)
+- Floating quick-add (`+`) deep-links into existing create routes; More sheet groups Household / Communication / Account
 - Desktop (`lg+`): sidebar navigation + wider content (capped ~`max-w-5xl`)
 - Nav config lives in `src/lib/nav-items.ts`:
   - Bottom bar shows only enabled `surface: "primary"` items (capped at 4) so new domains do not crowd the thumb bar
   - Sidebar lists all enabled items (primary + `more`)
-  - Primary: Home · Calendar · Chores · Money. Settings and Inbox live under `more`
-  - Unshipped domains (Records) stay `enabled: false`
-  - House is enabled under `surface: "more"` (Phase 6 resource hub)
-  - When primary slots are full, ship new roots as `surface: "more"` (and later a More screen) instead of growing the bottom bar endlessly
+  - Primary: Home · Calendar · Chores · Money. House, Maintenance, Governance, Inbox, Settings, and Profile live under `more`
+  - Lucide icons only; badges (chores due, money confirmations, urgent maintenance, inbox unread) hide when zero
+  - Unshipped domains stay `enabled: false`
+- Home is the household action center (attention, today, money summary, exceptions, quick actions); setup/members live under Settings
+- Presentation maps in `src/lib/presentation/` humanize roles, audit events, and enums
+- Roommate coordination (UX-B/C): guest notices, away status, chore coverage, weekly review, polls, utilities, emergency card, and RLS-scoped global search under `/app/[householdId]/…`
 - Standalone PWA: safe-area chrome and optional in-app Back control; authenticated navigations are `NetworkOnly` in the service worker
 
 ## Loading and mutations

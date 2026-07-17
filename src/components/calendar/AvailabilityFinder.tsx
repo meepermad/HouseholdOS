@@ -4,6 +4,11 @@ import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { findAvailabilityWindows } from "@/lib/calendar/availability";
 import { searchAvailabilityAction } from "@/app/actions/calendar";
+import {
+  formatMinutesAsTime,
+  minutesToTimeValue,
+  timeValueToMinutes,
+} from "@/components/ui/time-field";
 
 type Member = { membershipId: string; displayName: string };
 
@@ -117,24 +122,32 @@ export function AvailabilityFinder({
           />
         </label>
         <label className="block text-sm">
-          <span className="font-medium">Earliest (minute of day)</span>
+          <span className="font-medium">Earliest time</span>
           <input
-            type="number"
-            min={0}
-            max={1439}
-            value={earliest}
-            onChange={(e) => setEarliest(Number(e.target.value))}
+            type="time"
+            value={minutesToTimeValue(earliest)}
+            onChange={(e) => {
+              try {
+                setEarliest(timeValueToMinutes(e.target.value));
+              } catch {
+                /* ignore incomplete */
+              }
+            }}
             className="mt-1 w-full min-h-11 rounded-md border border-border bg-surface px-3"
           />
         </label>
         <label className="block text-sm">
-          <span className="font-medium">Latest (minute of day)</span>
+          <span className="font-medium">Latest time</span>
           <input
-            type="number"
-            min={1}
-            max={1440}
-            value={latest}
-            onChange={(e) => setLatest(Number(e.target.value))}
+            type="time"
+            value={minutesToTimeValue(latest > 1439 ? 1439 : latest)}
+            onChange={(e) => {
+              try {
+                setLatest(timeValueToMinutes(e.target.value));
+              } catch {
+                /* ignore incomplete */
+              }
+            }}
             className="mt-1 w-full min-h-11 rounded-md border border-border bg-surface px-3"
           />
         </label>
@@ -177,18 +190,38 @@ export function AvailabilityFinder({
                 className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border px-3 py-2"
               >
                 <div>
-                  <p className="font-medium tabular-nums">{label}</p>
-                  <p className="text-xs text-text-secondary">
-                    {s.requiredAvailable ? "All required free" : "Gaps remain"} ·{" "}
-                    {s.optionalAvailableCount} optional · {s.conflictCount}{" "}
-                    conflicts
+                  <p className="font-medium tabular-nums">
+                    {start.toLocaleDateString(undefined, {
+                      weekday: "long",
+                      month: "long",
+                      day: "numeric",
+                    })}
                   </p>
+                  <p className="text-sm tabular-nums text-text-primary">
+                    {formatMinutesAsTime(
+                      start.getHours() * 60 + start.getMinutes(),
+                    )}
+                    –
+                    {formatMinutesAsTime(
+                      new Date(s.endsAt).getHours() * 60 +
+                        new Date(s.endsAt).getMinutes(),
+                    )}
+                  </p>
+                  <p className="text-xs text-text-secondary">
+                    {s.requiredAvailable
+                      ? "Everyone available"
+                      : "Gaps remain"}
+                    {s.optionalAvailableCount > 0
+                      ? ` · ${s.optionalAvailableCount} optional free`
+                      : ""}
+                  </p>
+                  <span className="sr-only">{label}</span>
                 </div>
                 <Link
                   href={`/app/${householdId}/calendar/new?${qs.toString()}`}
-                  className="inline-flex min-h-11 items-center rounded-md border border-border px-3 text-sm font-medium hover:bg-surface-interactive"
+                  className="inline-flex min-h-11 items-center rounded-md bg-primary px-3 text-sm font-semibold text-primary-foreground"
                 >
-                  Use this time
+                  Create event
                 </Link>
               </li>
             );

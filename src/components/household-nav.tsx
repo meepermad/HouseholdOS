@@ -2,14 +2,21 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useId, useState } from "react";
+import { useId, useState } from "react";
+import { Ellipsis } from "lucide-react";
 import {
-  moreNavItems,
+  moreNavBySection,
   primaryNavItems,
   sidebarNavItems,
   type HouseholdNavItem,
+  type NavBadgeKey,
 } from "@/lib/nav-items";
+import { navIcon } from "@/lib/nav-icons";
 import { NotificationBadge } from "@/components/notifications/NotificationBadge";
+import { BottomSheet } from "@/components/ui/bottom-sheet";
+import { QuickAddButton, QuickAddSheet } from "@/components/shell/quick-add-sheet";
+
+export type NavBadgeCounts = Partial<Record<Exclude<NavBadgeKey, null>, number>>;
 
 function linkClass(active: boolean, compact: boolean) {
   const base = compact
@@ -20,19 +27,27 @@ function linkClass(active: boolean, compact: boolean) {
     : `${base} text-text-secondary hover:bg-surface-interactive hover:text-text-primary`;
 }
 
+function badgeFor(
+  item: HouseholdNavItem,
+  counts: NavBadgeCounts,
+): number {
+  if (!item.badge) return 0;
+  return counts[item.badge] ?? 0;
+}
+
 function NavLinks({
   items,
   householdId,
   pathname,
   compact,
-  unreadCount = 0,
+  badgeCounts,
   onNavigate,
 }: {
   items: HouseholdNavItem[];
   householdId: string;
   pathname: string;
   compact: boolean;
-  unreadCount?: number;
+  badgeCounts: NavBadgeCounts;
   onNavigate?: () => void;
 }) {
   return (
@@ -40,7 +55,8 @@ function NavLinks({
       {items.map((item) => {
         const active = item.match(pathname, householdId);
         const label = compact ? (item.shortLabel ?? item.label) : item.label;
-        const showBadge = item.key === "inbox" && unreadCount > 0;
+        const count = badgeFor(item, badgeCounts);
+        const Icon = navIcon(item.icon);
         return (
           <Link
             key={item.key}
@@ -51,11 +67,11 @@ function NavLinks({
           >
             {compact ? (
               <>
-                <span aria-hidden className="relative text-base leading-none">
-                  {item.mark}
-                  {showBadge ? (
+                <span aria-hidden className="relative leading-none">
+                  <Icon className="h-5 w-5" strokeWidth={active ? 2.25 : 1.75} />
+                  {count > 0 ? (
                     <NotificationBadge
-                      count={unreadCount}
+                      count={count}
                       className="absolute -right-3 -top-2"
                     />
                   ) : null}
@@ -64,11 +80,13 @@ function NavLinks({
               </>
             ) : (
               <>
-                <span aria-hidden className="w-4 text-center text-text-muted">
-                  {item.mark}
-                </span>
+                <Icon
+                  className="h-4 w-4 shrink-0 text-text-muted"
+                  aria-hidden
+                  strokeWidth={active ? 2.25 : 1.75}
+                />
                 <span className="flex-1">{label}</span>
-                {showBadge ? <NotificationBadge count={unreadCount} /> : null}
+                {count > 0 ? <NotificationBadge count={count} /> : null}
               </>
             )}
           </Link>
@@ -78,90 +96,44 @@ function NavLinks({
   );
 }
 
-function MoreSheet({
-  open,
-  onClose,
-  householdId,
-  pathname,
-  unreadCount,
-  titleId,
-}: {
-  open: boolean;
-  onClose: () => void;
-  householdId: string;
-  pathname: string;
-  unreadCount: number;
-  titleId: string;
-}) {
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [open, onClose]);
-
-  if (!open) return null;
-
-  const items = moreNavItems();
-  return (
-    <div className="fixed inset-0 z-40 lg:hidden" role="presentation">
-      <button
-        type="button"
-        className="absolute inset-0 bg-black/40"
-        aria-label="Close more navigation"
-        onClick={onClose}
-      />
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={titleId}
-        className="absolute inset-x-0 bottom-0 rounded-t-lg border border-border bg-surface-elevated p-4 shadow-lg safe-pb"
-      >
-        <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-border-strong" aria-hidden />
-        <h2 id={titleId} className="mb-3 text-sm font-semibold text-text-primary">
-          More
-        </h2>
-        <nav aria-label="More" className="flex flex-col gap-1">
-          <NavLinks
-            items={items}
-            householdId={householdId}
-            pathname={pathname}
-            compact={false}
-            unreadCount={unreadCount}
-            onNavigate={onClose}
-          />
-        </nav>
-      </div>
-    </div>
-  );
-}
-
 export function HouseholdNav({
   householdId,
   variant = "top",
   unreadCount = 0,
+  badgeCounts,
 }: {
   householdId: string;
   variant?: "top" | "bottom" | "sidebar";
   unreadCount?: number;
+  badgeCounts?: NavBadgeCounts;
 }) {
   const pathname = usePathname() ?? "";
   const [moreOpen, setMoreOpen] = useState(false);
+  const [quickAddOpen, setQuickAddOpen] = useState(false);
   const moreTitleId = useId();
-  const moreOpenForPath = moreOpen;
 
-  // Close the overflow menu whenever navigation changes without an effect.
+  const counts: NavBadgeCounts = {
+    ...badgeCounts,
+    inbox: badgeCounts?.inbox ?? unreadCount,
+  };
+
   const [lastPathname, setLastPathname] = useState(pathname);
   if (lastPathname !== pathname) {
     setLastPathname(pathname);
-    if (moreOpenForPath) setMoreOpen(false);
+    if (moreOpen) setMoreOpen(false);
+    if (quickAddOpen) setQuickAddOpen(false);
   }
+
   if (variant === "bottom") {
     const items = primaryNavItems();
-    const moreItems = moreNavItems();
-    const moreActive = moreItems.some((item) => item.match(pathname, householdId));
+    const sections = moreNavBySection();
+    const moreActive = sections.some((group) =>
+      group.items.some((item) => item.match(pathname, householdId)),
+    );
+    const moreBadge =
+      (counts.inbox ?? 0) +
+      (counts.maintenance ?? 0);
+
     return (
       <>
         <nav
@@ -175,33 +147,68 @@ export function HouseholdNav({
               householdId={householdId}
               pathname={pathname}
               compact
-              unreadCount={unreadCount}
+              badgeCounts={counts}
             />
             <button
               type="button"
               className={linkClass(moreActive || moreOpen, true)}
               aria-expanded={moreOpen}
-              aria-controls="more-nav-sheet"
+              aria-controls={moreTitleId}
               data-testid="mobile-more-nav"
               onClick={() => setMoreOpen((open) => !open)}
             >
-              <span aria-hidden className="text-base leading-none">
-                ···
+              <span aria-hidden className="relative leading-none">
+                <Ellipsis
+                  className="h-5 w-5"
+                  strokeWidth={moreActive ? 2.25 : 1.75}
+                />
+                {moreBadge > 0 ? (
+                  <NotificationBadge
+                    count={moreBadge}
+                    className="absolute -right-3 -top-2"
+                  />
+                ) : null}
               </span>
               <span>More</span>
             </button>
           </div>
         </nav>
-        <div id="more-nav-sheet">
-          <MoreSheet
-            open={moreOpen}
-            onClose={() => setMoreOpen(false)}
-            householdId={householdId}
-            pathname={pathname}
-            unreadCount={unreadCount}
-            titleId={moreTitleId}
-          />
+        <div className="pointer-events-none fixed inset-x-0 bottom-[calc(var(--app-bottom-nav-height)+var(--safe-bottom)+0.75rem)] z-20 flex justify-end px-4 lg:hidden">
+          <div className="pointer-events-auto">
+            <QuickAddButton onClick={() => setQuickAddOpen(true)} />
+          </div>
         </div>
+        <BottomSheet
+          open={moreOpen}
+          onClose={() => setMoreOpen(false)}
+          title="More"
+          testId="more-nav-sheet"
+        >
+          <nav aria-label="More" className="flex flex-col gap-4">
+            {sections.map((group) => (
+              <div key={group.section}>
+                <p className="mb-1 px-3 text-xs font-semibold uppercase tracking-wide text-text-muted">
+                  {group.label}
+                </p>
+                <div className="flex flex-col gap-1">
+                  <NavLinks
+                    items={group.items}
+                    householdId={householdId}
+                    pathname={pathname}
+                    compact={false}
+                    badgeCounts={counts}
+                    onNavigate={() => setMoreOpen(false)}
+                  />
+                </div>
+              </div>
+            ))}
+          </nav>
+        </BottomSheet>
+        <QuickAddSheet
+          open={quickAddOpen}
+          onClose={() => setQuickAddOpen(false)}
+          householdId={householdId}
+        />
       </>
     );
   }
@@ -222,7 +229,15 @@ export function HouseholdNav({
           householdId={householdId}
           pathname={pathname}
           compact={false}
-          unreadCount={unreadCount}
+          badgeCounts={counts}
+        />
+        <div className="mt-4 px-3">
+          <QuickAddButton onClick={() => setQuickAddOpen(true)} />
+        </div>
+        <QuickAddSheet
+          open={quickAddOpen}
+          onClose={() => setQuickAddOpen(false)}
+          householdId={householdId}
         />
       </nav>
     );
@@ -239,7 +254,7 @@ export function HouseholdNav({
         householdId={householdId}
         pathname={pathname}
         compact={false}
-        unreadCount={unreadCount}
+        badgeCounts={counts}
       />
     </nav>
   );
