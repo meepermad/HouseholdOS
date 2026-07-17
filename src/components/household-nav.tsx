@@ -150,11 +150,14 @@ export function HouseholdNav({
   const pathname = usePathname() ?? "";
   const [moreOpen, setMoreOpen] = useState(false);
   const moreTitleId = useId();
+  const moreOpenForPath = moreOpen;
 
-  useEffect(() => {
-    setMoreOpen(false);
-  }, [pathname]);
-
+  // Close the overflow menu whenever navigation changes without an effect.
+  const [lastPathname, setLastPathname] = useState(pathname);
+  if (lastPathname !== pathname) {
+    setLastPathname(pathname);
+    if (moreOpenForPath) setMoreOpen(false);
+  }
   if (variant === "bottom") {
     const items = primaryNavItems();
     const moreItems = moreNavItems();

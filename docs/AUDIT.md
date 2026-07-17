@@ -128,6 +128,26 @@ Chore audit payloads must not include private evidence URLs, sensitive completio
 
 House-resource audit and notification payloads must not include private purchase notes, personal pantry quantities/dietary notes, or receipt secrets. Domain RPCs insert via `_resource_audit` (actor from `auth.uid()`).
 
+## Event types (Phase 6.5 meals)
+
+- `recipe.created`
+- `recipe.updated`
+- `recipe.archived`
+- `recipe.visibility_changed`
+- `meal.settings_updated`
+- `meal.request_created`
+- `meal.planned`
+- `meal.rsvp_changed`
+- `meal.cancelled`
+- `meal.shopping_needed`
+- `meal.preparing`
+- `meal.prepared`
+- `meal.pantry_usage_confirmed`
+- `meal_batch.use_soon`
+- `meal_batch.discarded`
+
+Meal audit payloads must not include guest dietary notes, private pantry quantities, or medical dietary explanations. Domain RPCs insert via `_meal_audit` (actor from `auth.uid()`).
+
 ## Shape
 
 | Column | Purpose |

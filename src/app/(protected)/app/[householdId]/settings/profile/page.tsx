@@ -64,6 +64,19 @@ export default async function ProfileSettingsPage({
         </Link>
       </Surface>
 
+      <Surface>
+        <h2 className="text-sm font-semibold text-text-primary">Meals</h2>
+        <p className="mt-1 text-sm text-text-secondary">
+          Staple assumptions and shopping-prep policy after accepting a recipe.
+        </p>
+        <Link
+          href={`/app/${householdId}/settings/meals`}
+          className="mt-3 inline-flex min-h-11 items-center text-sm font-medium text-primary underline underline-offset-2"
+        >
+          Open meal settings
+        </Link>
+      </Surface>
+
       {isHouseholdCoordinator(ctx.roles) ? (
         <Surface>
           <h2 className="text-sm font-semibold text-text-primary">Operations</h2>

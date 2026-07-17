@@ -2,7 +2,7 @@
 
 Private, mobile-first household management PWA for shared expenses, ownership, responsibilities, and commitments.
 
-Auth, households, memberships, invitations, manual expenses, **external payment settlement recording**, **notification delivery**, a **shared household calendar**, **chores with rotations and responsibility areas**, and **house resources** (durable inventory, consumable supplies, pantry, shopping lists with expense-item linkage) are in place. HouseholdOS does not move money or verify payment providers. Push delivery stays off until VAPID keys and Supabase Cron are configured (`NOTIFICATION_DELIVERY_ENABLED`). External calendar apps may subscribe read-only via a personal feed; they are not the source of truth. See `docs/ARCHITECTURE.md` for the roadmap (recipes / meal planning next).
+Auth, households, memberships, invitations, manual expenses, **external payment settlement recording**, **notification delivery**, a **shared household calendar**, **chores with rotations and responsibility areas**, **house resources** (durable inventory, consumable supplies, pantry, shopping lists with expense-item linkage), and **meals** (recipes, pantry-aware requests, meal plans, meal-prep batches, shopping prep) are in place. HouseholdOS does not move money or verify payment providers. Push delivery stays off until VAPID keys and Supabase Cron are configured (`NOTIFICATION_DELIVERY_ENABLED`). External calendar apps may subscribe read-only via a personal feed; they are not the source of truth. See `docs/ARCHITECTURE.md` for the roadmap (maintenance / household issues next).
 
 ## Stack
 

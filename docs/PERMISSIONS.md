@@ -61,6 +61,21 @@ Enforced in:
 
 \*\*\*\*\*\*\*`financial_coordinator` gains **no** physical inventory override. Personal `owner_only` pantry/inventory is **not** bypassed by coordinator status. Expense linkage requires same-household expense visibility plus `resource.link_expense`. Ownership transfers for personal items require the owner or an audited `resource.coordinator_override`.
 
+## Meals and recipes
+
+| Capability | member | household_coordinator | financial_coordinator |
+|---|---|---|---|
+| View visible recipes / meal plans | yes | yes | yes |
+| Create personal or household recipes / meal plans / requests | yes | yes | yes |
+| Edit own recipe / organize own meal | yes | yes | yes |
+| Archive household-visible recipes | creator | creator or coordinator | creator |
+| Read/edit creator-only recipes of others | no | **no** | no |
+| Update only own meal attendance | yes | yes | yes |
+| Confirm shopping prep / mark prepared (organizer) | organizer | organizer | organizer |
+| Update meal settings (staples / shopping-prep policy) | no | yes | no |
+
+Personal dietary preferences are owner-only. Meal organizers see aggregated constraint summaries unless a member opted to share identity. Meal expense suggestions do not grant financial authority — purchasers confirm through existing expense RPCs. Pantry matching never reveals unauthorized personal pantry quantities.
+
 ## Calendar visibility
 
 | Visibility | Who sees full details | Others see |

@@ -147,17 +147,29 @@ Four separate domains share locations and expense-item links but are **not** one
 | Locations | `household_locations` — household-scoped, rename-safe, archived when referenced |
 | Durable inventory | `inventory_items` + `inventory_condition_events` + `inventory_ownership_members` |
 | Consumable supplies | `supply_items` + append-oriented `supply_stock_events`; restock policy `manual\|suggest\|automatic` (default suggest) |
-| Pantry | `pantry_items` + `pantry_stock_events`; personal `owner_only` rows hidden via RLS (coordinators do not bypass) |
-| Shopping | `shopping_lists` + `shopping_list_items`; default list lazy-created; active supply-request dedupe |
+| Pantry | `pantry_items` + `pantry_stock_events`; personal `owner_only` rows hidden via RLS (coordinators do not bypass); optional `is_staple` |
+| Shopping | `shopping_lists` + `shopping_list_items`; default list lazy-created; active supply-request dedupe; meal-linked shortfall columns |
 | Expense linkage | `resource_expense_links` → `expense_items` (not receipt OCR); void/amend does not delete physical items |
 | Ownership | `household\|personal\|shared_selected\|temporary\|unknown` — distinct from payer/restocker |
 | Visibility | `household\|owner_only\|selected_members` enforced in RLS |
 | Quantity | `numeric(12,3)` + unit enum; no cross-unit conversion |
 | Reminders | `scheduled_notification_requests` source types `pantry_item` / `inventory_item` |
-| Nav | House enabled under `surface: "more"`; hub tabs for Inventory / Supplies / Pantry / Shopping |
+| Nav | House enabled under `surface: "more"`; hub tabs for Inventory / Supplies / Pantry / Shopping / Meals / Recipes / Meal prep |
 | Auth | RPCs with `householdos.resource_mutation`; financial_coordinator has no physical override |
 
-Recipe matching, meal planning, barcode/OCR, and store integrations are deferred to Phase 6.5+.
+## Meals and recipes (Phase 6.5)
+
+Coordination-first meal planning on top of pantry, shopping, calendar, chores, and notifications. No portion claiming, leftover reservation, nutrition tracking, or AI recipe generation.
+
+| Concern | Implementation |
+|---|---|
+| Recipes | `recipes` + ingredients/steps/equipment; visibility `household\|creator_only\|selected_members` (coordinators do not bypass creator-only) |
+| Requests | `meal_requests` → deterministic `rank_recipe_candidates` → `accept_meal_request_result` creates a meal plan |
+| Meal plans | Types `shared_household\|guest_inclusive\|personal\|open_household\|meal_prep`; attendance + guest headcount; serving estimates |
+| Shopping prep | `meal_shopping_proposals`; policy `manual\|suggest_and_confirm\|automatic_on_acceptance` (default suggest_and_confirm); only after accept |
+| Meal-prep batches | Approximate remaining states; no portion ownership columns |
+| Calendar | Optional `source_type=meal_plan`; category includes `meal_prep` |
+| Auth | RPCs with `householdos.meal_mutation`; actor from `auth.uid()` |
 
 ## Roadmap
 
@@ -166,8 +178,9 @@ Phase 3 — Payment settlement ledger + payment-related in-app notifications
 Phase 3.1 — Notification delivery: web push, preferences, quiet hours, digests, retries
 Phase 4 — Shared HouseholdOS calendar, recurrence, reminders, secure iCalendar feed
 Phase 5 — Chores / responsibility rotations on calendar + notifications
-Phase 6 — Inventory, supplies, shopping lists, pantry (current)
-Phase 6.5 — Recipe requests matched to pantry / constraints
+Phase 6 — Inventory, supplies, shopping lists, pantry
+Phase 6.5 — Recipes, meal requests, meal planning, meal-prep batches (current)
+Phase 7 — Maintenance requests, household issues, repair tracking, vendor appointments
 Later — LifeOS connector; optional Google/Apple calendar sync
 ```
 
@@ -175,4 +188,4 @@ Calendar stages remaining: LifeOS connector → optional two-way provider sync.
 
 ## Out of scope (current)
 
-Receipt OCR, actual bank/Venmo/Zelle/Plaid transfers, recipes/meal planning product UI, Google/Apple OAuth calendar sync, two-way calendar writeback, full offline sync, SMS, live email delivery (adapter boundary only until a provider is configured), chore photo evidence storage, public chore rankings or financial penalties for missed chores, barcode scanning, grocery delivery APIs.
+Receipt OCR, actual bank/Venmo/Zelle/Plaid transfers, Google/Apple OAuth calendar sync, two-way calendar writeback, full offline sync, SMS, live email delivery (adapter boundary only until a provider is configured), chore photo evidence storage, public chore rankings or financial penalties for missed chores, barcode scanning, grocery delivery APIs, recipe website scraping, AI-generated recipes, portion claiming.

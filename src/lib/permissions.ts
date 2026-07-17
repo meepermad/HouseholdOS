@@ -52,6 +52,10 @@ export const CAPABILITIES = [
   "resource.shop",
   "resource.link_expense",
   "resource.coordinator_override",
+  "meal.view",
+  "meal.create",
+  "meal.manage_own",
+  "meal.settings",
 ] as const;
 
 export type Capability = (typeof CAPABILITIES)[number];
@@ -103,6 +107,13 @@ const RESOURCE_MEMBER_CAPABILITIES = [
   "resource.link_expense",
 ] as const satisfies readonly Capability[];
 
+/** Meals / recipes — member baseline. */
+const MEAL_MEMBER_CAPABILITIES = [
+  "meal.view",
+  "meal.create",
+  "meal.manage_own",
+] as const satisfies readonly Capability[];
+
 const ROLE_CAPABILITIES: Record<HouseholdResponsibility, readonly Capability[]> = {
   member: [
     "household.view",
@@ -113,6 +124,7 @@ const ROLE_CAPABILITIES: Record<HouseholdResponsibility, readonly Capability[]> 
     ...CALENDAR_MEMBER_CAPABILITIES,
     ...CHORE_MEMBER_CAPABILITIES,
     ...RESOURCE_MEMBER_CAPABILITIES,
+    ...MEAL_MEMBER_CAPABILITIES,
   ],
   household_coordinator: [
     "household.view",
@@ -130,6 +142,8 @@ const ROLE_CAPABILITIES: Record<HouseholdResponsibility, readonly Capability[]> 
     ...CALENDAR_MEMBER_CAPABILITIES,
     ...CHORE_MEMBER_CAPABILITIES,
     ...RESOURCE_MEMBER_CAPABILITIES,
+    ...MEAL_MEMBER_CAPABILITIES,
+    "meal.settings",
     // Only the household coordinator may edit/cancel household-visible events
     // organized by someone else.
     "calendar.coordinator_override",
@@ -148,6 +162,7 @@ const ROLE_CAPABILITIES: Record<HouseholdResponsibility, readonly Capability[]> 
     ...CALENDAR_MEMBER_CAPABILITIES,
     ...CHORE_MEMBER_CAPABILITIES,
     ...RESOURCE_MEMBER_CAPABILITIES,
+    ...MEAL_MEMBER_CAPABILITIES,
   ],
 };
 

@@ -52,5 +52,13 @@ describe("nav items growth rules", () => {
       "house",
     ]);
   });
+
+  it("treats meals and recipes as house destinations", () => {
+    const house = HOUSEHOLD_NAV_ITEMS.find((i) => i.key === "house");
+    expect(house?.match("/app/h1/meals", "h1")).toBe(true);
+    expect(house?.match("/app/h1/recipes/request", "h1")).toBe(true);
+    expect(house?.match("/app/h1/meal-prep", "h1")).toBe(true);
+    expect(house?.match("/app/h1/money", "h1")).toBe(false);
+  });
 });
 

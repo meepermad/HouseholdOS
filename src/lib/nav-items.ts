@@ -92,7 +92,11 @@ export const HOUSEHOLD_NAV_ITEMS: readonly HouseholdNavItem[] = [
     label: "House",
     mark: "▣",
     href: (id) => `/app/${id}/house`,
-    match: (pathname, id) => pathname.startsWith(`/app/${id}/house`),
+    match: (pathname, id) =>
+      pathname.startsWith(`/app/${id}/house`) ||
+      pathname.startsWith(`/app/${id}/meals`) ||
+      pathname.startsWith(`/app/${id}/recipes`) ||
+      pathname.startsWith(`/app/${id}/meal-prep`),
     enabled: true,
     surface: "more",
   },

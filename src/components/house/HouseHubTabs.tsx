@@ -4,10 +4,13 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const TABS = [
-  { key: "inventory", label: "Inventory" },
-  { key: "supplies", label: "Supplies" },
-  { key: "pantry", label: "Pantry" },
-  { key: "shopping", label: "Shopping" },
+  { key: "inventory", label: "Inventory", href: (id: string) => `/app/${id}/house/inventory` },
+  { key: "supplies", label: "Supplies", href: (id: string) => `/app/${id}/house/supplies` },
+  { key: "pantry", label: "Pantry", href: (id: string) => `/app/${id}/house/pantry` },
+  { key: "shopping", label: "Shopping", href: (id: string) => `/app/${id}/house/shopping` },
+  { key: "meals", label: "Meals", href: (id: string) => `/app/${id}/meals` },
+  { key: "recipes", label: "Recipes", href: (id: string) => `/app/${id}/recipes` },
+  { key: "meal-prep", label: "Meal prep", href: (id: string) => `/app/${id}/meal-prep` },
 ] as const;
 
 export function HouseHubTabs({ householdId }: { householdId: string }) {
@@ -15,8 +18,13 @@ export function HouseHubTabs({ householdId }: { householdId: string }) {
   return (
     <nav aria-label="House resources" className="flex flex-wrap gap-2 border-b border-border pb-2 text-sm">
       {TABS.map((tab) => {
-        const href = `/app/${householdId}/house/${tab.key}`;
-        const active = pathname?.startsWith(href);
+        const href = tab.href(householdId);
+        const active =
+          pathname === href ||
+          pathname?.startsWith(`${href}/`) ||
+          (tab.key === "meals" && pathname?.includes("/meals")) ||
+          (tab.key === "recipes" && pathname?.includes("/recipes")) ||
+          (tab.key === "meal-prep" && pathname?.includes("/meal-prep"));
         return (
           <Link
             key={tab.key}

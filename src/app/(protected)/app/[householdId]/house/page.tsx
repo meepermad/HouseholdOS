@@ -62,7 +62,7 @@ export default async function HousePage({
       <header>
         <h1 className="font-[family-name:var(--font-display)] text-3xl">House</h1>
         <p className="mt-1 text-sm text-text-secondary">
-          Inventory, supplies, pantry, and shopping — for the household, and for what&apos;s personal.
+          Inventory, supplies, pantry, shopping, and meals — for the household, and for what&apos;s personal.
         </p>
       </header>
       <HouseHubTabs householdId={householdId} />
