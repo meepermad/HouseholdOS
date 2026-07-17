@@ -18,6 +18,7 @@ import {
   calendarViewPath,
   type CalendarView,
 } from "@/components/calendar/CalendarToolbar";
+import { householdRoutes } from "@/lib/routes/household";
 
 export const dynamic = "force-dynamic";
 
@@ -141,7 +142,7 @@ export async function renderCalendarViewPage(params: {
 
   return (
     <div className="space-y-4">
-      <AppBackButton fallbackHref={`/app/${householdId}`} />
+      <AppBackButton fallbackHref={householdRoutes.home(householdId)} />
       <CalendarShell
         householdId={householdId}
         view={view}

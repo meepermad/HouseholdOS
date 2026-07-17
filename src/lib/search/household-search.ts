@@ -1,5 +1,6 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
+import { householdRoutes } from "@/lib/routes/household";
 
 export type SearchDomain =
   | "calendar"
@@ -72,7 +73,7 @@ export async function searchHousehold(
           domain: "calendar" as const,
           title: r.title,
           snippet: clip(r.description),
-          href: `/app/${householdId}/calendar/events/${r.id}`,
+          href: householdRoutes.calendar.event(householdId, r.id),
         })),
     );
   } catch {

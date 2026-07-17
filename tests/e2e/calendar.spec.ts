@@ -175,13 +175,40 @@ test.describe("authenticated calendar smoke", () => {
     await deleteTestAuthUsers(admin, createdUserIds);
   });
 
+  test("bottom nav Calendar lands on agenda without hanging", async ({
+    browser,
+  }, testInfo) => {
+    test.skip(testInfo.project.name !== "Desktop Chrome");
+    const page = await pageWithStoredSession(browser, storageStatePath);
+    await page.goto(`/app/${householdId}`);
+    await expect(page.getByTestId("home-action-center")).toBeVisible({
+      timeout: 30_000,
+    });
+    const calendarLink = page.locator('nav a[href*="/calendar/agenda"]').first();
+    await expect(calendarLink).toBeVisible();
+    await calendarLink.click();
+    await expect(page).toHaveURL(new RegExp(`/app/${householdId}/calendar/agenda`), {
+      timeout: 45_000,
+    });
+    await expect(page.getByTestId("calendar-toolbar")).toBeVisible({
+      timeout: 45_000,
+    });
+    await page.reload();
+    await expect(page.getByTestId("calendar-toolbar")).toBeVisible({
+      timeout: 45_000,
+    });
+    await page.close();
+  });
+
   test("calendar page shows agenda heading or empty state", async ({
     browser,
   }, testInfo) => {
     test.skip(testInfo.project.name !== "Desktop Chrome");
     const page = await pageWithStoredSession(browser, storageStatePath);
-    await page.goto(`/app/${householdId}/calendar/agenda`);
-
+    await page.goto(`/app/${householdId}/calendar`);
+    await expect(page).toHaveURL(new RegExp(`/app/${householdId}/calendar/agenda`), {
+      timeout: 45_000,
+    });
     await expect(page.getByTestId("calendar-toolbar")).toBeVisible({
       timeout: 45_000,
     });

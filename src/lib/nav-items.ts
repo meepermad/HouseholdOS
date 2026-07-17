@@ -1,3 +1,5 @@
+import { householdRoutes, isCalendarPath } from "@/lib/routes/household";
+
 /**
  * Nav icon keys mapped to Lucide icon names for a single icon family.
  * Components resolve these via `navIcon()`.
@@ -61,7 +63,7 @@ export const HOUSEHOLD_NAV_ITEMS: readonly HouseholdNavItem[] = [
     key: "home",
     label: "Home",
     icon: "home",
-    href: (id) => `/app/${id}`,
+    href: (id) => householdRoutes.home(id),
     match: (pathname, id) =>
       pathname === `/app/${id}` || pathname === `/app/${id}/`,
     enabled: true,
@@ -71,8 +73,8 @@ export const HOUSEHOLD_NAV_ITEMS: readonly HouseholdNavItem[] = [
     key: "calendar",
     label: "Calendar",
     icon: "calendar",
-    href: (id) => `/app/${id}/calendar`,
-    match: (pathname, id) => pathname.startsWith(`/app/${id}/calendar`),
+    href: (id) => householdRoutes.calendar.agenda(id),
+    match: (pathname, id) => isCalendarPath(pathname, id),
     enabled: true,
     surface: "primary",
   },
@@ -80,7 +82,7 @@ export const HOUSEHOLD_NAV_ITEMS: readonly HouseholdNavItem[] = [
     key: "chores",
     label: "Chores",
     icon: "chores",
-    href: (id) => `/app/${id}/chores`,
+    href: (id) => householdRoutes.chores.index(id),
     match: (pathname, id) =>
       pathname.startsWith(`/app/${id}/chores`) ||
       pathname.startsWith(`/app/${id}/responsibilities`),
@@ -92,7 +94,7 @@ export const HOUSEHOLD_NAV_ITEMS: readonly HouseholdNavItem[] = [
     key: "money",
     label: "Money",
     icon: "money",
-    href: (id) => `/app/${id}/money`,
+    href: (id) => householdRoutes.money.index(id),
     match: (pathname, id) => pathname.startsWith(`/app/${id}/money`),
     enabled: true,
     surface: "primary",
@@ -102,7 +104,7 @@ export const HOUSEHOLD_NAV_ITEMS: readonly HouseholdNavItem[] = [
     key: "house",
     label: "House",
     icon: "house",
-    href: (id) => `/app/${id}/house`,
+    href: (id) => householdRoutes.house.index(id),
     match: (pathname, id) =>
       pathname.startsWith(`/app/${id}/house`) ||
       pathname.startsWith(`/app/${id}/meals`) ||
@@ -116,7 +118,7 @@ export const HOUSEHOLD_NAV_ITEMS: readonly HouseholdNavItem[] = [
     key: "maintenance",
     label: "Maintenance",
     icon: "maintenance",
-    href: (id) => `/app/${id}/maintenance`,
+    href: (id) => householdRoutes.maintenance.index(id),
     match: (pathname, id) => pathname.startsWith(`/app/${id}/maintenance`),
     enabled: true,
     surface: "more",
@@ -127,7 +129,7 @@ export const HOUSEHOLD_NAV_ITEMS: readonly HouseholdNavItem[] = [
     key: "governance",
     label: "Governance",
     icon: "governance",
-    href: (id) => `/app/${id}/governance`,
+    href: (id) => householdRoutes.governance.index(id),
     match: (pathname, id) =>
       pathname.startsWith(`/app/${id}/governance`) ||
       pathname.startsWith(`/app/${id}/settings/governance`),
@@ -139,7 +141,7 @@ export const HOUSEHOLD_NAV_ITEMS: readonly HouseholdNavItem[] = [
     key: "search",
     label: "Search",
     icon: "search",
-    href: (id) => `/app/${id}/search`,
+    href: (id) => householdRoutes.search(id),
     match: (pathname, id) => pathname.startsWith(`/app/${id}/search`),
     enabled: true,
     surface: "more",
@@ -149,7 +151,7 @@ export const HOUSEHOLD_NAV_ITEMS: readonly HouseholdNavItem[] = [
     key: "polls",
     label: "Decisions",
     icon: "governance",
-    href: (id) => `/app/${id}/polls`,
+    href: (id) => householdRoutes.polls.index(id),
     match: (pathname, id) => pathname.startsWith(`/app/${id}/polls`),
     enabled: true,
     surface: "more",
@@ -159,7 +161,7 @@ export const HOUSEHOLD_NAV_ITEMS: readonly HouseholdNavItem[] = [
     key: "utilities",
     label: "Bills",
     icon: "money",
-    href: (id) => `/app/${id}/utilities`,
+    href: (id) => householdRoutes.utilities(id),
     match: (pathname, id) => pathname.startsWith(`/app/${id}/utilities`),
     enabled: true,
     surface: "more",
@@ -169,7 +171,7 @@ export const HOUSEHOLD_NAV_ITEMS: readonly HouseholdNavItem[] = [
     key: "emergency",
     label: "Emergency card",
     icon: "maintenance",
-    href: (id) => `/app/${id}/emergency`,
+    href: (id) => householdRoutes.emergency(id),
     match: (pathname, id) => pathname.startsWith(`/app/${id}/emergency`),
     enabled: true,
     surface: "more",
@@ -179,7 +181,7 @@ export const HOUSEHOLD_NAV_ITEMS: readonly HouseholdNavItem[] = [
     key: "guests",
     label: "Guest notices",
     icon: "calendar",
-    href: (id) => `/app/${id}/guests/new`,
+    href: (id) => householdRoutes.guestsNew(id),
     match: (pathname, id) => pathname.startsWith(`/app/${id}/guests`),
     enabled: true,
     surface: "more",
@@ -189,7 +191,7 @@ export const HOUSEHOLD_NAV_ITEMS: readonly HouseholdNavItem[] = [
     key: "away",
     label: "Away status",
     icon: "profile",
-    href: (id) => `/app/${id}/away`,
+    href: (id) => householdRoutes.away(id),
     match: (pathname, id) => pathname.startsWith(`/app/${id}/away`),
     enabled: true,
     surface: "more",
@@ -199,7 +201,7 @@ export const HOUSEHOLD_NAV_ITEMS: readonly HouseholdNavItem[] = [
     key: "review",
     label: "Weekly review",
     icon: "home",
-    href: (id) => `/app/${id}/review`,
+    href: (id) => householdRoutes.review(id),
     match: (pathname, id) => pathname.startsWith(`/app/${id}/review`),
     enabled: true,
     surface: "more",
@@ -210,7 +212,7 @@ export const HOUSEHOLD_NAV_ITEMS: readonly HouseholdNavItem[] = [
     label: "Inbox",
     shortLabel: "Inbox",
     icon: "inbox",
-    href: (id) => `/app/${id}/notifications`,
+    href: (id) => householdRoutes.notifications(id),
     match: (pathname, id) => pathname.startsWith(`/app/${id}/notifications`),
     enabled: true,
     surface: "more",
@@ -221,7 +223,7 @@ export const HOUSEHOLD_NAV_ITEMS: readonly HouseholdNavItem[] = [
     key: "settings",
     label: "Settings",
     icon: "settings",
-    href: (id) => `/app/${id}/settings`,
+    href: (id) => householdRoutes.settings.index(id),
     match: (pathname, id) => pathname.startsWith(`/app/${id}/settings`),
     enabled: true,
     surface: "more",
@@ -231,7 +233,7 @@ export const HOUSEHOLD_NAV_ITEMS: readonly HouseholdNavItem[] = [
     key: "profile",
     label: "Profile",
     icon: "profile",
-    href: (id) => `/app/${id}/settings/profile`,
+    href: (id) => householdRoutes.settings.profile(id),
     match: (pathname, id) =>
       pathname === `/app/${id}/settings/profile` ||
       pathname === `/app/${id}/settings/profile/`,
@@ -302,41 +304,41 @@ export const QUICK_ADD_ACTIONS: readonly QuickAddAction[] = [
   {
     key: "expense",
     label: "Add expense",
-    href: (id) => `/app/${id}/money/expenses/new`,
+    href: (id) => householdRoutes.money.expensesNew(id),
   },
   {
     key: "shopping",
     label: "Add shopping item",
-    href: (id) => `/app/${id}/house/shopping`,
+    href: (id) => householdRoutes.house.shopping(id),
   },
   {
     key: "meal",
     label: "Request meal",
-    href: (id) => `/app/${id}/meals/new`,
+    href: (id) => householdRoutes.meals.new(id),
   },
   {
     key: "chore",
     label: "Create chore",
-    href: (id) => `/app/${id}/chores/new`,
+    href: (id) => householdRoutes.chores.new(id),
   },
   {
     key: "event",
     label: "Create event",
-    href: (id) => `/app/${id}/calendar/events/new`,
+    href: (id) => householdRoutes.calendar.new(id),
   },
   {
     key: "maintenance",
     label: "Report issue",
-    href: (id) => `/app/${id}/maintenance/new`,
+    href: (id) => householdRoutes.maintenance.new(id),
   },
   {
     key: "guest",
     label: "Add guest notice",
-    href: (id) => `/app/${id}/guests/new`,
+    href: (id) => householdRoutes.guestsNew(id),
   },
   {
     key: "decision",
     label: "Start household decision",
-    href: (id) => `/app/${id}/polls/new`,
+    href: (id) => householdRoutes.polls.new(id),
   },
 ] as const;

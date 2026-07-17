@@ -64,5 +64,14 @@ describe("nav items growth rules", () => {
     expect(QUICK_ADD_ACTIONS.find((a) => a.key === "decision")?.href("h1")).toBe(
       "/app/h1/polls/new",
     );
+    expect(QUICK_ADD_ACTIONS.find((a) => a.key === "event")?.href("h1")).toBe(
+      "/app/h1/calendar/new",
+    );
+  });
+
+  it("points Calendar primary nav at agenda landing", () => {
+    const calendar = HOUSEHOLD_NAV_ITEMS.find((i) => i.key === "calendar");
+    expect(calendar?.href("h1")).toBe("/app/h1/calendar/agenda");
+    expect(calendar?.match("/app/h1/calendar/day", "h1")).toBe(true);
   });
 });

@@ -3,6 +3,7 @@ import {
   normalizeCalendarView,
   renderCalendarViewPage,
 } from "@/app/(protected)/app/[householdId]/calendar/calendar-view";
+import { householdRoutes } from "@/lib/routes/household";
 
 export const dynamic = "force-dynamic";
 
@@ -18,9 +19,7 @@ export default async function CalendarPage({
   const { view: viewParam, date: dateParam } = await searchParams;
   const view = normalizeCalendarView(viewParam);
   if (!viewParam) {
-    redirect(
-      `/app/${householdId}/calendar/agenda${dateParam ? `?date=${dateParam}` : ""}`,
-    );
+    redirect(householdRoutes.calendar.agenda(householdId, dateParam));
   }
   return renderCalendarViewPage({ householdId, view, dateParam });
 }

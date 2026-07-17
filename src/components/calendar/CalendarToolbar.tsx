@@ -4,8 +4,12 @@ import Link from "next/link";
 import { useState } from "react";
 import { Ellipsis, Plus } from "lucide-react";
 import { BottomSheet } from "@/components/ui/bottom-sheet";
+import {
+  householdRoutes,
+  type CalendarViewSlug,
+} from "@/lib/routes/household";
 
-export type CalendarView = "agenda" | "day" | "month" | "week";
+export type CalendarView = CalendarViewSlug;
 
 export const CALENDAR_VIEWS: readonly CalendarView[] = [
   "agenda",
@@ -26,8 +30,7 @@ export function calendarViewPath(
   view: CalendarView,
   date?: string,
 ): string {
-  const base = `/app/${householdId}/calendar/${view}`;
-  return date ? `${base}?date=${date}` : base;
+  return householdRoutes.calendar.view(householdId, view, date);
 }
 
 export function CalendarToolbar({
@@ -66,7 +69,7 @@ export function CalendarToolbar({
         <div className="flex shrink-0 items-center gap-1">
           {canCreate ? (
             <Link
-              href={`/app/${householdId}/calendar/new`}
+              href={householdRoutes.calendar.new(householdId)}
               className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-md bg-primary text-primary-foreground"
               aria-label="New event"
               data-testid="calendar-new-event"
@@ -144,21 +147,21 @@ export function CalendarToolbar({
       >
         <nav className="flex flex-col gap-1">
           <Link
-            href={`/app/${householdId}/calendar/invitations`}
+            href={householdRoutes.calendar.invitations(householdId)}
             className="flex min-h-11 items-center rounded-md px-2 text-sm hover:bg-surface-interactive"
             onClick={() => setMenuOpen(false)}
           >
             Invitations
           </Link>
           <Link
-            href={`/app/${householdId}/calendar/availability`}
+            href={householdRoutes.calendar.availability(householdId)}
             className="flex min-h-11 items-center rounded-md px-2 text-sm hover:bg-surface-interactive"
             onClick={() => setMenuOpen(false)}
           >
             Find a time
           </Link>
           <Link
-            href={`/app/${householdId}/settings/calendar`}
+            href={householdRoutes.settings.calendar(householdId)}
             className="flex min-h-11 items-center rounded-md px-2 text-sm hover:bg-surface-interactive"
             onClick={() => setMenuOpen(false)}
           >

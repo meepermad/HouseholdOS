@@ -1,4 +1,5 @@
 import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
+import { householdRoutes } from "@/lib/routes/household";
 
 export const FEED_SCOPES = ["visible_to_me", "household_public_only"] as const;
 export type FeedScope = (typeof FEED_SCOPES)[number];
@@ -54,5 +55,5 @@ export function safeEventDeepLink(params: {
   eventId: string;
 }): string {
   const origin = params.origin.replace(/\/$/, "");
-  return `${origin}/app/${params.householdId}/calendar/events/${params.eventId}`;
+  return `${origin}${householdRoutes.calendar.event(params.householdId, params.eventId)}`;
 }

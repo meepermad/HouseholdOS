@@ -55,7 +55,9 @@ describe("HouseholdNav", () => {
   it("renders only implemented destinations", () => {
     render(<HouseholdNav householdId="hh-1" variant="bottom" />);
     expect(screen.getByRole("link", { name: "Home" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Calendar" })).toBeInTheDocument();
+    const calendar = screen.getByRole("link", { name: "Calendar" });
+    expect(calendar).toBeInTheDocument();
+    expect(calendar).toHaveAttribute("href", "/app/hh-1/calendar/agenda");
     expect(screen.getByRole("link", { name: "Chores" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Money" })).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Settings" })).not.toBeInTheDocument();

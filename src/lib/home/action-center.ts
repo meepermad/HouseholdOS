@@ -9,6 +9,7 @@ import {
 } from "@/lib/governance/queries";
 import { listMaintenanceRequests } from "@/lib/maintenance/queries";
 import { QUICK_ADD_ACTIONS } from "@/lib/nav-items";
+import { householdRoutes } from "@/lib/routes/household";
 
 export type HomeAttentionItem = {
   id: string;
@@ -91,7 +92,7 @@ export async function loadHomeActionCenter(options: {
         title: "Confirm a payment",
         detail: "Someone marked a payment as sent. Confirm when you receive it.",
         urgency: "high",
-        href: `/app/${householdId}/money/payments/${p.id}`,
+        href: householdRoutes.money.payments(householdId, p.id),
       });
     }
     for (const d of moneyItems.openDisputes) {
@@ -100,16 +101,20 @@ export async function loadHomeActionCenter(options: {
         title: "Review a money dispute",
         detail: "An open dispute needs your attention.",
         urgency: "high",
-        href: `/app/${householdId}/money/disputes/${d.id}`,
+        href: householdRoutes.money.disputes(householdId, d.id),
       });
     }
     for (const r of moneyItems.refundsOwed) {
+      if (!r.obligation_id) continue;
       attention.push({
         id: `refund-${r.obligation_id}`,
         title: "Refund owed",
         detail: "You have an open refund obligation.",
         urgency: "normal",
-        href: `/app/${householdId}/money/reimbursements/${r.obligation_id}`,
+        href: householdRoutes.money.reimbursements(
+          householdId,
+          r.obligation_id,
+        ),
       });
     }
     money.awaitingConfirmation = moneyItems.awaitingConfirm.length;
@@ -139,21 +144,21 @@ export async function loadHomeActionCenter(options: {
         title: "Overdue chore",
         detail: item.title ?? "A chore is past due.",
         urgency: "high",
-        href: `/app/${householdId}/chores`,
+        href: householdRoutes.chores.index(householdId),
       });
     }
     for (const item of choreItems.dueSoon) {
       today.push({
         id: `chore-due-${item.id}`,
         label: item.title ?? "Chore due",
-        href: `/app/${householdId}/chores`,
+        href: householdRoutes.chores.index(householdId),
       });
       attention.push({
         id: `chore-attn-${item.id}`,
         title: "Chore due soon",
         detail: item.title ?? "Complete or reassign this chore.",
         urgency: "normal",
-        href: `/app/${householdId}/chores`,
+        href: householdRoutes.chores.index(householdId),
       });
     }
     for (const item of choreItems.awaitingVerification) {
@@ -162,7 +167,7 @@ export async function loadHomeActionCenter(options: {
         title: "Verify a chore",
         detail: item.title ?? "Confirm that this chore was done.",
         urgency: "normal",
-        href: `/app/${householdId}/chores`,
+        href: householdRoutes.chores.index(householdId),
       });
     }
     for (const item of choreItems.reassignmentPending) {
@@ -171,7 +176,7 @@ export async function loadHomeActionCenter(options: {
         title: "Respond to chore reassignment",
         detail: item.title ?? "A reassignment request is waiting.",
         urgency: "normal",
-        href: `/app/${householdId}/chores`,
+        href: householdRoutes.chores.index(householdId),
       });
     }
     for (const item of choreItems.responsibilityTransferPending) {
@@ -180,7 +185,7 @@ export async function loadHomeActionCenter(options: {
         title: "Responsibility transfer",
         detail: "Accept or decline a responsibility handoff.",
         urgency: "normal",
-        href: `/app/${householdId}/responsibilities`,
+        href: householdRoutes.responsibilities(householdId),
       });
     }
   } catch {
@@ -198,7 +203,7 @@ export async function loadHomeActionCenter(options: {
       today.push({
         id: `evt-${occ.occurrenceId}`,
         label: occ.title,
-        href: `/app/${householdId}/calendar/events/${occ.eventId}`,
+        href: householdRoutes.calendar.event(householdId, occ.eventId),
       });
     }
 
@@ -212,7 +217,7 @@ export async function loadHomeActionCenter(options: {
       upcoming.push({
         id: `up-${occ.occurrenceId}`,
         label: occ.title,
-        href: `/app/${householdId}/calendar/events/${occ.eventId}`,
+        href: householdRoutes.calendar.event(householdId, occ.eventId),
       });
     }
   } catch {
@@ -227,7 +232,7 @@ export async function loadHomeActionCenter(options: {
         title: "Governance approval needed",
         detail: "A household document is waiting for approval.",
         urgency: "normal",
-        href: `/app/${householdId}/governance/approvals`,
+        href: householdRoutes.governance.approvals(householdId),
       });
     }
     const acks = await listPendingAcknowledgments(householdId, membershipId);
@@ -237,7 +242,7 @@ export async function loadHomeActionCenter(options: {
         title: "Acknowledgment needed",
         detail: "Confirm that you have read a household document.",
         urgency: "normal",
-        href: `/app/${householdId}/governance/acknowledgments`,
+        href: householdRoutes.governance.acknowledgments(householdId),
       });
     }
   } catch {
@@ -263,13 +268,13 @@ export async function loadHomeActionCenter(options: {
           title: "Urgent maintenance update",
           detail: r.title,
           urgency: "high",
-          href: `/app/${householdId}/maintenance/${r.id}`,
+          href: householdRoutes.maintenance.detail(householdId, r.id),
         });
       } else {
         houseExceptions.push({
           id: `maint-ex-${r.id}`,
           label: r.title,
-          href: `/app/${householdId}/maintenance/${r.id}`,
+          href: householdRoutes.maintenance.detail(householdId, r.id),
         });
       }
     }

@@ -146,7 +146,7 @@ export async function listOccurrencesInRange(
 ): Promise<CalendarOccurrence[]> {
   const supabase = db(await createClient());
 
-  const { data: occ } = await supabase
+  const { data: occ, error: occError } = await supabase
     .from("calendar_event_occurrences")
     .select(
       `id, event_id, original_starts_at, starts_at, ends_at, all_day,
@@ -162,6 +162,19 @@ export async function listOccurrencesInRange(
     .lt("starts_at", rangeEnd)
     .gt("ends_at", rangeStart)
     .order("starts_at", { ascending: true });
+
+  if (occError) {
+    const { AppError, logServerError } = await import("@/lib/errors");
+    logServerError("list_occurrences_in_range", occError, {
+      householdId,
+      rangeStart,
+      rangeEnd,
+    });
+    throw new AppError(
+      "database_failure",
+      "Unable to load calendar events. Try again or return Home.",
+    );
+  }
 
   const rows = (occ ?? []) as Array<Record<string, unknown>>;
   if (rows.length === 0) return [];

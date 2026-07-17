@@ -3,6 +3,8 @@
  * Source domains own lifecycle; calendar stores a non-authoritative projection.
  */
 
+import { householdRoutes } from "@/lib/routes/household";
+
 export type CalendarSourceType =
   | "native"
   | "chore"
@@ -45,7 +47,7 @@ const NATIVE: DomainProjectionMeta = {
   deletableInCalendar: true,
   lifecycleOwner: "householdos",
   deepLink: (householdId, _sourceId, eventId) =>
-    `/app/${householdId}/calendar/event/${eventId}`,
+    householdRoutes.calendar.event(householdId, eventId),
   editableFields: [
     "title",
     "description",
@@ -240,7 +242,7 @@ const DOMAIN_MAP: Record<string, DomainProjectionMeta> = {
     deletableInCalendar: false,
     lifecycleOwner: "external",
     deepLink: (householdId, _sourceId, eventId) =>
-      `/app/${householdId}/calendar/event/${eventId}`,
+      householdRoutes.calendar.event(householdId, eventId),
     editableFields: [],
     readOnlyExplanation:
       "External events are read-only unless two-way sync is enabled and confirmed by the provider.",
@@ -253,7 +255,7 @@ const DOMAIN_MAP: Record<string, DomainProjectionMeta> = {
     deletableInCalendar: true,
     lifecycleOwner: "householdos",
     deepLink: (householdId, _sourceId, eventId) =>
-      `/app/${householdId}/calendar/event/${eventId}`,
+      householdRoutes.calendar.event(householdId, eventId),
     editableFields: ["title", "description", "location", "time"],
     readOnlyExplanation: null,
   },
@@ -277,5 +279,5 @@ export function resolveDomainProjection(
 }
 
 export function calendarEventPath(householdId: string, eventId: string): string {
-  return `/app/${householdId}/calendar/event/${eventId}`;
+  return householdRoutes.calendar.event(householdId, eventId);
 }

@@ -103,7 +103,7 @@ describe("safeEventDeepLink", () => {
       householdId: "hh-abc",
       eventId: "evt-xyz",
     });
-    expect(link).toBe("https://householdos.app/app/hh-abc/calendar/events/evt-xyz");
+    expect(link).toBe("https://householdos.app/app/hh-abc/calendar/event/evt-xyz");
     expect(link).not.toMatch(/javascript:/i);
     expect(link).not.toMatch(/\.ics/);
   });
