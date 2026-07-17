@@ -25,7 +25,7 @@ HouseholdOS validates environment variables with Zod. Missing or malformed value
 | `NOTIFICATION_WORKER_SECRET` | For cron worker | Bearer secret (≥16 chars) for `POST /api/internal/notifications/dispatch` only. |
 | `DOCUMENT_JOB_WORKER_SECRET` | For OCR worker | Bearer secret (≥16 chars) for `POST /api/internal/documents/process` only. |
 | `EXPORT_WORKER_SECRET` | For export worker | Bearer secret (≥16 chars) for `POST /api/internal/exports/process` only. |
-| `SYNC_WORKER_SECRET` | Reserved | Declared for Completion-D sync worker; unused until offline sync ships. |
+| `SYNC_WORKER_SECRET` | For sync catch-up worker | Bearer secret (≥16 chars) for `POST /api/internal/sync/process` only. Client outbox uses session `/api/sync/push`. |
 | `NOTIFICATION_DELIVERY_ENABLED` | No | Default `false`. Set `true` only when VAPID + cron are ready. |
 | `VAPID_PRIVATE_KEY` | For push send | Server-only. Never `NEXT_PUBLIC_*`. Keep stable across deploys. |
 | `VAPID_SUBJECT` | For push send | `mailto:` or `https://` contact for VAPID. |

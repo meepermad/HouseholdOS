@@ -266,6 +266,7 @@ Extends Phase 4 without replacing working calendar models:
 | Routed settlements | One-intermediary A→B→C proposals under Money → Simplify balances; external A→C payment only; confirm atomically reduces both legs; reservations + stale revalidation |
 | Receipt destinations | After confirm, `apply_receipt_line_destinations` applies pantry/supply/inventory/shopping actions (`proposed→applied|failed|skipped|reversed`); reverse is soft and does not delete stock |
 | Archive restore | Coordinator selective nonfinancial restore from export JSON into a household; financial/auth/secrets excluded |
+| Offline sync | IndexedDB snapshots + mutation outbox for allowlisted nonfinancial actions; money confirms/routes/export/restore stay online-only; `SYNC_WORKER_SECRET` gates `/api/internal/sync/process`; logout clears offline data |
 | Export | Coordinator async JSON/CSV archive via `EXPORT_WORKER_SECRET` worker; excludes secrets, push endpoints, feed tokens; not a full database restore |
 | Document jobs | Receipt OCR claim/complete via `DOCUMENT_JOB_WORKER_SECRET` at `/api/internal/documents/process` |
 | Notifications worker | `/api/internal/notifications/dispatch` uses `NOTIFICATION_WORKER_SECRET` only |
@@ -275,4 +276,4 @@ Extends Phase 4 without replacing working calendar models:
 
 ## Out of scope (current)
 
-Actual bank/Venmo/Zelle/Plaid transfers, full offline sync, SMS, live email delivery (adapter boundary only until a provider is configured), chore photo evidence storage, public chore rankings or financial penalties for missed chores, barcode scanning, grocery delivery APIs, recipe-site crawling/indexing, paywall or anti-bot bypass, AI-generated recipes, portion claiming, automatic emergency-service contact, automatic landlord/vendor messaging, Apple Calendar two-way writeback, claiming live Google/Apple verification without credentials, automatic opening-balance CSV confirm (imports stay drafts), full raw database restore from export (selective nonfinancial restore only).
+Actual bank/Venmo/Zelle/Plaid transfers, SMS, live email delivery (adapter boundary only until a provider is configured), chore photo evidence storage, public chore rankings or financial penalties for missed chores, barcode scanning, grocery delivery APIs, recipe-site crawling/indexing, paywall or anti-bot bypass, AI-generated recipes, portion claiming, automatic emergency-service contact, automatic landlord/vendor messaging, Apple Calendar two-way writeback, claiming live Google/Apple verification without credentials, automatic opening-balance CSV confirm (imports stay drafts), full raw database restore from export (selective nonfinancial restore only), offline financial mutation queues.

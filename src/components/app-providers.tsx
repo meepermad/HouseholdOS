@@ -1,5 +1,6 @@
 import { ThemeProvider } from "@/components/theme-provider";
 import { OfflineBanner } from "@/components/offline-banner";
+import { OfflineLifecycle } from "@/components/offline-lifecycle";
 import { ServiceWorkerUpdateBanner } from "@/components/sw-update-banner";
 import { getAuthenticatedThemePreference } from "@/lib/theme/server";
 import { persistThemePreferenceAction } from "@/app/actions/preferences";
@@ -17,6 +18,7 @@ export async function AppProviders({
       persistAction={persistThemePreferenceAction}
     >
       <OfflineBanner />
+      <OfflineLifecycle />
       <ServiceWorkerUpdateBanner />
       {children}
     </ThemeProvider>
