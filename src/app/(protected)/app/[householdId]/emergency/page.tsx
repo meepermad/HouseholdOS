@@ -18,12 +18,11 @@ export default async function EmergencyCardPage({
   const { householdId } = await params;
   const ctx = await assertActiveMembership(householdId);
   const supabase = await createClient();
-  const { data } = await supabase
-    .from("household_emergency_cards" as never)
+  const { data: card } = await supabase
+    .from("household_emergency_cards")
     .select("*")
     .eq("household_id", householdId)
     .maybeSingle();
-  const card = (data ?? null) as Record<string, string | null> | null;
   const canEdit = ctx.roles.includes("household_coordinator");
 
   return (

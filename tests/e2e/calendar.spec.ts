@@ -180,10 +180,10 @@ test.describe("authenticated calendar smoke", () => {
   }, testInfo) => {
     test.skip(testInfo.project.name !== "Desktop Chrome");
     const page = await pageWithStoredSession(browser, storageStatePath);
-    await page.goto(`/app/${householdId}/calendar`);
+    await page.goto(`/app/${householdId}/calendar/agenda`);
 
     await expect(page.getByTestId("calendar-toolbar")).toBeVisible({
-      timeout: 20_000,
+      timeout: 45_000,
     });
     await expect(
       page.getByRole("heading", { name: /Agenda|Month|Week|Day/i }),

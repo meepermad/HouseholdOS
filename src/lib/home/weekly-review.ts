@@ -122,13 +122,13 @@ export async function buildWeeklyReview(
 
   try {
     const { data: guests } = await supabase
-      .from("guest_notices" as never)
+      .from("guest_notices")
       .select("id, guest_count, visit_date")
       .eq("household_id", householdId)
       .eq("status", "active")
       .gte("visit_date", thisWeekStart.toISOString().slice(0, 10))
       .lt("visit_date", nextWeekEnd.toISOString().slice(0, 10));
-    const rows = (guests ?? []) as Array<{ guest_count: number }>;
+    const rows = guests ?? [];
     if (rows.length > 0) {
       const count = rows.reduce((s, g) => s + (g.guest_count ?? 0), 0);
       nextWeek.push({

@@ -40,7 +40,7 @@ export async function setAwayStatusAction(
     }
     const ctx = await assertActiveMembership(parsed.data.householdId);
     const supabase = await createClient();
-    const { error } = await supabase.from("membership_away_status" as never).insert({
+    const { error } = await supabase.from("membership_away_status").insert({
       household_id: parsed.data.householdId,
       membership_id: ctx.membershipId,
       starts_at: new Date(parsed.data.startsAt).toISOString(),
@@ -53,7 +53,7 @@ export async function setAwayStatusAction(
         parsed.data.stillParticipatesInExpenses ?? true,
       reduce_nonurgent_notifications:
         parsed.data.reduceNonurgentNotifications ?? true,
-    } as never);
+    });
     if (error) {
       logServerError("set_away_status", error, parsed.data);
       return { ok: false, error: "Unable to save away status." };
@@ -121,7 +121,7 @@ export async function createGuestNoticeAction(
       const { data: eventId } = await supabase.rpc("create_calendar_event", {
         p_household_id: parsed.data.householdId,
         p_title: `Guests (${parsed.data.guestCount})`,
-        p_description: parsed.data.note ?? null,
+        p_description: parsed.data.note ?? undefined,
         p_category: "guest_visit",
         p_visibility: "household",
         p_starts_at: starts.toISOString(),
@@ -129,14 +129,14 @@ export async function createGuestNoticeAction(
         p_all_day: false,
         p_event_guest_count: parsed.data.guestCount,
         p_guest_label: "Guests",
-      } as never);
+      });
       if (typeof eventId === "string") calendarEventId = eventId;
     } catch (error) {
       logServerError("guest_notice_calendar", error, parsed.data);
     }
 
     const { data, error } = await supabase
-      .from("guest_notices" as never)
+      .from("guest_notices")
       .insert({
         household_id: parsed.data.householdId,
         host_membership_id: ctx.membershipId,
@@ -153,7 +153,7 @@ export async function createGuestNoticeAction(
         note: parsed.data.note ?? null,
         acknowledgment_requested:
           parsed.data.acknowledgmentRequested ?? false,
-      } as never)
+      })
       .select("id")
       .maybeSingle();
 
@@ -165,7 +165,7 @@ export async function createGuestNoticeAction(
     revalidatePath(`/app/${parsed.data.householdId}`);
     revalidatePath(`/app/${parsed.data.householdId}/calendar`);
     revalidatePath(`/app/${parsed.data.householdId}/guests`);
-    return { ok: true, id: (data as { id?: string } | null)?.id };
+    return { ok: true, id: data?.id };
   } catch (error) {
     if (error instanceof AppError) return { ok: false, error: error.publicMessage };
     return { ok: false, error: toPublicErrorMessage(error) };
@@ -203,14 +203,14 @@ export async function createCoverageOfferAction(
     }
     const ctx = await assertActiveMembership(parsed.data.householdId);
     const supabase = await createClient();
-    const { error } = await supabase.from("chore_coverage_offers" as never).insert({
+    const { error } = await supabase.from("chore_coverage_offers").insert({
       household_id: parsed.data.householdId,
       occurrence_id: parsed.data.occurrenceId,
       offered_by_membership_id: ctx.membershipId,
       offered_to_membership_id: parsed.data.offeredToMembershipId ?? null,
       kind: parsed.data.kind,
       note: parsed.data.note ?? null,
-    } as never);
+    });
     if (error) {
       logServerError("create_coverage_offer", error, parsed.data);
       return { ok: false, error: "Unable to request coverage." };
@@ -237,12 +237,12 @@ export async function resolveCoverageOfferAction(
     const ctx = await assertActiveMembership(householdId);
     const supabase = await createClient();
     const { error } = await supabase
-      .from("chore_coverage_offers" as never)
+      .from("chore_coverage_offers")
       .update({
         status,
         resolved_by_membership_id: ctx.membershipId,
         resolved_at: new Date().toISOString(),
-      } as never)
+      })
       .eq("id", offerId)
       .eq("household_id", householdId)
       .eq("status", "pending");

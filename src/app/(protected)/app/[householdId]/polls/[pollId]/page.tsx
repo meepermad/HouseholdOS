@@ -16,32 +16,25 @@ export default async function PollDetailPage({
   await assertActiveMembership(householdId);
   const supabase = await createClient();
   const { data: poll } = await supabase
-    .from("household_polls" as never)
+    .from("household_polls")
     .select("id, question, status, allow_multiple, anonymous")
     .eq("household_id", householdId)
     .eq("id", pollId)
     .maybeSingle();
   if (!poll) notFound();
-  const p = poll as {
-    id: string;
-    question: string;
-    status: string;
-    allow_multiple: boolean;
-    anonymous: boolean;
-  };
 
   const { data: options } = await supabase
-    .from("household_poll_options" as never)
+    .from("household_poll_options")
     .select("id, label, sort_order")
     .eq("poll_id", pollId)
     .order("sort_order");
-  const opts = (options ?? []) as Array<{ id: string; label: string }>;
+  const opts = options ?? [];
 
   const { data: votes } = await supabase
-    .from("household_poll_votes" as never)
+    .from("household_poll_votes")
     .select("option_id")
     .eq("poll_id", pollId);
-  const voteRows = (votes ?? []) as Array<{ option_id: string }>;
+  const voteRows = votes ?? [];
   const tallies = Object.fromEntries(
     opts.map((o) => [o.id, voteRows.filter((v) => v.option_id === o.id).length]),
   );
@@ -49,7 +42,7 @@ export default async function PollDetailPage({
   return (
     <main className="space-y-4" data-testid="poll-detail">
       <h1 className="font-[family-name:var(--font-display)] text-2xl">
-        {p.question}
+        {poll.question}
       </h1>
       <p className="text-xs text-text-muted">
         Results are coordination inputs only — they do not change permissions or
@@ -70,7 +63,7 @@ export default async function PollDetailPage({
         ))}
       </ul>
 
-      {p.status === "open" ? (
+      {poll.status === "open" ? (
         <ActionForm
           action={votePollAction}
           className="space-y-3"
@@ -83,7 +76,7 @@ export default async function PollDetailPage({
             {opts.map((o) => (
               <label key={o.id} className="flex min-h-11 items-center gap-2 text-sm">
                 <input
-                  type={p.allow_multiple ? "checkbox" : "radio"}
+                  type={poll.allow_multiple ? "checkbox" : "radio"}
                   name="optionId"
                   value={o.id}
                 />

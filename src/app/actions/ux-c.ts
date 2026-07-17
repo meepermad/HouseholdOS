@@ -5,7 +5,6 @@ import { z } from "zod";
 import { assertActiveMembership } from "@/lib/household-context";
 import { createClient } from "@/lib/supabase/server";
 import { AppError, logServerError, toPublicErrorMessage } from "@/lib/errors";
-import { can } from "@/lib/permissions";
 
 const pollSchema = z.object({
   householdId: z.string().uuid(),
@@ -43,7 +42,7 @@ export async function createPollAction(
     const ctx = await assertActiveMembership(parsed.data.householdId);
     const supabase = await createClient();
     const { data: poll, error } = await supabase
-      .from("household_polls" as never)
+      .from("household_polls")
       .insert({
         household_id: parsed.data.householdId,
         created_by_membership_id: ctx.membershipId,
@@ -53,30 +52,27 @@ export async function createPollAction(
         deadline_at: parsed.data.deadlineAt
           ? new Date(parsed.data.deadlineAt).toISOString()
           : null,
-      } as never)
+      })
       .select("id")
       .maybeSingle();
     if (error || !poll) {
       logServerError("create_poll", error, parsed.data);
       return { ok: false, error: "Unable to create poll." };
     }
-    const pollId = (poll as { id: string }).id;
-    const { error: optError } = await supabase
-      .from("household_poll_options" as never)
-      .insert(
-        optionLabels.map((label, sort_order) => ({
-          poll_id: pollId,
-          household_id: parsed.data.householdId,
-          label,
-          sort_order,
-        })) as never,
-      );
+    const { error: optError } = await supabase.from("household_poll_options").insert(
+      optionLabels.map((label, sort_order) => ({
+        poll_id: poll.id,
+        household_id: parsed.data.householdId,
+        label,
+        sort_order,
+      })),
+    );
     if (optError) {
-      logServerError("create_poll_options", optError, { pollId });
+      logServerError("create_poll_options", optError, { pollId: poll.id });
       return { ok: false, error: "Poll created but options failed." };
     }
     revalidatePath(`/app/${parsed.data.householdId}/polls`);
-    return { ok: true, id: pollId };
+    return { ok: true, id: poll.id };
   } catch (error) {
     if (error instanceof AppError) return { ok: false, error: error.publicMessage };
     return { ok: false, error: toPublicErrorMessage(error) };
@@ -96,13 +92,13 @@ export async function votePollAction(
     }
     const ctx = await assertActiveMembership(householdId);
     const supabase = await createClient();
-    const { error } = await supabase.from("household_poll_votes" as never).insert(
+    const { error } = await supabase.from("household_poll_votes").insert(
       optionIds.map((option_id) => ({
         poll_id: pollId,
         option_id,
         household_id: householdId,
         membership_id: ctx.membershipId,
-      })) as never,
+      })),
     );
     if (error) {
       logServerError("vote_poll", error, { pollId });
@@ -148,13 +144,13 @@ export async function createUtilityAction(
     }
     await assertActiveMembership(parsed.data.householdId);
     const supabase = await createClient();
-    const { error } = await supabase.from("household_utilities" as never).insert({
+    const { error } = await supabase.from("household_utilities").insert({
       household_id: parsed.data.householdId,
       name: parsed.data.name,
       category: parsed.data.category,
       due_day_of_month: parsed.data.dueDayOfMonth ?? null,
       estimated_amount_cents: parsed.data.estimatedAmountCents ?? null,
-    } as never);
+    });
     if (error) {
       logServerError("create_utility", error, parsed.data);
       return { ok: false, error: "Unable to add utility." };
@@ -203,8 +199,8 @@ export async function upsertEmergencyCardAction(
       updated_at: new Date().toISOString(),
     };
     const { error } = await supabase
-      .from("household_emergency_cards" as never)
-      .upsert(row as never, { onConflict: "household_id" });
+      .from("household_emergency_cards")
+      .upsert(row, { onConflict: "household_id" });
     if (error) {
       logServerError("upsert_emergency_card", error, { householdId });
       return { ok: false, error: "Unable to save emergency card." };
@@ -216,6 +212,3 @@ export async function upsertEmergencyCardAction(
     return { ok: false, error: toPublicErrorMessage(error) };
   }
 }
-
-// Keep can import used for future capability gates
-void can;

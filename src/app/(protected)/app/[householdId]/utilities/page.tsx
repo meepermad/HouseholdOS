@@ -20,21 +20,13 @@ export default async function UtilitiesPage({
   const { householdId } = await params;
   await assertActiveMembership(householdId);
   const supabase = await createClient();
-  const { data } = await supabase
-    .from("household_utilities" as never)
+  const { data: utilities } = await supabase
+    .from("household_utilities")
     .select(
       "id, name, category, estimated_amount_cents, payment_status, due_day_of_month",
     )
     .eq("household_id", householdId)
     .order("name");
-  const utilities = (data ?? []) as Array<{
-    id: string;
-    name: string;
-    category: string;
-    estimated_amount_cents: number | null;
-    payment_status: string;
-    due_day_of_month: number | null;
-  }>;
 
   return (
     <main className="space-y-6" data-testid="utilities-page">
@@ -48,7 +40,7 @@ export default async function UtilitiesPage({
         </p>
       </header>
 
-      {utilities.length === 0 ? (
+      {(utilities ?? []).length === 0 ? (
         <EmptyState
           variant="section"
           title="No recurring bills yet"
@@ -56,7 +48,7 @@ export default async function UtilitiesPage({
         />
       ) : (
         <ul className="divide-y divide-border rounded-md border border-border bg-surface">
-          {utilities.map((u) => (
+          {(utilities ?? []).map((u) => (
             <li key={u.id} className="px-4 py-3 text-sm" data-testid="utility-card">
               <p className="font-medium">{u.name}</p>
               <p className="text-xs text-text-muted">

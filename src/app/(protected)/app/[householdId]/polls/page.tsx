@@ -14,18 +14,12 @@ export default async function PollsPage({
   const { householdId } = await params;
   await assertActiveMembership(householdId);
   const supabase = await createClient();
-  const { data } = await supabase
-    .from("household_polls" as never)
+  const { data: polls } = await supabase
+    .from("household_polls")
     .select("id, question, status, created_at, anonymous, allow_multiple")
     .eq("household_id", householdId)
     .order("created_at", { ascending: false })
     .limit(40);
-  const polls = (data ?? []) as Array<{
-    id: string;
-    question: string;
-    status: string;
-    anonymous: boolean;
-  }>;
 
   return (
     <main className="space-y-4" data-testid="polls-list">
@@ -40,7 +34,7 @@ export default async function PollsPage({
           New poll
         </Link>
       </div>
-      {polls.length === 0 ? (
+      {(polls ?? []).length === 0 ? (
         <EmptyState
           variant="section"
           title="No polls yet"
@@ -48,7 +42,7 @@ export default async function PollsPage({
         />
       ) : (
         <ul className="divide-y divide-border rounded-md border border-border bg-surface">
-          {polls.map((p) => (
+          {(polls ?? []).map((p) => (
             <li key={p.id}>
               <Link
                 href={`/app/${householdId}/polls/${p.id}`}
