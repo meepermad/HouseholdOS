@@ -212,8 +212,45 @@ async function executeMappedRow(
       });
       return !error;
     }
+    case "chores": {
+      const due = new Date();
+      due.setDate(due.getDate() + 1);
+      const { error } = await supabase.rpc("create_one_time_chore", {
+        p_household_id: householdId,
+        p_title: mapped.name,
+        p_category: "other",
+        p_due_at: due.toISOString(),
+        p_description: mapped.description || null,
+        p_visibility: "household",
+        p_show_on_calendar: true,
+      });
+      return !error;
+    }
+    case "calendar_events": {
+      if (!mapped.title || !mapped.starts_at) return false;
+      const startsAt = mapped.starts_at;
+      const endsAt =
+        mapped.ends_at ||
+        new Date(new Date(startsAt).getTime() + 60 * 60 * 1000).toISOString();
+      const { error } = await supabase.rpc("create_calendar_event", {
+        p_household_id: householdId,
+        p_title: mapped.title,
+        p_description: mapped.notes || null,
+        p_location: mapped.location || null,
+        p_category: "other",
+        p_visibility: "household",
+        p_all_day: false,
+        p_starts_at: startsAt,
+        p_ends_at: endsAt,
+        p_time_zone: "America/Chicago",
+        p_client_idempotency_key: `import-cal-${householdId}-${mapped.title}-${startsAt}`.slice(
+          0,
+          120,
+        ),
+      });
+      return !error;
+    }
     default:
-      // chores / calendar_events need richer RPC signatures — mark skipped
       return false;
   }
 }

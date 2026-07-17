@@ -194,6 +194,10 @@ export async function confirmReceiptAsExpenseAction(
       },
     );
     if (error) return { ok: false, error: error.message };
+    // Best-effort resource destinations after expense draft exists
+    await supabase.rpc("apply_receipt_line_destinations", {
+      p_receipt_id: receiptId,
+    });
     invalidate(householdId, receiptId);
     redirect(`/app/${householdId}/money/expenses/${expenseId}/edit`);
   } catch (e) {

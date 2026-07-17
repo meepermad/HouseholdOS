@@ -13,6 +13,7 @@ import { listActiveMemberOptions } from "@/lib/expenses/queries";
 import { can } from "@/lib/permissions";
 import { createClient } from "@/lib/supabase/server";
 import { CommentThread } from "@/components/comments/CommentThread";
+import { listRecordComments } from "@/lib/comments/queries";
 
 export const dynamic = "force-dynamic";
 
@@ -31,7 +32,7 @@ export default async function ExpenseDetailPage({
     redirect(`/app/${householdId}/money/expenses/${expenseId}/edit`);
   }
 
-  const [members, obligationsResult, auditsResult] = await Promise.all([
+  const [members, obligationsResult, auditsResult, comments] = await Promise.all([
     listActiveMemberOptions(householdId),
     supabase
       .from("reimbursement_obligations")
@@ -45,6 +46,12 @@ export default async function ExpenseDetailPage({
       .eq("entity_id", expenseId)
       .order("created_at", { ascending: false })
       .limit(20),
+    listRecordComments({
+      householdId,
+      parentType: "expense",
+      parentId: expenseId,
+      actorMembershipId: ctx.membershipId,
+    }),
   ]);
 
   const obligations = obligationsResult.data;
@@ -342,7 +349,7 @@ export default async function ExpenseDetailPage({
         householdId={householdId}
         parentType="expense"
         parentId={expenseId}
-        comments={[]}
+        comments={comments}
       />
     </main>
   );

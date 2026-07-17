@@ -1,6 +1,7 @@
 import { assertActiveMembership } from "@/lib/household-context";
 import { AppBackButton } from "@/components/app-back-button";
 import { ImportCsvPanel } from "@/components/import/ImportCsvPanel";
+import { RestoreArchivePanel } from "@/components/import/RestoreArchivePanel";
 import {
   getLaunchFeatureReadiness,
   launchFeatureUnavailableMessage,
@@ -35,11 +36,12 @@ export default async function ImportSettingsPage({
           Import data
         </h1>
         <p className="mt-1 text-sm text-text-secondary">
-          Review-first CSV import. Rows are validated and previewed before any
-          domain records are created. Opening balances are not supported yet.
+          Review-first CSV import and selective archive restore. Financial history,
+          auth, and secrets are never auto-imported.
         </p>
       </header>
       <ImportCsvPanel householdId={householdId} />
+      <RestoreArchivePanel householdId={householdId} />
     </main>
   );
 }

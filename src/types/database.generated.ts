@@ -2766,6 +2766,10 @@ export type Database = {
           confidence: number | null
           corrected_name: string | null
           created_at: string
+          destination_applied_at: string | null
+          destination_apply_error: string | null
+          destination_apply_status: string
+          destination_resource_id: string | null
           expense_item_id: string | null
           household_id: string
           id: string
@@ -2786,6 +2790,10 @@ export type Database = {
           confidence?: number | null
           corrected_name?: string | null
           created_at?: string
+          destination_applied_at?: string | null
+          destination_apply_error?: string | null
+          destination_apply_status?: string
+          destination_resource_id?: string | null
           expense_item_id?: string | null
           household_id: string
           id?: string
@@ -2806,6 +2814,10 @@ export type Database = {
           confidence?: number | null
           corrected_name?: string | null
           created_at?: string
+          destination_applied_at?: string | null
+          destination_apply_error?: string | null
+          destination_apply_status?: string
+          destination_resource_id?: string | null
           expense_item_id?: string | null
           household_id?: string
           id?: string
@@ -12606,6 +12618,10 @@ export type Database = {
         Args: { p_next_status: string; p_notes?: string; p_workflow_id: string }
         Returns: string
       }
+      apply_receipt_line_destinations: {
+        Args: { p_receipt_id: string }
+        Returns: undefined
+      }
       approve_chore_reassignment: {
         Args: { p_request_id: string; p_resolution_note?: string }
         Returns: string
@@ -14535,6 +14551,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      reverse_receipt_destination_applies: {
+        Args: { p_receipt_id: string }
+        Returns: undefined
       }
       reverse_reimbursement_waiver: {
         Args: { p_reason: string; p_waiver_id: string }
