@@ -4211,6 +4211,60 @@ export type Database = {
           },
         ]
       }
+      household_directory_contacts: {
+        Row: {
+          created_at: string
+          created_by_membership_id: string
+          email: string | null
+          household_id: string
+          id: string
+          name: string
+          notes: string | null
+          phone: string | null
+          role_label: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by_membership_id: string
+          email?: string | null
+          household_id: string
+          id?: string
+          name: string
+          notes?: string | null
+          phone?: string | null
+          role_label?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by_membership_id?: string
+          email?: string | null
+          household_id?: string
+          id?: string
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          role_label?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "household_directory_contacts_created_by_membership_id_fkey"
+            columns: ["created_by_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "household_directory_contacts_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       household_emergency_cards: {
         Row: {
           breaker_panel_location: string | null
@@ -4606,6 +4660,60 @@ export type Database = {
           },
         ]
       }
+      household_meeting_notes: {
+        Row: {
+          action_items: Json
+          agenda: string | null
+          created_at: string
+          created_by_membership_id: string
+          household_id: string
+          id: string
+          meeting_at: string
+          outcomes: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          action_items?: Json
+          agenda?: string | null
+          created_at?: string
+          created_by_membership_id: string
+          household_id: string
+          id?: string
+          meeting_at: string
+          outcomes?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          action_items?: Json
+          agenda?: string | null
+          created_at?: string
+          created_by_membership_id?: string
+          household_id?: string
+          id?: string
+          meeting_at?: string
+          outcomes?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "household_meeting_notes_created_by_membership_id_fkey"
+            columns: ["created_by_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "household_meeting_notes_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       household_membership_roles: {
         Row: {
           granted_at: string
@@ -4689,6 +4797,160 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      household_packages: {
+        Row: {
+          carrier: string | null
+          claimed_at: string | null
+          created_at: string
+          created_by_membership_id: string
+          household_id: string
+          id: string
+          location_note: string | null
+          photo_storage_path: string | null
+          recipient_membership_id: string | null
+          status: string
+          tracking_private: string | null
+          updated_at: string
+        }
+        Insert: {
+          carrier?: string | null
+          claimed_at?: string | null
+          created_at?: string
+          created_by_membership_id: string
+          household_id: string
+          id?: string
+          location_note?: string | null
+          photo_storage_path?: string | null
+          recipient_membership_id?: string | null
+          status?: string
+          tracking_private?: string | null
+          updated_at?: string
+        }
+        Update: {
+          carrier?: string | null
+          claimed_at?: string | null
+          created_at?: string
+          created_by_membership_id?: string
+          household_id?: string
+          id?: string
+          location_note?: string | null
+          photo_storage_path?: string | null
+          recipient_membership_id?: string | null
+          status?: string
+          tracking_private?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "household_packages_created_by_membership_id_fkey"
+            columns: ["created_by_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "household_packages_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "household_packages_recipient_membership_id_fkey"
+            columns: ["recipient_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      household_parking_assignments: {
+        Row: {
+          created_at: string
+          ends_on: string | null
+          household_id: string
+          id: string
+          membership_id: string
+          spot_id: string
+          starts_on: string
+        }
+        Insert: {
+          created_at?: string
+          ends_on?: string | null
+          household_id: string
+          id?: string
+          membership_id: string
+          spot_id: string
+          starts_on?: string
+        }
+        Update: {
+          created_at?: string
+          ends_on?: string | null
+          household_id?: string
+          id?: string
+          membership_id?: string
+          spot_id?: string
+          starts_on?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "household_parking_assignments_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "household_parking_assignments_membership_id_fkey"
+            columns: ["membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "household_parking_assignments_spot_id_household_id_fkey"
+            columns: ["spot_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "household_parking_spots"
+            referencedColumns: ["id", "household_id"]
+          },
+        ]
+      }
+      household_parking_spots: {
+        Row: {
+          active: boolean
+          created_at: string
+          household_id: string
+          id: string
+          label: string
+          notes: string | null
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          household_id: string
+          id?: string
+          label: string
+          notes?: string | null
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          household_id?: string
+          id?: string
+          label?: string
+          notes?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "household_parking_spots_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
             referencedColumns: ["id"]
           },
         ]
@@ -4843,6 +5105,35 @@ export type Database = {
             foreignKeyName: "household_polls_household_id_fkey"
             columns: ["household_id"]
             isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      household_retention_policies: {
+        Row: {
+          household_id: string
+          receipt_image_retention_days: number | null
+          soft_delete_preview_required: boolean
+          updated_at: string
+        }
+        Insert: {
+          household_id: string
+          receipt_image_retention_days?: number | null
+          soft_delete_preview_required?: boolean
+          updated_at?: string
+        }
+        Update: {
+          household_id?: string
+          receipt_image_retention_days?: number | null
+          soft_delete_preview_required?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "household_retention_policies_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: true
             referencedRelation: "households"
             referencedColumns: ["id"]
           },
@@ -5544,6 +5835,7 @@ export type Database = {
           lease_end: string | null
           lease_start: string | null
           name: string
+          parking_module_enabled: boolean
           property_nickname: string | null
           status: string
           timezone: string
@@ -5558,6 +5850,7 @@ export type Database = {
           lease_end?: string | null
           lease_start?: string | null
           name: string
+          parking_module_enabled?: boolean
           property_nickname?: string | null
           status?: string
           timezone?: string
@@ -5572,6 +5865,7 @@ export type Database = {
           lease_end?: string | null
           lease_start?: string | null
           name?: string
+          parking_module_enabled?: boolean
           property_nickname?: string | null
           status?: string
           timezone?: string
@@ -11278,6 +11572,69 @@ export type Database = {
             columns: ["notification_event_id"]
             isOneToOne: false
             referencedRelation: "notification_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shared_purchase_proposals: {
+        Row: {
+          created_at: string
+          created_by_membership_id: string
+          description: string | null
+          estimated_amount_cents: number | null
+          expense_id: string | null
+          household_id: string
+          id: string
+          ownership_model: string
+          poll_id: string | null
+          status: string
+          threshold_cents: number | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by_membership_id: string
+          description?: string | null
+          estimated_amount_cents?: number | null
+          expense_id?: string | null
+          household_id: string
+          id?: string
+          ownership_model?: string
+          poll_id?: string | null
+          status?: string
+          threshold_cents?: number | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by_membership_id?: string
+          description?: string | null
+          estimated_amount_cents?: number | null
+          expense_id?: string | null
+          household_id?: string
+          id?: string
+          ownership_model?: string
+          poll_id?: string | null
+          status?: string
+          threshold_cents?: number | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shared_purchase_proposals_created_by_membership_id_fkey"
+            columns: ["created_by_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shared_purchase_proposals_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
             referencedColumns: ["id"]
           },
         ]

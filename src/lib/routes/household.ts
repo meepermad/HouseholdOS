@@ -100,6 +100,9 @@ export const householdRoutes = {
     shopping: (householdId: string) => `${base(householdId)}/house/shopping`,
   },
 
+  ops: (householdId: string) => `${base(householdId)}/ops`,
+  products: (householdId: string) => `${base(householdId)}/products`,
+
   meals: {
     new: (householdId: string) => `${base(householdId)}/meals/new`,
   },

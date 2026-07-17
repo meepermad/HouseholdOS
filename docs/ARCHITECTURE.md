@@ -267,6 +267,9 @@ Extends Phase 4 without replacing working calendar models:
 | Receipt destinations | After confirm, `apply_receipt_line_destinations` applies pantry/supply/inventory/shopping actions (`proposed→applied|failed|skipped|reversed`); reverse is soft and does not delete stock |
 | Archive restore | Coordinator selective nonfinancial restore from export JSON into a household; financial/auth/secrets excluded |
 | Offline sync | IndexedDB snapshots + mutation outbox for allowlisted nonfinancial actions; money confirms/routes/export/restore stay online-only; `SYNC_WORKER_SECRET` gates `/api/internal/sync/process`; logout clears offline data |
+| Roommate ops | Shared purchases, meeting board, packages, directory, supply forecast, optional parking module, retention policy row |
+| Products | Browser one-shot barcode + manual digits; `ProductLookupAdapter` (fixture/manual); review required |
+| Calendar interop | Google PKCE + mock/live provider gate; Apple ICS subscribe/export/import only |
 | Export | Coordinator async JSON/CSV archive via `EXPORT_WORKER_SECRET` worker; excludes secrets, push endpoints, feed tokens; not a full database restore |
 | Document jobs | Receipt OCR claim/complete via `DOCUMENT_JOB_WORKER_SECRET` at `/api/internal/documents/process` |
 | Notifications worker | `/api/internal/notifications/dispatch` uses `NOTIFICATION_WORKER_SECRET` only |

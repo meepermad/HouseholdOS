@@ -129,6 +129,13 @@ export {
 } from "@/lib/notifications/digest";
 
 export {
+  groupNotifications as groupRelatedNotifications,
+  supersedeNotificationIds,
+  type GroupableNotification,
+  type NotificationGroup,
+} from "@/lib/notifications/grouping";
+
+export {
   buildScheduleIdempotencyKey,
   isScheduleCancelled,
   type ScheduleRequestInput,
