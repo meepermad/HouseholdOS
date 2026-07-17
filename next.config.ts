@@ -17,6 +17,20 @@ const withPWA = withPWAInit({
             url.pathname.startsWith("/join")),
         handler: "NetworkOnly",
       },
+      {
+        // Cache OCR language/worker assets; never cache private receipt images.
+        urlPattern: ({ url }: { url: URL }) =>
+          url.pathname.startsWith("/ocr/") ||
+          url.pathname.startsWith("/pdfjs/"),
+        handler: "CacheFirst",
+        options: {
+          cacheName: "householdos-ocr-assets",
+          expiration: {
+            maxEntries: 32,
+            maxAgeSeconds: 60 * 60 * 24 * 30,
+          },
+        },
+      },
     ],
   },
 });

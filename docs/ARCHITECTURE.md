@@ -257,7 +257,7 @@ Extends Phase 4 without replacing working calendar models:
 | Concern | Approach |
 |---|---|
 | Setup wizard | Optional `household_setup_progress`; skippable steps; Home reminder until dismissed/completed; starter templates call existing RPCs |
-| Receipts | Private `expense-receipts` bucket; review-first OCR via `ReceiptExtractionAdapter` (OpenAI / fixture / disabled); draft expense only after confirm; integer cents |
+| Receipts | Private `expense-receipts` bucket; review-first OCR via `ReceiptExtractionAdapter` (`local_tesseract` / `openai` / `fixture` / `disabled`); default on-device Tesseract.js + deterministic parser; draft expense only after confirm; integer cents; household-scoped merchant/item aliases |
 | Receipt authorization | `can_view_expense_receipt` / `can_edit_expense_receipt` — uploader, financial coordinator, or linked-expense creator/payer/allocation participant. Unrelated active members cannot see drafts, OCR payloads, line classifications, or signed URLs |
 | Duplicates | Advisory file/content/merchant-date-total signals — never silent merge |
 | Resource links | Optional pantry/supply/inventory/shopping suggestions after review; void/amend does not delete physical resources |

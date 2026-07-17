@@ -46,6 +46,23 @@ export async function processReceiptExtractionJobs(options?: {
       .update({ status: "extracting" })
       .eq("id", receipt.id);
 
+    // Local OCR runs in the browser — never download/send to a cloud provider.
+    if (adapter.name === "local_tesseract") {
+      await supabase.rpc("complete_receipt_extraction", {
+        p_receipt_id: receipt.id,
+        p_adapter_name: adapter.name,
+        p_confidence: 0,
+        p_proposed: {},
+        p_content_hash: "",
+        p_line_items: [],
+        p_configured: false,
+        p_error:
+          "Local OCR is device-side. Enter manually or submit on-device extraction.",
+      });
+      manual += 1;
+      continue;
+    }
+
     const { data: file } = await supabase.storage
       .from("expense-receipts")
       .download(receipt.storage_path);

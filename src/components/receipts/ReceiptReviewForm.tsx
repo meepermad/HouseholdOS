@@ -104,6 +104,12 @@ export function ReceiptReviewForm({
   }
 
   function confirmExpense() {
+    if (!reconciliation.balanced) {
+      setMessage(
+        "Resolve the reconciliation difference or add an adjustment before creating the draft expense.",
+      );
+      return;
+    }
     startTransition(async () => {
       await saveReview();
       const fd = new FormData();
@@ -160,10 +166,51 @@ export function ReceiptReviewForm({
       </div>
 
       {!reconciliation.balanced ? (
-        <p className="text-sm text-amber-700 dark:text-amber-300">
-          {reconciliation.warnings.join(" ") || "Totals may need correction."}
+        <div
+          className="rounded-md border border-border p-3 text-sm"
+          data-testid="receipt-reconciliation"
+        >
+          <p className="text-amber-700 dark:text-amber-300">
+            {reconciliation.warnings.join(" ") || "Totals may need correction."}
+          </p>
+        </div>
+      ) : (
+        <p className="text-sm text-text-secondary" data-testid="receipt-reconciliation">
+          Line items reconcile with the declared total.
         </p>
-      ) : null}
+      )}
+
+      <div className="flex flex-wrap gap-2" data-testid="receipt-bulk-actions">
+        <button
+          type="button"
+          className="min-h-11 rounded-md border border-border px-3 text-sm"
+          onClick={() =>
+            setLines((prev) =>
+              prev.map((l) => ({
+                ...l,
+                classification: "shared_household" as LineItemClassification,
+              })),
+            )
+          }
+        >
+          Mark all shared
+        </button>
+        <button
+          type="button"
+          className="min-h-11 rounded-md border border-border px-3 text-sm"
+          onClick={() =>
+            setLines((prev) =>
+              prev.map((l) =>
+                l.reviewStatus === "pending" && (l.totalPriceCents ?? 0) > 0
+                  ? { ...l, reviewStatus: "accepted" }
+                  : l,
+              ),
+            )
+          }
+        >
+          Accept high-confidence items
+        </button>
+      </div>
 
       <ul className="space-y-4" data-testid="receipt-line-items">
         {lines.map((line, index) => {

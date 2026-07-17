@@ -49,3 +49,9 @@ supabase/.temp/
 next-env.d.ts
 
 .vercel
+
+# Self-hosted OCR/PDF runtime assets (synced by npm run sync:ocr-assets)
+/public/ocr/**
+!/public/ocr/README.md
+/public/pdfjs/**
+!/public/pdfjs/README.md

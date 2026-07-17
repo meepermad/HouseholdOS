@@ -125,14 +125,19 @@ export async function uploadReceiptAction(
 
     void ctx;
     invalidate(householdId, String(id));
+    const redirectTo = `/app/${householdId}/money/receipts/${id}`;
     if (dup.outcome !== "none") {
       return {
         ok: true,
         message: `Receipt uploaded. Possible duplicate detected (${dup.outcome}).`,
-        data: { redirectTo: `/app/${householdId}/money/receipts/${id}` },
+        data: { redirectTo, receiptId: String(id), duplicateOutcome: dup.outcome },
       };
     }
-    redirect(`/app/${householdId}/money/receipts/${id}`);
+    return {
+      ok: true,
+      message: "Receipt uploaded.",
+      data: { redirectTo, receiptId: String(id) },
+    };
   } catch (e) {
     if (e && typeof e === "object" && "digest" in e) throw e;
     return { ok: false, error: toPublicErrorMessage(e) };
@@ -202,6 +207,126 @@ export async function confirmReceiptAsExpenseAction(
     redirect(`/app/${householdId}/money/expenses/${expenseId}/edit`);
   } catch (e) {
     if (e && typeof e === "object" && "digest" in e) throw e;
+    return { ok: false, error: toPublicErrorMessage(e) };
+  }
+}
+
+/** Submit on-device OCR proposal after upload (local_tesseract). */
+export async function submitLocalReceiptExtractionAction(
+  _prev: ActionResult | null,
+  formData: FormData,
+): Promise<ActionResult> {
+  try {
+    const householdId = String(formData.get("householdId") ?? "");
+    const receiptId = String(formData.get("receiptId") ?? "");
+    const proposedJson = String(formData.get("proposedJson") ?? "{}");
+    const lineItemsJson = String(formData.get("lineItemsJson") ?? "[]");
+    const contentHash = String(formData.get("contentHash") ?? "");
+    const confidenceRaw = String(formData.get("confidence") ?? "");
+    const ocrFullText = String(formData.get("ocrFullText") ?? "") || null;
+    const ocrLinesJson = String(formData.get("ocrLinesJson") ?? "") || null;
+    const processingMetaJson = String(formData.get("processingMetaJson") ?? "") || null;
+    const adapterName =
+      String(formData.get("adapterName") ?? "local_tesseract").trim() ||
+      "local_tesseract";
+
+    let proposed: Record<string, unknown> = {};
+    let lineItems: unknown[] = [];
+    let ocrLines: unknown = null;
+    let processingMeta: unknown = null;
+    try {
+      proposed = JSON.parse(proposedJson) as Record<string, unknown>;
+    } catch {
+      return { ok: false, error: "Invalid extraction payload." };
+    }
+    try {
+      lineItems = JSON.parse(lineItemsJson) as unknown[];
+    } catch {
+      return { ok: false, error: "Invalid line items payload." };
+    }
+    if (ocrLinesJson) {
+      try {
+        ocrLines = JSON.parse(ocrLinesJson);
+      } catch {
+        ocrLines = null;
+      }
+    }
+    if (processingMetaJson) {
+      try {
+        processingMeta = JSON.parse(processingMetaJson);
+      } catch {
+        processingMeta = null;
+      }
+    }
+
+    const { supabase } = await db(householdId);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase as any).rpc("submit_client_receipt_extraction", {
+      p_receipt_id: receiptId,
+      p_adapter_name: adapterName,
+      p_confidence: confidenceRaw ? Number(confidenceRaw) : 0,
+      p_proposed: proposed,
+      p_content_hash: contentHash,
+      p_line_items: lineItems,
+      p_ocr_full_text: ocrFullText ?? undefined,
+      p_ocr_lines_json: ocrLines ?? undefined,
+      p_processing_meta: processingMeta ?? undefined,
+    });
+    if (error) return { ok: false, error: error.message };
+    invalidate(householdId, receiptId);
+    return { ok: true, message: "On-device extraction saved for review." };
+  } catch (e) {
+    return { ok: false, error: toPublicErrorMessage(e) };
+  }
+}
+
+export async function upsertReceiptAliasAction(
+  _prev: ActionResult | null,
+  formData: FormData,
+): Promise<ActionResult> {
+  try {
+    const householdId = String(formData.get("householdId") ?? "");
+    const kind = String(formData.get("kind") ?? "").trim();
+    const sourceText = String(formData.get("sourceText") ?? "").trim();
+    const targetText = String(formData.get("targetText") ?? "").trim();
+    const merchantScope =
+      String(formData.get("merchantScope") ?? "").trim() || null;
+    if (!kind || !sourceText || !targetText) {
+      return { ok: false, error: "Alias requires source and target text." };
+    }
+    const { supabase } = await db(householdId);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase as any).rpc("upsert_receipt_alias", {
+      p_household_id: householdId,
+      p_kind: kind,
+      p_source_text: sourceText,
+      p_target_text: targetText,
+      p_merchant_scope: merchantScope ?? undefined,
+    });
+    if (error) return { ok: false, error: error.message };
+    invalidate(householdId);
+    return { ok: true, message: "Alias saved for this household." };
+  } catch (e) {
+    return { ok: false, error: toPublicErrorMessage(e) };
+  }
+}
+
+export async function deleteReceiptAliasAction(
+  _prev: ActionResult | null,
+  formData: FormData,
+): Promise<ActionResult> {
+  try {
+    const householdId = String(formData.get("householdId") ?? "");
+    const aliasId = String(formData.get("aliasId") ?? "");
+    const { supabase } = await db(householdId);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase as any).rpc("delete_receipt_alias", {
+      p_alias_id: aliasId,
+    });
+    if (error) return { ok: false, error: error.message };
+    invalidate(householdId);
+    return { ok: true, message: "Alias deleted." };
+  } catch (e) {
     return { ok: false, error: toPublicErrorMessage(e) };
   }
 }

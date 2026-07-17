@@ -10,8 +10,8 @@ export function projectOcrConfidence(raw: number | null | undefined): number | n
 }
 
 export function confidenceLabel(confidence: number | null): string {
-  if (confidence === null) return "Unknown";
-  if (confidence >= 0.85) return "High";
-  if (confidence >= 0.6) return "Medium";
-  return "Low";
+  if (confidence === null) return "Could not determine";
+  if (confidence >= 0.85) return "Looks clear";
+  if (confidence >= 0.55) return "Please check";
+  return "Could not determine";
 }

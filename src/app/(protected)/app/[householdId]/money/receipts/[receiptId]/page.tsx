@@ -104,7 +104,7 @@ export default async function ReceiptDetailPage({
           Review receipt
         </h1>
         <p className="mt-1 text-sm text-text-secondary">
-          Status: {receipt.status}. {ocr.message}
+          Status: {receipt.status}. {ocr.privacyLabel ?? ocr.message}
         </p>
       </header>
       {(receipt.status === "uploaded" || receipt.status === "extracting") && (

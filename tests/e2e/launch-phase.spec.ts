@@ -110,6 +110,10 @@ test.describe("Launch phase navigation and surfaces", () => {
     await page.goto(`/app/${householdId}/money/receipts/new`);
     await expect(page.getByTestId("receipt-uploader")).toBeVisible();
     await expect(page.getByTestId("receipt-ocr-status")).toBeVisible();
+    await expect(page.getByTestId("receipt-provider-disclosure")).toBeVisible();
+    await expect(page.getByTestId("provider-local")).toBeVisible();
+    await expect(page.getByTestId("provider-manual")).toBeVisible();
+    await expect(page.getByTestId("receipt-file-input")).toBeVisible();
 
     await page.goto(`/app/${householdId}/setup`);
     await expect(page.getByTestId("setup-wizard")).toBeVisible();

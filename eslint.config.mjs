@@ -13,6 +13,9 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
     "src/types/database.generated.ts",
+    // Generated self-hosted OCR/PDF runtime assets
+    "public/ocr/**",
+    "public/pdfjs/**",
   ]),
 ]);
 

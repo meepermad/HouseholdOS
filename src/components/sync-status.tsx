@@ -33,13 +33,18 @@ export function SyncStatusChip({ householdId }: Props) {
     update();
     window.addEventListener("online", update);
     window.addEventListener("offline", update);
-    void refresh();
+    const boot = window.setTimeout(() => {
+      void refresh();
+    }, 0);
     const id = window.setInterval(() => void refresh(), 15000);
     return () => {
       window.removeEventListener("online", update);
       window.removeEventListener("offline", update);
+      window.clearTimeout(boot);
       window.clearInterval(id);
     };
+    // refresh reads householdId via closure; re-bind on household change
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [householdId]);
 
   async function onSync() {

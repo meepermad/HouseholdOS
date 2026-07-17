@@ -108,7 +108,7 @@ describe("ocr confidence", () => {
   it("projects percent and fraction values", () => {
     expect(projectOcrConfidence(0.9)).toBe(0.9);
     expect(projectOcrConfidence(90)).toBe(0.9);
-    expect(confidenceLabel(0.9)).toBe("High");
+    expect(confidenceLabel(0.9)).toBe("Looks clear");
   });
 });
 

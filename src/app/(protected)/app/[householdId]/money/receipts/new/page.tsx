@@ -22,14 +22,16 @@ export default async function NewReceiptPage({
           Scan receipt
         </h1>
         <p className="mt-1 text-sm text-text-secondary">
-          Upload a photo or PDF. Review and correct details before any expense
-          is created.
+          Capture, improve, and read the receipt on this device. Review and
+          correct every field before any expense is created.
         </p>
       </header>
       <ReceiptUploader
         householdId={householdId}
         ocrConfigured={ocr.configured}
         ocrMessage={ocr.message}
+        privacyLabel={ocr.privacyLabel}
+        cloudConfigured={ocr.cloudAvailable}
       />
     </main>
   );
