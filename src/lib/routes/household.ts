@@ -98,6 +98,18 @@ export const householdRoutes = {
   house: {
     index: (householdId: string) => `${base(householdId)}/house`,
     shopping: (householdId: string) => `${base(householdId)}/house/shopping`,
+    shoppingList: (householdId: string, listId: string) =>
+      `${base(householdId)}/house/shopping/${assertRouteSegment(listId, "list id")}`,
+    shoppingTrip: (householdId: string, listId: string) =>
+      `${base(householdId)}/house/shopping/${assertRouteSegment(listId, "list id")}/trip`,
+    shoppingRecommendations: (householdId: string, listId?: string) => {
+      const path = `${base(householdId)}/house/shopping/recommendations`;
+      return listId
+        ? `${path}?listId=${encodeURIComponent(listId)}`
+        : path;
+    },
+    recipesRediscover: (householdId: string) =>
+      `${base(householdId)}/house/recipes/rediscover`,
   },
 
   ops: (householdId: string) => `${base(householdId)}/ops`,
@@ -140,6 +152,8 @@ export const householdRoutes = {
     profile: (householdId: string) => `${base(householdId)}/settings/profile`,
     calendar: (householdId: string) =>
       `${base(householdId)}/settings/calendar`,
+    shopping: (householdId: string) =>
+      `${base(householdId)}/settings/shopping`,
     import: (householdId: string) => `${base(householdId)}/settings/import`,
     export: (householdId: string) => `${base(householdId)}/settings/export`,
   },

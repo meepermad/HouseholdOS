@@ -32,7 +32,13 @@ export type SharedMeetingPacket = {
   maintenance: { open: number; highSeverity: number };
   utilities: { dueSoon: number; missingActual: number };
   calendar: { upcomingEvents: number; guestNotices: number; busyOnlyAbsences: number };
-  food: { openShopping: number; supplyWarnings: string[] };
+  food: {
+    openShopping: number;
+    supplyWarnings: string[];
+    repeatedlyLowSupplies: number;
+    incompleteTripItems: number;
+    mealsMissingIngredients: number;
+  };
   purchases: { openProposals: number };
   governance: { pendingApprovals: number };
   packagesParking: { unclaimedPackages: number };
@@ -107,6 +113,8 @@ export async function buildSharedMeetingPacket(params: {
     routed,
     priorActions,
     packages,
+    stillNeededTrip,
+    missingMealIngredients,
   ] = await Promise.all([
     supabase
       .from("expenses")
@@ -215,6 +223,18 @@ export async function buildSharedMeetingPacket(params: {
       .select("id", { count: "exact", head: true })
       .eq("household_id", householdId)
       .eq("status", "arrived"),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (supabase as any)
+      .from("shopping_trip_events")
+      .select("id", { count: "exact", head: true })
+      .eq("household_id", householdId)
+      .eq("event_type", "still_needed")
+      .gte("created_at", `${period.start}T00:00:00Z`),
+    supabase
+      .from("meal_plan_ingredients")
+      .select("id", { count: "exact", head: true })
+      .eq("household_id", householdId)
+      .eq("checklist_status", "needed"),
   ]);
 
   const monthKey = period.start.slice(0, 7);
@@ -271,6 +291,18 @@ export async function buildSharedMeetingPacket(params: {
   const supplyWarnings = forecast.map(
     (f) => `${f.name} is at or below its reorder threshold.`,
   );
+  const incompleteTripItems = stillNeededTrip.count ?? 0;
+  const mealsMissingIngredients = missingMealIngredients.count ?? 0;
+  if (incompleteTripItems >= 3) {
+    warnings.push(
+      `${incompleteTripItems} shopping items were left incomplete across recent trips.`,
+    );
+  }
+  if (mealsMissingIngredients >= 2) {
+    warnings.push(
+      `${mealsMissingIngredients} planned meal ingredients are still marked needed.`,
+    );
+  }
 
   const today = new Date().toISOString().slice(0, 10);
   const suggestedAgenda = suggestAgendaItems(
@@ -363,6 +395,9 @@ export async function buildSharedMeetingPacket(params: {
     food: {
       openShopping: shopping.count ?? 0,
       supplyWarnings,
+      repeatedlyLowSupplies: supplyWarnings.length,
+      incompleteTripItems,
+      mealsMissingIngredients,
     },
     purchases: { openProposals: (purchases.data ?? []).length },
     governance: { pendingApprovals: 0 },

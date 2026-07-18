@@ -103,6 +103,22 @@ Lifecycle entity `household_meetings` (draft → preparing → ready_for_review 
 - Mutations go through security-definer RPCs (`ensure_monthly_meeting`, `lock_meeting_packet`, `start_meeting`, …) with `auth.uid()` actor checks.
 - Shared packets stay household-safe; pairwise balances stay in personal addenda unless household policy allows sharing.
 - Surface: `/app/[householdId]/meetings` under More / Ops (not a bottom-nav tab). In-app notifications and PWA push only.
+- Food section includes compact shopping patterns (repeatedly low supplies, incomplete trip items, meals still missing ingredients) — not every shopping line.
+
+### Shopping Intelligence and Forgotten Favorites
+
+Deterministic, review-first shopping recommendations and occasional recipe rediscovery. No GPS, retailer checkout, or automatic purchasing.
+
+| Concern | Approach |
+|---|---|
+| Candidate gather | Versioned TypeScript engine (`src/lib/shopping/recommendations/`) from meals, open requests, supplies/forecasts, guest/meal-prep needs, trip `still_needed`, and household-visible sources only |
+| Workflow | Gather → dedupe → quantity suggest → explain → user review → add via existing `create_shopping_item` |
+| Persistence | `shopping_recommendation_runs` / `_items` / `_sources` / `_decisions` + household prefs; trip sessions/events for in-store mode |
+| Rediscovery | Extends recipe preference signals (`src/lib/shopping/rediscovery/`); cadence-bounded; attendee-scoped without exposing private preference authors |
+| Mutations | Security-definer RPCs (`persist_shopping_recommendation_run`, `add_recommended_item_to_list`, `start_shopping_trip`, `decide_recipe_rediscovery`, …); actor from `auth.uid()` |
+| Surfaces | `/house/shopping/recommendations`, `/house/shopping/[listId]/trip`, `/house/recipes/rediscover`, `/settings/shopping`; Home attention cards; notification catalog under `shopping` category |
+
+Personal pantry and creator-only recipes must not appear in shared recommendation explanations or counts.
 
 ## Notifications (outbox + delivery)
 

@@ -10,6 +10,7 @@ import {
 import { listMaintenanceRequests } from "@/lib/maintenance/queries";
 import { QUICK_ADD_ACTIONS } from "@/lib/nav-items";
 import { householdRoutes } from "@/lib/routes/household";
+import { createClient } from "@/lib/supabase/server";
 
 export type HomeAttentionItem = {
   id: string;
@@ -311,6 +312,44 @@ export async function loadHomeActionCenter(options: {
     }
   } catch {
     /* degrade when meetings schema not yet applied */
+  }
+
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const supabase = (await createClient()) as any;
+    const { count: sugCount } = await supabase
+      .from("shopping_recommendation_items")
+      .select("id", { count: "exact", head: true })
+      .eq("household_id", householdId)
+      .eq("status", "suggested");
+    if ((sugCount ?? 0) >= 3) {
+      attention.push({
+        id: "shopping-recommendations",
+        title: "Shopping suggestions ready",
+        detail: `${sugCount} items may be needed for the next trip.`,
+        urgency: "normal",
+        href: householdRoutes.house.shoppingRecommendations(householdId),
+      });
+    }
+    const { data: favorite } = await supabase
+      .from("recipe_rediscovery_suggestions")
+      .select("id,explanation")
+      .eq("household_id", householdId)
+      .eq("status", "suggested")
+      .order("score", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (favorite?.id) {
+      attention.push({
+        id: `rediscovery-${favorite.id}`,
+        title: "Forgotten favorite",
+        detail: String(favorite.explanation).slice(0, 140),
+        urgency: "normal",
+        href: householdRoutes.house.recipesRediscover(householdId),
+      });
+    }
+  } catch {
+    /* degrade when shopping intelligence schema not applied */
   }
 
   return {

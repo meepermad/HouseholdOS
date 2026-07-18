@@ -11020,6 +11020,206 @@ export type Database = {
           },
         ]
       }
+      recipe_rediscovery_decisions: {
+        Row: {
+          actor_membership_id: string
+          client_idempotency_key: string | null
+          created_at: string
+          decision: string
+          household_id: string
+          id: string
+          recipe_id: string
+          resulting_meal_plan_id: string | null
+          resulting_shopping_item_ids: string[]
+          suggestion_id: string
+        }
+        Insert: {
+          actor_membership_id: string
+          client_idempotency_key?: string | null
+          created_at?: string
+          decision: string
+          household_id: string
+          id?: string
+          recipe_id: string
+          resulting_meal_plan_id?: string | null
+          resulting_shopping_item_ids?: string[]
+          suggestion_id: string
+        }
+        Update: {
+          actor_membership_id?: string
+          client_idempotency_key?: string | null
+          created_at?: string
+          decision?: string
+          household_id?: string
+          id?: string
+          recipe_id?: string
+          resulting_meal_plan_id?: string | null
+          resulting_shopping_item_ids?: string[]
+          suggestion_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recipe_rediscovery_decisions_actor_membership_id_fkey"
+            columns: ["actor_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recipe_rediscovery_decisions_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recipe_rediscovery_decisions_suggestion_id_fkey"
+            columns: ["suggestion_id"]
+            isOneToOne: false
+            referencedRelation: "recipe_rediscovery_suggestions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recipe_rediscovery_preferences: {
+        Row: {
+          allow_push_reminders: boolean
+          cadence: string
+          enabled: boolean
+          household_id: string
+          include_guest_friendly: boolean
+          include_meal_prep_favorites: boolean
+          max_suggestions_per_trip: number
+          min_days_since_prepared: number
+          updated_at: string
+          updated_by_membership_id: string | null
+        }
+        Insert: {
+          allow_push_reminders?: boolean
+          cadence?: string
+          enabled?: boolean
+          household_id: string
+          include_guest_friendly?: boolean
+          include_meal_prep_favorites?: boolean
+          max_suggestions_per_trip?: number
+          min_days_since_prepared?: number
+          updated_at?: string
+          updated_by_membership_id?: string | null
+        }
+        Update: {
+          allow_push_reminders?: boolean
+          cadence?: string
+          enabled?: boolean
+          household_id?: string
+          include_guest_friendly?: boolean
+          include_meal_prep_favorites?: boolean
+          max_suggestions_per_trip?: number
+          min_days_since_prepared?: number
+          updated_at?: string
+          updated_by_membership_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recipe_rediscovery_preferences_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: true
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recipe_rediscovery_preferences_updated_by_membership_id_fkey"
+            columns: ["updated_by_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recipe_rediscovery_suggestions: {
+        Row: {
+          client_idempotency_key: string | null
+          expires_at: string | null
+          explanation: string
+          household_id: string
+          id: string
+          list_id: string | null
+          missing_summary: Json
+          pantry_have: number
+          pantry_total: number
+          preference_fit: string
+          reason_codes: string[]
+          recipe_id: string
+          score: number
+          scoring_version: string
+          shown_at: string
+          status: string
+          trip_id: string | null
+          viewer_membership_id: string
+        }
+        Insert: {
+          client_idempotency_key?: string | null
+          expires_at?: string | null
+          explanation: string
+          household_id: string
+          id?: string
+          list_id?: string | null
+          missing_summary?: Json
+          pantry_have?: number
+          pantry_total?: number
+          preference_fit?: string
+          reason_codes?: string[]
+          recipe_id: string
+          score?: number
+          scoring_version?: string
+          shown_at?: string
+          status?: string
+          trip_id?: string | null
+          viewer_membership_id: string
+        }
+        Update: {
+          client_idempotency_key?: string | null
+          expires_at?: string | null
+          explanation?: string
+          household_id?: string
+          id?: string
+          list_id?: string | null
+          missing_summary?: Json
+          pantry_have?: number
+          pantry_total?: number
+          preference_fit?: string
+          reason_codes?: string[]
+          recipe_id?: string
+          score?: number
+          scoring_version?: string
+          shown_at?: string
+          status?: string
+          trip_id?: string | null
+          viewer_membership_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recipe_rediscovery_suggestions_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recipe_rediscovery_suggestions_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "shopping_trip_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recipe_rediscovery_suggestions_viewer_membership_id_fkey"
+            columns: ["viewer_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       recipe_steps: {
         Row: {
           created_at: string
@@ -11071,6 +11271,54 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "recipes"
             referencedColumns: ["id", "household_id"]
+          },
+        ]
+      }
+      recipe_suggestion_snoozes: {
+        Row: {
+          created_at: string
+          household_id: string
+          id: string
+          membership_id: string | null
+          reason: string
+          recipe_id: string
+          scope: string
+          snooze_until: string | null
+        }
+        Insert: {
+          created_at?: string
+          household_id: string
+          id?: string
+          membership_id?: string | null
+          reason?: string
+          recipe_id: string
+          scope?: string
+          snooze_until?: string | null
+        }
+        Update: {
+          created_at?: string
+          household_id?: string
+          id?: string
+          membership_id?: string | null
+          reason?: string
+          recipe_id?: string
+          scope?: string
+          snooze_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recipe_suggestion_snoozes_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recipe_suggestion_snoozes_membership_id_fkey"
+            columns: ["membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -12767,6 +13015,488 @@ export type Database = {
           },
         ]
       }
+      shopping_recommendation_decisions: {
+        Row: {
+          actor_membership_id: string
+          client_idempotency_key: string | null
+          created_at: string
+          decision: string
+          household_id: string
+          id: string
+          item_id: string
+          note: string | null
+          resulting_shopping_item_id: string | null
+          snooze_until: string | null
+        }
+        Insert: {
+          actor_membership_id: string
+          client_idempotency_key?: string | null
+          created_at?: string
+          decision: string
+          household_id: string
+          id?: string
+          item_id: string
+          note?: string | null
+          resulting_shopping_item_id?: string | null
+          snooze_until?: string | null
+        }
+        Update: {
+          actor_membership_id?: string
+          client_idempotency_key?: string | null
+          created_at?: string
+          decision?: string
+          household_id?: string
+          id?: string
+          item_id?: string
+          note?: string | null
+          resulting_shopping_item_id?: string | null
+          snooze_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shopping_recommendation_decisions_actor_membership_id_fkey"
+            columns: ["actor_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shopping_recommendation_decisions_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shopping_recommendation_decisions_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "shopping_recommendation_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shopping_recommendation_items: {
+        Row: {
+          confidence: string
+          created_at: string
+          existing_list_item_id: string | null
+          explanation: string
+          household_id: string
+          id: string
+          list_id: string | null
+          name: string
+          normalized_key: string
+          owner_membership_id: string | null
+          priority_band: string
+          quantity_breakdown: Json
+          reason_codes: string[]
+          related_inventory_id: string | null
+          related_pantry_id: string | null
+          related_product_id: string | null
+          related_supply_id: string | null
+          run_id: string
+          sort_order: number
+          status: string
+          suggested_quantity: number | null
+          suggested_unit: string
+          unit_mismatch: boolean
+          updated_at: string
+          visibility: string
+        }
+        Insert: {
+          confidence?: string
+          created_at?: string
+          existing_list_item_id?: string | null
+          explanation: string
+          household_id: string
+          id?: string
+          list_id?: string | null
+          name: string
+          normalized_key: string
+          owner_membership_id?: string | null
+          priority_band: string
+          quantity_breakdown?: Json
+          reason_codes?: string[]
+          related_inventory_id?: string | null
+          related_pantry_id?: string | null
+          related_product_id?: string | null
+          related_supply_id?: string | null
+          run_id: string
+          sort_order?: number
+          status?: string
+          suggested_quantity?: number | null
+          suggested_unit?: string
+          unit_mismatch?: boolean
+          updated_at?: string
+          visibility?: string
+        }
+        Update: {
+          confidence?: string
+          created_at?: string
+          existing_list_item_id?: string | null
+          explanation?: string
+          household_id?: string
+          id?: string
+          list_id?: string | null
+          name?: string
+          normalized_key?: string
+          owner_membership_id?: string | null
+          priority_band?: string
+          quantity_breakdown?: Json
+          reason_codes?: string[]
+          related_inventory_id?: string | null
+          related_pantry_id?: string | null
+          related_product_id?: string | null
+          related_supply_id?: string | null
+          run_id?: string
+          sort_order?: number
+          status?: string
+          suggested_quantity?: number | null
+          suggested_unit?: string
+          unit_mismatch?: boolean
+          updated_at?: string
+          visibility?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shopping_recommendation_items_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shopping_recommendation_items_list_id_household_id_fkey"
+            columns: ["list_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "shopping_lists"
+            referencedColumns: ["id", "household_id"]
+          },
+          {
+            foreignKeyName: "shopping_recommendation_items_owner_membership_id_fkey"
+            columns: ["owner_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shopping_recommendation_items_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "shopping_recommendation_runs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shopping_recommendation_items_run_id_household_id_fkey"
+            columns: ["run_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "shopping_recommendation_runs"
+            referencedColumns: ["id", "household_id"]
+          },
+        ]
+      }
+      shopping_recommendation_preferences: {
+        Row: {
+          default_list_id: string | null
+          enabled: boolean
+          forecast_confidence_threshold: string
+          household_id: string
+          include_guest_needs: boolean
+          include_proposed_meal_ingredients: boolean
+          include_recurring_staples: boolean
+          include_supply_forecasts: boolean
+          recommendation_horizon_days: number
+          show_personal_separately: boolean
+          updated_at: string
+          updated_by_membership_id: string | null
+        }
+        Insert: {
+          default_list_id?: string | null
+          enabled?: boolean
+          forecast_confidence_threshold?: string
+          household_id: string
+          include_guest_needs?: boolean
+          include_proposed_meal_ingredients?: boolean
+          include_recurring_staples?: boolean
+          include_supply_forecasts?: boolean
+          recommendation_horizon_days?: number
+          show_personal_separately?: boolean
+          updated_at?: string
+          updated_by_membership_id?: string | null
+        }
+        Update: {
+          default_list_id?: string | null
+          enabled?: boolean
+          forecast_confidence_threshold?: string
+          household_id?: string
+          include_guest_needs?: boolean
+          include_proposed_meal_ingredients?: boolean
+          include_recurring_staples?: boolean
+          include_supply_forecasts?: boolean
+          recommendation_horizon_days?: number
+          show_personal_separately?: boolean
+          updated_at?: string
+          updated_by_membership_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shopping_recommendation_prefe_default_list_id_household_id_fkey"
+            columns: ["default_list_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "shopping_lists"
+            referencedColumns: ["id", "household_id"]
+          },
+          {
+            foreignKeyName: "shopping_recommendation_preferenc_updated_by_membership_id_fkey"
+            columns: ["updated_by_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shopping_recommendation_preferences_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: true
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shopping_recommendation_runs: {
+        Row: {
+          client_idempotency_key: string | null
+          created_at: string
+          expires_at: string | null
+          household_id: string
+          id: string
+          list_id: string | null
+          mode_filter: string
+          scope: string
+          scoring_version: string
+          source_freshness: Json
+          status: string
+          viewer_membership_id: string
+        }
+        Insert: {
+          client_idempotency_key?: string | null
+          created_at?: string
+          expires_at?: string | null
+          household_id: string
+          id?: string
+          list_id?: string | null
+          mode_filter?: string
+          scope?: string
+          scoring_version?: string
+          source_freshness?: Json
+          status?: string
+          viewer_membership_id: string
+        }
+        Update: {
+          client_idempotency_key?: string | null
+          created_at?: string
+          expires_at?: string | null
+          household_id?: string
+          id?: string
+          list_id?: string | null
+          mode_filter?: string
+          scope?: string
+          scoring_version?: string
+          source_freshness?: Json
+          status?: string
+          viewer_membership_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shopping_recommendation_runs_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shopping_recommendation_runs_list_id_household_id_fkey"
+            columns: ["list_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "shopping_lists"
+            referencedColumns: ["id", "household_id"]
+          },
+          {
+            foreignKeyName: "shopping_recommendation_runs_viewer_membership_id_fkey"
+            columns: ["viewer_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shopping_recommendation_sources: {
+        Row: {
+          created_at: string
+          explanation: string
+          household_id: string
+          id: string
+          item_id: string
+          quantity: number | null
+          quantity_unit: string | null
+          reason_code: string
+          source_id: string | null
+          source_type: string
+        }
+        Insert: {
+          created_at?: string
+          explanation: string
+          household_id: string
+          id?: string
+          item_id: string
+          quantity?: number | null
+          quantity_unit?: string | null
+          reason_code: string
+          source_id?: string | null
+          source_type: string
+        }
+        Update: {
+          created_at?: string
+          explanation?: string
+          household_id?: string
+          id?: string
+          item_id?: string
+          quantity?: number | null
+          quantity_unit?: string | null
+          reason_code?: string
+          source_id?: string | null
+          source_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shopping_recommendation_sources_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shopping_recommendation_sources_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "shopping_recommendation_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shopping_trip_events: {
+        Row: {
+          actor_membership_id: string
+          created_at: string
+          event_type: string
+          household_id: string
+          id: string
+          payload: Json
+          shopping_item_id: string | null
+          trip_id: string
+        }
+        Insert: {
+          actor_membership_id: string
+          created_at?: string
+          event_type: string
+          household_id: string
+          id?: string
+          payload?: Json
+          shopping_item_id?: string | null
+          trip_id: string
+        }
+        Update: {
+          actor_membership_id?: string
+          created_at?: string
+          event_type?: string
+          household_id?: string
+          id?: string
+          payload?: Json
+          shopping_item_id?: string | null
+          trip_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shopping_trip_events_actor_membership_id_fkey"
+            columns: ["actor_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shopping_trip_events_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shopping_trip_events_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "shopping_trip_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shopping_trip_sessions: {
+        Row: {
+          client_idempotency_key: string | null
+          completed_at: string | null
+          household_id: string
+          id: string
+          list_id: string
+          started_at: string
+          started_by_membership_id: string
+          status: string
+          store_label: string | null
+        }
+        Insert: {
+          client_idempotency_key?: string | null
+          completed_at?: string | null
+          household_id: string
+          id?: string
+          list_id: string
+          started_at?: string
+          started_by_membership_id: string
+          status?: string
+          store_label?: string | null
+        }
+        Update: {
+          client_idempotency_key?: string | null
+          completed_at?: string | null
+          household_id?: string
+          id?: string
+          list_id?: string
+          started_at?: string
+          started_by_membership_id?: string
+          status?: string
+          store_label?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shopping_trip_sessions_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shopping_trip_sessions_list_id_household_id_fkey"
+            columns: ["list_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "shopping_lists"
+            referencedColumns: ["id", "household_id"]
+          },
+          {
+            foreignKeyName: "shopping_trip_sessions_started_by_membership_id_fkey"
+            columns: ["started_by_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       supply_items: {
         Row: {
           active: boolean
@@ -13672,6 +14402,10 @@ export type Database = {
         Args: { p_definition_id: string; p_status: string }
         Returns: string
       }
+      _shopping_intel_actor: {
+        Args: { p_household_id: string }
+        Returns: string
+      }
       _sync_obligation_settlement_status: {
         Args: { p_obligation_id: string }
         Returns: undefined
@@ -13820,6 +14554,15 @@ export type Database = {
           p_source_entity_type?: string
           p_title: string
           p_why_included?: string
+        }
+        Returns: string
+      }
+      add_recommended_item_to_list: {
+        Args: {
+          p_idempotency_key?: string
+          p_item_id: string
+          p_quantity?: number
+          p_quantity_unit?: string
         }
         Returns: string
       }
@@ -14341,6 +15084,10 @@ export type Database = {
           p_warnings?: Json
         }
         Returns: string
+      }
+      complete_shopping_trip: {
+        Args: { p_trip_id: string }
+        Returns: undefined
       }
       confirm_expense: {
         Args: {
@@ -15003,6 +15750,14 @@ export type Database = {
         Args: { p_endpoint_hash?: string; p_subscription_id?: string }
         Returns: boolean
       }
+      decide_recipe_rediscovery: {
+        Args: {
+          p_decision: string
+          p_idempotency_key?: string
+          p_suggestion_id: string
+        }
+        Returns: undefined
+      }
       decline_chore_reassignment: {
         Args: { p_request_id: string; p_resolution_note?: string }
         Returns: string
@@ -15047,6 +15802,15 @@ export type Database = {
       dismiss_recipe_feedback: {
         Args: { p_feedback_request_id: string }
         Returns: string
+      }
+      dismiss_shopping_recommendation: {
+        Args: {
+          p_decision?: string
+          p_idempotency_key?: string
+          p_item_id: string
+          p_snooze_until?: string
+        }
+        Returns: undefined
       }
       dismiss_suggested_agenda_item: {
         Args: { p_item_id: string }
@@ -15138,6 +15902,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      ensure_shopping_recommendation_preferences: {
+        Args: { p_household_id: string }
+        Returns: undefined
       }
       expire_recipe_import_drafts: { Args: never; Returns: number }
       fail_notification_delivery: {
@@ -15450,6 +16218,28 @@ export type Database = {
         Args: { p_definition_id: string }
         Returns: string
       }
+      persist_recipe_rediscovery_suggestions: {
+        Args: {
+          p_household_id: string
+          p_idempotency_key?: string
+          p_list_id: string
+          p_suggestions: Json
+          p_trip_id: string
+        }
+        Returns: number
+      }
+      persist_shopping_recommendation_run: {
+        Args: {
+          p_household_id: string
+          p_idempotency_key?: string
+          p_items: Json
+          p_list_id: string
+          p_mode_filter: string
+          p_scope: string
+          p_source_freshness?: Json
+        }
+        Returns: string
+      }
       process_due_scheduled_notifications: {
         Args: { p_limit?: number }
         Returns: number
@@ -15591,6 +16381,15 @@ export type Database = {
           p_reason?: string
           p_remaining_state?: string
           p_state?: string
+        }
+        Returns: string
+      }
+      record_shopping_trip_event: {
+        Args: {
+          p_event_type: string
+          p_payload?: Json
+          p_shopping_item_id: string
+          p_trip_id: string
         }
         Returns: string
       }
@@ -16006,6 +16805,15 @@ export type Database = {
         Returns: string
       }
       start_meeting: { Args: { p_meeting_id: string }; Returns: undefined }
+      start_shopping_trip: {
+        Args: {
+          p_household_id: string
+          p_idempotency_key?: string
+          p_list_id: string
+          p_store_label?: string
+        }
+        Returns: string
+      }
       submit_client_receipt_extraction: {
         Args: {
           p_adapter_name: string
@@ -16245,6 +17053,27 @@ export type Database = {
       update_recipe: {
         Args: { p_patch: Json; p_recipe_id: string }
         Returns: string
+      }
+      update_shopping_recommendation_preferences: {
+        Args: {
+          p_allow_push_reminders?: boolean
+          p_enabled?: boolean
+          p_forecast_confidence_threshold?: string
+          p_household_id: string
+          p_include_guest_friendly?: boolean
+          p_include_guest_needs?: boolean
+          p_include_meal_prep_favorites?: boolean
+          p_include_proposed_meal_ingredients?: boolean
+          p_include_recurring_staples?: boolean
+          p_include_supply_forecasts?: boolean
+          p_max_suggestions_per_trip?: number
+          p_min_days_since_prepared?: number
+          p_recommendation_horizon_days?: number
+          p_rediscovery_cadence?: string
+          p_rediscovery_enabled?: boolean
+          p_show_personal_separately?: boolean
+        }
+        Returns: undefined
       }
       upsert_calendar_availability_rule: {
         Args: {

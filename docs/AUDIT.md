@@ -171,6 +171,23 @@ instructions, cookies, headers, or private draft payloads.
 
 Preference/feedback audit payloads must not include preference signals, numeric ratings, private notes, or preference author identity.
 
+## Event types (Shopping Intelligence)
+
+- `shopping.recommendation_run`
+- `shopping.recommendation_added`
+- `shopping.recommendation_dismissed`
+- `shopping.recommendation_snoozed`
+- `shopping.recommendation_suppressed`
+- `shopping.trip_started`
+- `shopping.trip_completed`
+- `shopping.item_unavailable`
+- `recipe.rediscovery_suggested`
+- `recipe.rediscovery_decided`
+- `recipe.rediscovery_snoozed`
+- `recipe.rediscovery_suppressed`
+
+Shopping-intelligence audit payloads store reason codes, entity ids, and decision types only — never personal pantry quantities, private preference authors, or private recipe notes.
+
 ## Event types (Phase 7B maintenance)
 
 - `maintenance.reported`

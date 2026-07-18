@@ -92,6 +92,21 @@ Personal recipe preference and feedback rows are owner-only. Recommendation
 scoring may use attendee preferences internally, but organizers receive
 anonymized explanations only. Coordinators do not bypass preference privacy.
 
+## Shopping recommendations and Forgotten Favorites
+
+| Capability | member | household_coordinator | financial_coordinator |
+|---|---|---|---|
+| Generate / review shared shopping recommendations | yes | yes | yes |
+| Add recommended items to an authorized list | yes (via existing shopping RPCs) | yes | yes |
+| Dismiss / snooze / suppress a suggestion | yes | yes | yes |
+| Start / complete shopping trip mode | yes | yes | yes |
+| View Forgotten Favorites in shared context | yes (household-visible recipes only) | yes | yes |
+| Update shopping / rediscovery household prefs | no | yes | no |
+| See personal pantry quantities in shared recs | **no** | **no** | **no** |
+| See creator-only recipes of others in rediscovery | **no** | **no** | **no** |
+
+Shared recommendation runs use only household-visible source data. Personal shopping requests and personal pantry stay scoped to authorized members. Recommendation counts must not leak hidden items. Preference explanations stay anonymized (`Preference fit: Strong` / participant-count wording). Final list mutations always go through existing shopping and meal shopping-prep RPCs.
+
 ## Maintenance
 
 | Capability | member | household_coordinator | financial_coordinator |

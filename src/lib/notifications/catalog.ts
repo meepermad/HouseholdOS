@@ -165,6 +165,17 @@ export const EVENT_SHOPPING_ITEM_ASSIGNED = "shopping.item_assigned" as const;
 export const EVENT_SHOPPING_ITEM_PURCHASED = "shopping.item_purchased" as const;
 export const EVENT_SHOPPING_ITEM_UNAVAILABLE = "shopping.item_unavailable" as const;
 export const EVENT_SHOPPING_ITEM_CANCELLED = "shopping.item_cancelled" as const;
+export const EVENT_SHOPPING_RECOMMENDATIONS_READY =
+  "shopping.recommendations_ready" as const;
+export const EVENT_SHOPPING_TRIP_REMINDER = "shopping.trip_reminder" as const;
+export const EVENT_SHOPPING_ITEM_STILL_NEEDED =
+  "shopping.item_still_needed" as const;
+export const EVENT_SHOPPING_MEAL_IDEA_AVAILABLE =
+  "shopping.meal_idea_available" as const;
+export const EVENT_RECIPE_FORGOTTEN_FAVORITE =
+  "recipe.forgotten_favorite" as const;
+export const EVENT_RECIPE_REDISCOVERY_SNOOZE_EXPIRED =
+  "recipe.rediscovery_snooze_expired" as const;
 export const EVENT_MAINTENANCE_REPORTED = "maintenance.reported" as const;
 export const EVENT_MAINTENANCE_UPDATED = "maintenance.updated" as const;
 /** @deprecated Prefer EVENT_MAINTENANCE_REPORTED */
@@ -933,6 +944,72 @@ export const NOTIFICATION_CATALOG: Readonly<Record<string, CatalogEntry>> = {
     defaultUrgency: "low",
     recipientRule: "explicit",
     deepLinkPattern: `${APP_LINK}/house/shopping/{entityId}`,
+    digestAllowed: true,
+    actionOriented: false,
+    privacy: "generic_ok",
+    active: true,
+  }),
+  [EVENT_SHOPPING_RECOMMENDATIONS_READY]: entry({
+    eventType: EVENT_SHOPPING_RECOMMENDATIONS_READY,
+    category: "shopping",
+    defaultUrgency: "normal",
+    recipientRule: "explicit",
+    deepLinkPattern: `${APP_LINK}/house/shopping/recommendations`,
+    digestAllowed: true,
+    actionOriented: true,
+    privacy: "generic_ok",
+    active: true,
+  }),
+  [EVENT_SHOPPING_TRIP_REMINDER]: entry({
+    eventType: EVENT_SHOPPING_TRIP_REMINDER,
+    category: "shopping",
+    defaultUrgency: "normal",
+    recipientRule: "explicit",
+    deepLinkPattern: `${APP_LINK}/house/shopping/{entityId}`,
+    digestAllowed: false,
+    actionOriented: true,
+    privacy: "generic_ok",
+    active: true,
+  }),
+  [EVENT_SHOPPING_ITEM_STILL_NEEDED]: entry({
+    eventType: EVENT_SHOPPING_ITEM_STILL_NEEDED,
+    category: "shopping",
+    defaultUrgency: "normal",
+    recipientRule: "explicit",
+    deepLinkPattern: `${APP_LINK}/house/shopping/{entityId}`,
+    digestAllowed: true,
+    actionOriented: true,
+    privacy: "generic_ok",
+    active: true,
+  }),
+  [EVENT_SHOPPING_MEAL_IDEA_AVAILABLE]: entry({
+    eventType: EVENT_SHOPPING_MEAL_IDEA_AVAILABLE,
+    category: "shopping",
+    defaultUrgency: "low",
+    recipientRule: "explicit",
+    deepLinkPattern: `${APP_LINK}/house/recipes/rediscover`,
+    digestAllowed: true,
+    actionOriented: false,
+    privacy: "generic_ok",
+    active: true,
+  }),
+  [EVENT_RECIPE_FORGOTTEN_FAVORITE]: entry({
+    eventType: EVENT_RECIPE_FORGOTTEN_FAVORITE,
+    category: "shopping",
+    defaultUrgency: "low",
+    recipientRule: "explicit",
+    deepLinkPattern: `${APP_LINK}/house/recipes/rediscover`,
+    digestAllowed: true,
+    actionOriented: false,
+    privacy: "generic_ok",
+    active: true,
+  }),
+  [EVENT_RECIPE_REDISCOVERY_SNOOZE_EXPIRED]: entry({
+    eventType: EVENT_RECIPE_REDISCOVERY_SNOOZE_EXPIRED,
+    category: "shopping",
+    defaultUrgency: "low",
+    recipientRule: "explicit",
+    deepLinkPattern: `${APP_LINK}/house/recipes/rediscover`,
     digestAllowed: true,
     actionOriented: false,
     privacy: "generic_ok",

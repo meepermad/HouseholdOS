@@ -6,6 +6,7 @@ import {
   ListChecks,
   Moon,
   Package,
+  ShoppingCart,
   Upload,
   UserRound,
   UtensilsCrossed,
@@ -133,6 +134,13 @@ export default async function SettingsHubPage({
               label="Meals"
               description="Meal planning preferences"
               icon={UtensilsCrossed}
+            />
+            <SettingsRow
+              href={`${base}/shopping`}
+              label="Shopping & rediscovery"
+              description="Recommended lists and Forgotten Favorites"
+              icon={ShoppingCart}
+              testId="settings-row-shopping"
             />
             <SettingsRow
               href={`${base}/house-resources`}
