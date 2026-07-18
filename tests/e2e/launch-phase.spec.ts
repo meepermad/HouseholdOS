@@ -104,8 +104,12 @@ test.describe("Launch phase navigation and surfaces", () => {
   }) => {
     await login(page, email);
     await page.goto(`/app/${householdId}/money`);
-    await expect(page.getByTestId("money-scan-receipt")).toBeVisible();
-    await expect(page.getByTestId("money-receipt-drafts")).toBeVisible();
+    await expect(page.getByTestId("money-hub")).toBeVisible();
+    await expect(page.getByTestId("money-balance-summary")).toBeVisible();
+    await expect(page.getByTestId("money-primary-actions")).toBeVisible();
+    await expect(page.getByTestId("money-secondary-tools")).toBeVisible();
+    await expect(page.getByTestId("money-primary-scan-receipt")).toBeVisible();
+    await expect(page.getByTestId("money-primary-add-expense")).toBeVisible();
 
     await page.goto(`/app/${householdId}/money/receipts/new`);
     await expect(page.getByTestId("receipt-uploader")).toBeVisible();

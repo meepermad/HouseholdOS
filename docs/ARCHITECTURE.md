@@ -81,6 +81,19 @@ projected = official − submitted (pending) allocations
 - Private external references / private notes live in `payment_private_details` (RLS: sender ∪ recipient only)
 - Amendments/voids after payment preserve payment history and may create refund obligations (`obligation_kind = refund`)
 
+### Money overview projection
+
+The Money hub loads a versioned RLS-scoped projection (`src/lib/money/overview.ts`, `MONEY_OVERVIEW_VERSION`) that aggregates:
+
+- Official vs pending member balances
+- Context-aware primary actions (max two)
+- Financial attention queue (plain language, deep links)
+- Compact pairwise balances + optional routed-settlement teaser
+- Monthly financial summary (`MONTHLY_FINANCE_AGG_VERSION`) shared with Monthly Household Review
+- Mixed recent activity (no raw audit keys)
+
+Expense and payment list pages support thin URL filters for deep links from the overview. No privileged client is used for normal Money reads. Saved financial defaults and cross-record financial search are deferred.
+
 ## Notifications (outbox + delivery)
 
 Pipeline:

@@ -25,8 +25,9 @@ describe("SimplifySuggestionList", () => {
         memberLabel={(id) => id.slice(0, 1).toUpperCase()}
       />,
     );
-    expect(screen.getAllByText(/Routed payment/i).length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/outside the app/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Suggested routed payment/i).length).toBeGreaterThan(0);
+    expect(screen.getByText(/Before balances change/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/outside HouseholdOS/i).length).toBeGreaterThan(0);
     expect(screen.getByTestId("propose-routed-payment")).toBeTruthy();
   });
 });

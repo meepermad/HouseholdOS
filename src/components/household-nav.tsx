@@ -173,11 +173,15 @@ export function HouseholdNav({
             </button>
           </div>
         </nav>
-        <div className="pointer-events-none fixed inset-x-0 bottom-[calc(var(--app-bottom-nav-height)+var(--safe-bottom)+0.75rem)] z-20 flex justify-end px-4 lg:hidden">
-          <div className="pointer-events-auto">
-            <QuickAddButton onClick={() => setQuickAddOpen(true)} />
+        {/* Hide FAB on Money hub: primary actions already cover scan/add expense. */}
+        {pathname === `/app/${householdId}/money` ||
+        pathname === `/app/${householdId}/money/` ? null : (
+          <div className="pointer-events-none fixed inset-x-0 bottom-[calc(var(--app-bottom-nav-height)+var(--safe-bottom)+0.75rem)] z-20 flex justify-end px-4 lg:hidden">
+            <div className="pointer-events-auto">
+              <QuickAddButton onClick={() => setQuickAddOpen(true)} />
+            </div>
           </div>
-        </div>
+        )}
         <BottomSheet
           open={moreOpen}
           onClose={() => setMoreOpen(false)}

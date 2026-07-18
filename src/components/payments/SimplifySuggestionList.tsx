@@ -33,30 +33,74 @@ export function SimplifySuggestionList({
 
   return (
     <ul className="space-y-4" data-testid="simplify-suggestions">
-      {suggestions.map((s) => (
-        <li
-          key={`${s.obligationAbId}-${s.obligationBcId}-${s.amountCents}`}
-          className="rounded-md border border-border bg-surface p-4"
-        >
-          <p className="text-sm font-medium">
-            Routed payment · {formatMoney(s.amountCents)}
-          </p>
-          <p className="mt-2 text-sm text-text-muted">
-            {memberLabel(s.payerMembershipId)} pays{" "}
-            {memberLabel(s.recipientMembershipId)} outside the app (Venmo, Cash App,
-            Zelle, cash, etc.). HouseholdOS records that payment and reduces both{" "}
-            {memberLabel(s.payerMembershipId)}→{memberLabel(s.intermediaryMembershipId)}{" "}
-            and {memberLabel(s.intermediaryMembershipId)}→
-            {memberLabel(s.recipientMembershipId)}.
-          </p>
-          <p className="mt-2 text-xs text-text-muted">
-            Before: A→B {formatMoney(s.beforeEdges.ab)}, B→C{" "}
-            {formatMoney(s.beforeEdges.bc)}. After: A→B{" "}
-            {formatMoney(s.afterEdges.ab)}, B→C {formatMoney(s.afterEdges.bc)}.
-          </p>
-          <ProposeForm householdId={householdId} suggestion={s} />
-        </li>
-      ))}
+      {suggestions.map((s) => {
+        const payer = memberLabel(s.payerMembershipId);
+        const intermediary = memberLabel(s.intermediaryMembershipId);
+        const recipient = memberLabel(s.recipientMembershipId);
+        return (
+          <li
+            key={`${s.obligationAbId}-${s.obligationBcId}-${s.amountCents}`}
+            className="rounded-md border border-border bg-surface p-4"
+            data-testid="simplify-suggestion-card"
+          >
+            <p className="text-sm font-medium">
+              Suggested routed payment · {formatMoney(s.amountCents)}
+            </p>
+            <div className="mt-3 space-y-2 text-sm text-text-secondary">
+              <p>
+                You owe {intermediary} {formatMoney(s.beforeEdges.ab)}.
+              </p>
+              <p>
+                {intermediary} owes {recipient} {formatMoney(s.beforeEdges.bc)}.
+              </p>
+              <p className="font-medium text-text-primary">
+                {payer} could pay {recipient} {formatMoney(s.amountCents)} on{" "}
+                {intermediary}&apos;s behalf.
+              </p>
+            </div>
+
+            <div className="mt-3 rounded-md border border-border bg-background px-3 py-3 text-sm">
+              <p className="font-medium">Before balances change:</p>
+              <ol className="mt-2 list-decimal space-y-1 pl-5 text-text-secondary">
+                <li>{intermediary} must approve.</li>
+                <li>
+                  {recipient} must agree to receive the payment.
+                </li>
+                <li>
+                  {payer} must pay {recipient} outside HouseholdOS (Venmo, Cash App,
+                  Zelle, cash, etc.).
+                </li>
+                <li>
+                  {recipient} must confirm receiving exactly{" "}
+                  {formatMoney(s.amountCents)}.
+                </li>
+              </ol>
+            </div>
+
+            <div className="mt-3 text-sm text-text-secondary">
+              <p className="font-medium text-text-primary">After confirmation:</p>
+              <ul className="mt-2 list-disc space-y-1 pl-5">
+                <li>
+                  {payer} would owe {intermediary}{" "}
+                  {formatMoney(s.afterEdges.ab)}.
+                </li>
+                <li>
+                  {intermediary} would owe {recipient}{" "}
+                  {formatMoney(s.afterEdges.bc)}.
+                </li>
+              </ul>
+              <p className="mt-2 text-xs text-text-muted">
+                Participants: {payer}, {intermediary}, and {recipient}. If balances
+                change before confirmation, the proposal may become stale and should
+                be reviewed or cancelled. Reversing a confirmed routed settlement
+                restores the prior obligations.
+              </p>
+            </div>
+
+            <ProposeForm householdId={householdId} suggestion={s} />
+          </li>
+        );
+      })}
     </ul>
   );
 }
@@ -92,7 +136,7 @@ function ProposeForm({
       <input type="hidden" name="obligationAbId" value={suggestion.obligationAbId} />
       <input type="hidden" name="obligationBcId" value={suggestion.obligationBcId} />
       <input type="hidden" name="idempotencyKey" value={idempotencyKey} />
-      <label className="flex items-center gap-2 text-sm">
+      <label className="flex flex-wrap items-center gap-2 text-sm">
         <span>Amount (cents, max {suggestion.amountCents})</span>
         <input
           type="number"
