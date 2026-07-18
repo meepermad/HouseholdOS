@@ -282,6 +282,37 @@ export async function loadHomeActionCenter(options: {
     /* degrade */
   }
 
+  try {
+    const { meetingTable } = await import("@/lib/meetings/client");
+    const meetingsT = await meetingTable("household_meetings");
+    const { data: nextMeeting } = await meetingsT
+      .select("id, title, meeting_at, status")
+      .eq("household_id", householdId)
+      .in("status", [
+        "draft",
+        "preparing",
+        "ready_for_review",
+        "locked",
+        "in_progress",
+      ])
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (nextMeeting?.id) {
+      attention.push({
+        id: `meeting-${nextMeeting.id}`,
+        title: "Monthly household meeting",
+        detail: nextMeeting.meeting_at
+          ? `Scheduled ${String(nextMeeting.meeting_at)}. Agenda items need review.`
+          : "Prepare the monthly review packet before the meeting.",
+        urgency: "normal",
+        href: householdRoutes.meetings.detail(householdId, String(nextMeeting.id)),
+      });
+    }
+  } catch {
+    /* degrade when meetings schema not yet applied */
+  }
+
   return {
     attention: prioritizeAttention(attention).slice(0, 12),
     today: today.slice(0, 10),

@@ -7,7 +7,6 @@ import { CalendarAgenda } from "@/components/calendar/CalendarAgenda";
 import { CalendarMonth } from "@/components/calendar/CalendarMonth";
 import { CalendarWeek } from "@/components/calendar/CalendarWeek";
 import { CalendarDay } from "@/components/calendar/CalendarDay";
-import { AppBackButton } from "@/components/app-back-button";
 import {
   formatShortDay,
   monthGridRange,
@@ -142,7 +141,6 @@ export async function renderCalendarViewPage(params: {
 
   return (
     <div className="space-y-4">
-      <AppBackButton fallbackHref={householdRoutes.home(householdId)} />
       <CalendarShell
         householdId={householdId}
         view={view}

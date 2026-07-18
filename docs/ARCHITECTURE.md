@@ -94,6 +94,16 @@ The Money hub loads a versioned RLS-scoped projection (`src/lib/money/overview.t
 
 Expense and payment list pages support thin URL filters for deep links from the overview. No privileged client is used for normal Money reads. Saved financial defaults and cross-record financial search are deferred.
 
+### Monthly Household Review
+
+Lifecycle entity `household_meetings` (draft → preparing → ready_for_review → locked → in_progress → completed → published → archived / cancelled) with section configuration, suggested agenda items, locked shared snapshots, personal addenda, session notes, decisions, and action items.
+
+- Packet generation is RLS-scoped TypeScript (`src/lib/meetings/packet.ts`) reusing monthly finance aggregation.
+- Suggested agenda rules are versioned (`AGENDA_RULES_VERSION`) in `src/lib/meetings/agenda-rules.ts`.
+- Mutations go through security-definer RPCs (`ensure_monthly_meeting`, `lock_meeting_packet`, `start_meeting`, …) with `auth.uid()` actor checks.
+- Shared packets stay household-safe; pairwise balances stay in personal addenda unless household policy allows sharing.
+- Surface: `/app/[householdId]/meetings` under More / Ops (not a bottom-nav tab). In-app notifications and PWA push only.
+
 ## Notifications (outbox + delivery)
 
 Pipeline:

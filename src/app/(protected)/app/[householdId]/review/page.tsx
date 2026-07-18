@@ -2,6 +2,7 @@ import Link from "next/link";
 import { assertActiveMembership } from "@/lib/household-context";
 import { buildWeeklyReview } from "@/lib/home/weekly-review";
 import { EmptyState } from "@/components/ui/empty-state";
+import { householdRoutes } from "@/lib/routes/household";
 
 export const dynamic = "force-dynamic";
 
@@ -16,7 +17,7 @@ export default async function WeeklyReviewPage({
 
   return (
     <main className="space-y-6" data-testid="weekly-review">
-      <header>
+      <header className="space-y-2">
         <h1 className="font-[family-name:var(--font-display)] text-2xl">
           Weekly household review
         </h1>
@@ -24,6 +25,13 @@ export default async function WeeklyReviewPage({
           A meeting-friendly overview from household records. No rankings or
           scores.
         </p>
+        <Link
+          href={householdRoutes.meetings.index(householdId)}
+          className="inline-flex min-h-11 items-center text-sm font-semibold text-primary underline-offset-2 hover:underline"
+          data-testid="weekly-review-meetings-link"
+        >
+          Open monthly household meetings
+        </Link>
       </header>
 
       <section className="space-y-2">

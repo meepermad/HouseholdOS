@@ -3,7 +3,6 @@ import { assertActiveMembership } from "@/lib/household-context";
 import { formatUsdFromCents, toCents } from "@/lib/money";
 import { FINANCE_COPY } from "@/lib/presentation";
 import { loadHomeActionCenter } from "@/lib/home/action-center";
-import { QUICK_ADD_ACTIONS } from "@/lib/nav-items";
 import { EmptyState } from "@/components/ui/empty-state";
 import { can } from "@/lib/permissions";
 import { SetupReminderCard } from "@/components/setup/SetupReminderCard";
@@ -209,28 +208,6 @@ export default async function HouseholdHomePage({
           </ul>
         </section>
       ) : null}
-
-      <section className="space-y-2" aria-labelledby="quick-actions-heading">
-        <h2
-          id="quick-actions-heading"
-          className="text-sm font-semibold uppercase tracking-wide text-text-muted"
-        >
-          Quick actions
-        </h2>
-        <ul className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-          {QUICK_ADD_ACTIONS.map((action) => (
-            <li key={action.key}>
-              <Link
-                href={action.href(householdId)}
-                className="flex min-h-11 items-center justify-center rounded-md border border-border bg-surface px-2 text-center text-sm font-medium text-text-primary hover:bg-surface-interactive"
-                data-testid={`home-quick-${action.key}`}
-              >
-                {action.label}
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </section>
 
       {can(ctx.roles, "member.invite") || can(ctx.roles, "household.update") ? (
         <p className="text-center text-xs text-text-muted">

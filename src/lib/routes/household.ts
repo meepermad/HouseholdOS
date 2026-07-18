@@ -101,6 +101,16 @@ export const householdRoutes = {
   },
 
   ops: (householdId: string) => `${base(householdId)}/ops`,
+  meetings: {
+    index: (householdId: string) => `${base(householdId)}/meetings`,
+    detail: (householdId: string, meetingId: string) =>
+      `${base(householdId)}/meetings/${assertRouteSegment(meetingId, "meeting id")}`,
+    run: (householdId: string, meetingId: string) =>
+      `${base(householdId)}/meetings/${assertRouteSegment(meetingId, "meeting id")}/run`,
+    print: (householdId: string, meetingId: string) =>
+      `${base(householdId)}/meetings/${assertRouteSegment(meetingId, "meeting id")}/print`,
+    settings: (householdId: string) => `${base(householdId)}/meetings/settings`,
+  },
   products: (householdId: string) => `${base(householdId)}/products`,
 
   meals: {

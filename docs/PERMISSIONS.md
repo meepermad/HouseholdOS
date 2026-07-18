@@ -176,6 +176,19 @@ Active household members may see public payment fields (parties, amount, method 
 
 Only the payment **sender and recipient** may select `payment_private_details` (private note, external reference). This is enforced with RLS, not UI-only hiding.
 
+## Monthly Household Review
+
+| Action | Who |
+|---|---|
+| View meetings / shared packets / recaps | Active household members |
+| View personal addendum | Only the owning membership |
+| Create / gather / lock / start / complete / publish | Organizer or household coordinator |
+| Accept / dismiss suggested agenda | Organizer or household coordinator |
+| Record notes / decisions / action items during meeting | Active participants (meeting in progress or completed) |
+| Bypass source-domain privacy via meeting packet | Forbidden — projections only include authorized data |
+
+Meeting writes are RPC-only. Coordinators do not automatically receive other members' personal addenda.
+
 ## Notes
 
 - Creator receives all three responsibilities (no global admin).

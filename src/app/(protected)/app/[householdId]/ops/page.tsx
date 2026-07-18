@@ -76,6 +76,15 @@ export default async function RoommateOpsPage({
           forecasts. Parking module{" "}
           {household.data?.parking_module_enabled ? "enabled" : "hidden until enabled"}.
         </p>
+        <p className="mt-3">
+          <a
+            href={`/app/${householdId}/meetings`}
+            className="inline-flex min-h-11 items-center text-sm font-semibold text-primary underline-offset-2 hover:underline"
+            data-testid="ops-meetings-link"
+          >
+            Open household meetings
+          </a>
+        </p>
       </header>
 
       <RoommateOpsForms householdId={householdId} members={members} />
@@ -88,7 +97,7 @@ export default async function RoommateOpsPage({
           ) : (
             (purchases.data ?? []).map((p) => (
               <li key={p.id} className="px-3 py-2">
-                {p.title} · {p.status}
+                {p.title} · {String(p.status).replaceAll("_", " ")}
               </li>
             ))
           )}
@@ -118,7 +127,7 @@ export default async function RoommateOpsPage({
           ) : (
             (packages.data ?? []).map((p) => (
               <li key={p.id} className="px-3 py-2">
-                {p.carrier || "Package"} · {p.status}
+                {p.carrier || "Package"} · {String(p.status).replaceAll("_", " ")}
                 {p.location_note ? ` · ${p.location_note}` : ""}
               </li>
             ))

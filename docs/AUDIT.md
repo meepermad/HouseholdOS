@@ -202,6 +202,14 @@ Preference/feedback audit payloads must not include preference signals, numeric 
 
 Maintenance audit payloads must not include raw storage paths, private evidence URLs, or private comment bodies beyond redacted flags.
 
+## Event types (Monthly Household Review)
+
+- `meeting.created`
+- `meeting.status_changed`
+- `meeting.calendar_linked`
+
+Meeting audit payloads store lifecycle status and calendar event ids only — never personal addendum balances, private payment notes, or OCR text.
+
 ## Shape
 
 | Column | Purpose |

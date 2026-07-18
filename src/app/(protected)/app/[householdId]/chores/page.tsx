@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { AppBackButton } from "@/components/app-back-button";
 import { ChoreBoard } from "@/components/chores/ChoreBoard";
 import { assertActiveMembership } from "@/lib/household-context";
 import { can } from "@/lib/permissions";
@@ -15,7 +14,6 @@ export default async function ChoresPage({ params }: { params: Promise<{ househo
   const create = can(ctx.roles, "chore.create");
   return (
     <main className="space-y-5">
-      <AppBackButton fallbackHref={`/app/${householdId}`} />
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="font-[family-name:var(--font-display)] text-2xl">

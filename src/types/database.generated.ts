@@ -2624,6 +2624,63 @@ export type Database = {
           },
         ]
       }
+      expense_receipt_aliases: {
+        Row: {
+          created_at: string
+          created_by_membership_id: string | null
+          household_id: string
+          id: string
+          kind: string
+          merchant_scope: string
+          normalized_source: string
+          source_text: string
+          target_text: string
+          updated_at: string
+          use_count: number
+        }
+        Insert: {
+          created_at?: string
+          created_by_membership_id?: string | null
+          household_id: string
+          id?: string
+          kind: string
+          merchant_scope?: string
+          normalized_source: string
+          source_text: string
+          target_text: string
+          updated_at?: string
+          use_count?: number
+        }
+        Update: {
+          created_at?: string
+          created_by_membership_id?: string | null
+          household_id?: string
+          id?: string
+          kind?: string
+          merchant_scope?: string
+          normalized_source?: string
+          source_text?: string
+          target_text?: string
+          updated_at?: string
+          use_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expense_receipt_aliases_created_by_membership_id_fkey"
+            columns: ["created_by_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expense_receipt_aliases_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       expense_receipt_duplicates: {
         Row: {
           created_at: string
@@ -2673,9 +2730,13 @@ export type Database = {
           created_at: string
           household_id: string
           id: string
+          ocr_full_text: string | null
+          ocr_lines_json: Json | null
+          processing_meta: Json | null
           proposed: Json
           raw_response_redacted: Json | null
           receipt_id: string
+          retain_until: string | null
         }
         Insert: {
           adapter_name: string
@@ -2684,9 +2745,13 @@ export type Database = {
           created_at?: string
           household_id: string
           id?: string
+          ocr_full_text?: string | null
+          ocr_lines_json?: Json | null
+          processing_meta?: Json | null
           proposed?: Json
           raw_response_redacted?: Json | null
           receipt_id: string
+          retain_until?: string | null
         }
         Update: {
           adapter_name?: string
@@ -2695,9 +2760,13 @@ export type Database = {
           created_at?: string
           household_id?: string
           id?: string
+          ocr_full_text?: string | null
+          ocr_lines_json?: Json | null
+          processing_meta?: Json | null
           proposed?: Json
           raw_response_redacted?: Json | null
           receipt_id?: string
+          retain_until?: string | null
         }
         Relationships: [
           {
@@ -2850,6 +2919,7 @@ export type Database = {
           declared_total_cents: number | null
           deleted_at: string | null
           expense_id: string | null
+          extraction_mode: string | null
           file_hash: string | null
           file_name: string
           household_id: string
@@ -2862,6 +2932,7 @@ export type Database = {
           size_bytes: number
           status: string
           storage_path: string
+          unsynced_client_draft: boolean
           updated_at: string
           uploaded_by_membership_id: string
         }
@@ -2872,6 +2943,7 @@ export type Database = {
           declared_total_cents?: number | null
           deleted_at?: string | null
           expense_id?: string | null
+          extraction_mode?: string | null
           file_hash?: string | null
           file_name: string
           household_id: string
@@ -2884,6 +2956,7 @@ export type Database = {
           size_bytes: number
           status?: string
           storage_path: string
+          unsynced_client_draft?: boolean
           updated_at?: string
           uploaded_by_membership_id: string
         }
@@ -2894,6 +2967,7 @@ export type Database = {
           declared_total_cents?: number | null
           deleted_at?: string | null
           expense_id?: string | null
+          extraction_mode?: string | null
           file_hash?: string | null
           file_name?: string
           household_id?: string
@@ -2906,6 +2980,7 @@ export type Database = {
           size_bytes?: number
           status?: string
           storage_path?: string
+          unsynced_client_draft?: boolean
           updated_at?: string
           uploaded_by_membership_id?: string
         }
@@ -4660,6 +4735,226 @@ export type Database = {
           },
         ]
       }
+      household_meeting_action_items: {
+        Row: {
+          blocking_note: string | null
+          client_idempotency_key: string | null
+          completed_at: string | null
+          created_at: string
+          created_by_membership_id: string
+          decision_id: string | null
+          due_date: string | null
+          household_id: string
+          id: string
+          meeting_id: string
+          owner_membership_id: string | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          blocking_note?: string | null
+          client_idempotency_key?: string | null
+          completed_at?: string | null
+          created_at?: string
+          created_by_membership_id: string
+          decision_id?: string | null
+          due_date?: string | null
+          household_id: string
+          id?: string
+          meeting_id: string
+          owner_membership_id?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          blocking_note?: string | null
+          client_idempotency_key?: string | null
+          completed_at?: string | null
+          created_at?: string
+          created_by_membership_id?: string
+          decision_id?: string | null
+          due_date?: string | null
+          household_id?: string
+          id?: string
+          meeting_id?: string
+          owner_membership_id?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "household_meeting_action_items_created_by_membership_id_fkey"
+            columns: ["created_by_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "household_meeting_action_items_decision_id_fkey"
+            columns: ["decision_id"]
+            isOneToOne: false
+            referencedRelation: "household_meeting_decisions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "household_meeting_action_items_meeting_id_household_id_fkey"
+            columns: ["meeting_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "household_meetings"
+            referencedColumns: ["id", "household_id"]
+          },
+          {
+            foreignKeyName: "household_meeting_action_items_owner_membership_id_fkey"
+            columns: ["owner_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      household_meeting_agenda_items: {
+        Row: {
+          created_at: string
+          created_by_membership_id: string | null
+          deadline: string | null
+          household_id: string
+          id: string
+          may_decide_in_meeting: boolean
+          meeting_id: string
+          required_participants: Json
+          section_key: string
+          sort_order: number
+          source: string
+          source_entity_id: string | null
+          source_entity_type: string | null
+          status: string
+          title: string
+          updated_at: string
+          why_included: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by_membership_id?: string | null
+          deadline?: string | null
+          household_id: string
+          id?: string
+          may_decide_in_meeting?: boolean
+          meeting_id: string
+          required_participants?: Json
+          section_key: string
+          sort_order?: number
+          source?: string
+          source_entity_id?: string | null
+          source_entity_type?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+          why_included?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by_membership_id?: string | null
+          deadline?: string | null
+          household_id?: string
+          id?: string
+          may_decide_in_meeting?: boolean
+          meeting_id?: string
+          required_participants?: Json
+          section_key?: string
+          sort_order?: number
+          source?: string
+          source_entity_id?: string | null
+          source_entity_type?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+          why_included?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "household_meeting_agenda_items_created_by_membership_id_fkey"
+            columns: ["created_by_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "household_meeting_agenda_items_meeting_id_household_id_fkey"
+            columns: ["meeting_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "household_meetings"
+            referencedColumns: ["id", "household_id"]
+          },
+        ]
+      }
+      household_meeting_decisions: {
+        Row: {
+          agenda_item_id: string | null
+          client_idempotency_key: string | null
+          created_at: string
+          created_by_membership_id: string
+          decision_text: string
+          household_id: string
+          id: string
+          meeting_id: string
+          owner_membership_id: string | null
+        }
+        Insert: {
+          agenda_item_id?: string | null
+          client_idempotency_key?: string | null
+          created_at?: string
+          created_by_membership_id: string
+          decision_text: string
+          household_id: string
+          id?: string
+          meeting_id: string
+          owner_membership_id?: string | null
+        }
+        Update: {
+          agenda_item_id?: string | null
+          client_idempotency_key?: string | null
+          created_at?: string
+          created_by_membership_id?: string
+          decision_text?: string
+          household_id?: string
+          id?: string
+          meeting_id?: string
+          owner_membership_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "household_meeting_decisions_agenda_item_id_fkey"
+            columns: ["agenda_item_id"]
+            isOneToOne: false
+            referencedRelation: "household_meeting_agenda_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "household_meeting_decisions_created_by_membership_id_fkey"
+            columns: ["created_by_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "household_meeting_decisions_meeting_id_household_id_fkey"
+            columns: ["meeting_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "household_meetings"
+            referencedColumns: ["id", "household_id"]
+          },
+          {
+            foreignKeyName: "household_meeting_decisions_owner_membership_id_fkey"
+            columns: ["owner_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       household_meeting_notes: {
         Row: {
           action_items: Json
@@ -4710,6 +5005,548 @@ export type Database = {
             columns: ["household_id"]
             isOneToOne: false
             referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      household_meeting_packet_versions: {
+        Row: {
+          created_at: string
+          created_by_membership_id: string | null
+          household_id: string
+          id: string
+          kind: string
+          meeting_id: string
+          version: number
+        }
+        Insert: {
+          created_at?: string
+          created_by_membership_id?: string | null
+          household_id: string
+          id?: string
+          kind: string
+          meeting_id: string
+          version: number
+        }
+        Update: {
+          created_at?: string
+          created_by_membership_id?: string | null
+          household_id?: string
+          id?: string
+          kind?: string
+          meeting_id?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "household_meeting_packet_versions_created_by_membership_id_fkey"
+            columns: ["created_by_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "household_meeting_packet_versions_meeting_id_household_id_fkey"
+            columns: ["meeting_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "household_meetings"
+            referencedColumns: ["id", "household_id"]
+          },
+        ]
+      }
+      household_meeting_participants: {
+        Row: {
+          acknowledged_packet_at: string | null
+          attended: boolean | null
+          created_at: string
+          household_id: string
+          id: string
+          meeting_id: string
+          membership_id: string
+          role: string
+        }
+        Insert: {
+          acknowledged_packet_at?: string | null
+          attended?: boolean | null
+          created_at?: string
+          household_id: string
+          id?: string
+          meeting_id: string
+          membership_id: string
+          role?: string
+        }
+        Update: {
+          acknowledged_packet_at?: string | null
+          attended?: boolean | null
+          created_at?: string
+          household_id?: string
+          id?: string
+          meeting_id?: string
+          membership_id?: string
+          role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "household_meeting_participants_meeting_id_household_id_fkey"
+            columns: ["meeting_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "household_meetings"
+            referencedColumns: ["id", "household_id"]
+          },
+          {
+            foreignKeyName: "household_meeting_participants_membership_id_fkey"
+            columns: ["membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      household_meeting_preferences: {
+        Row: {
+          agenda_rules_version: string
+          auto_create_calendar: boolean
+          created_at: string
+          household_id: string
+          maintenance_wait_days: number
+          preferred_time_local: string | null
+          purchase_deadline_days: number
+          recurrence_rule: string | null
+          reminder_packet_hours: number
+          reminder_prep_hours: number
+          share_pairwise_balances: boolean
+          timezone: string
+          updated_at: string
+          updated_by_membership_id: string | null
+          utility_variance_pct: number
+        }
+        Insert: {
+          agenda_rules_version?: string
+          auto_create_calendar?: boolean
+          created_at?: string
+          household_id: string
+          maintenance_wait_days?: number
+          preferred_time_local?: string | null
+          purchase_deadline_days?: number
+          recurrence_rule?: string | null
+          reminder_packet_hours?: number
+          reminder_prep_hours?: number
+          share_pairwise_balances?: boolean
+          timezone?: string
+          updated_at?: string
+          updated_by_membership_id?: string | null
+          utility_variance_pct?: number
+        }
+        Update: {
+          agenda_rules_version?: string
+          auto_create_calendar?: boolean
+          created_at?: string
+          household_id?: string
+          maintenance_wait_days?: number
+          preferred_time_local?: string | null
+          purchase_deadline_days?: number
+          recurrence_rule?: string | null
+          reminder_packet_hours?: number
+          reminder_prep_hours?: number
+          share_pairwise_balances?: boolean
+          timezone?: string
+          updated_at?: string
+          updated_by_membership_id?: string | null
+          utility_variance_pct?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "household_meeting_preferences_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: true
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "household_meeting_preferences_updated_by_membership_id_fkey"
+            columns: ["updated_by_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      household_meeting_record_links: {
+        Row: {
+          action_item_id: string | null
+          client_idempotency_key: string | null
+          created_at: string
+          created_by_membership_id: string
+          decision_id: string | null
+          entity_id: string
+          entity_type: string
+          household_id: string
+          id: string
+          meeting_id: string
+        }
+        Insert: {
+          action_item_id?: string | null
+          client_idempotency_key?: string | null
+          created_at?: string
+          created_by_membership_id: string
+          decision_id?: string | null
+          entity_id: string
+          entity_type: string
+          household_id: string
+          id?: string
+          meeting_id: string
+        }
+        Update: {
+          action_item_id?: string | null
+          client_idempotency_key?: string | null
+          created_at?: string
+          created_by_membership_id?: string
+          decision_id?: string | null
+          entity_id?: string
+          entity_type?: string
+          household_id?: string
+          id?: string
+          meeting_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "household_meeting_record_links_action_item_id_fkey"
+            columns: ["action_item_id"]
+            isOneToOne: false
+            referencedRelation: "household_meeting_action_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "household_meeting_record_links_created_by_membership_id_fkey"
+            columns: ["created_by_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "household_meeting_record_links_decision_id_fkey"
+            columns: ["decision_id"]
+            isOneToOne: false
+            referencedRelation: "household_meeting_decisions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "household_meeting_record_links_meeting_id_household_id_fkey"
+            columns: ["meeting_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "household_meetings"
+            referencedColumns: ["id", "household_id"]
+          },
+        ]
+      }
+      household_meeting_sections: {
+        Row: {
+          created_at: string
+          discussed_at: string | null
+          household_id: string
+          id: string
+          included: boolean
+          informational_only: boolean
+          meeting_id: string
+          organizer_note: string | null
+          section_key: string
+          skipped_at: string | null
+          sort_order: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          discussed_at?: string | null
+          household_id: string
+          id?: string
+          included?: boolean
+          informational_only?: boolean
+          meeting_id: string
+          organizer_note?: string | null
+          section_key: string
+          skipped_at?: string | null
+          sort_order?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          discussed_at?: string | null
+          household_id?: string
+          id?: string
+          included?: boolean
+          informational_only?: boolean
+          meeting_id?: string
+          organizer_note?: string | null
+          section_key?: string
+          skipped_at?: string | null
+          sort_order?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "household_meeting_sections_meeting_id_household_id_fkey"
+            columns: ["meeting_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "household_meetings"
+            referencedColumns: ["id", "household_id"]
+          },
+        ]
+      }
+      household_meeting_session_notes: {
+        Row: {
+          agenda_item_id: string | null
+          body: string
+          created_at: string
+          created_by_membership_id: string
+          household_id: string
+          id: string
+          meeting_id: string
+          parking_lot: boolean
+          section_key: string | null
+        }
+        Insert: {
+          agenda_item_id?: string | null
+          body: string
+          created_at?: string
+          created_by_membership_id: string
+          household_id: string
+          id?: string
+          meeting_id: string
+          parking_lot?: boolean
+          section_key?: string | null
+        }
+        Update: {
+          agenda_item_id?: string | null
+          body?: string
+          created_at?: string
+          created_by_membership_id?: string
+          household_id?: string
+          id?: string
+          meeting_id?: string
+          parking_lot?: boolean
+          section_key?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "household_meeting_session_notes_agenda_item_id_fkey"
+            columns: ["agenda_item_id"]
+            isOneToOne: false
+            referencedRelation: "household_meeting_agenda_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "household_meeting_session_notes_created_by_membership_id_fkey"
+            columns: ["created_by_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "household_meeting_session_notes_meeting_id_household_id_fkey"
+            columns: ["meeting_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "household_meetings"
+            referencedColumns: ["id", "household_id"]
+          },
+        ]
+      }
+      household_meeting_snapshot_values: {
+        Row: {
+          created_at: string
+          household_id: string
+          id: string
+          snapshot_id: string
+          source_entity_id: string | null
+          source_entity_type: string | null
+          source_updated_at: string | null
+          value_json: Json
+          value_key: string
+        }
+        Insert: {
+          created_at?: string
+          household_id: string
+          id?: string
+          snapshot_id: string
+          source_entity_id?: string | null
+          source_entity_type?: string | null
+          source_updated_at?: string | null
+          value_json: Json
+          value_key: string
+        }
+        Update: {
+          created_at?: string
+          household_id?: string
+          id?: string
+          snapshot_id?: string
+          source_entity_id?: string | null
+          source_entity_type?: string | null
+          source_updated_at?: string | null
+          value_json?: Json
+          value_key?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "household_meeting_snapshot_values_snapshot_id_fkey"
+            columns: ["snapshot_id"]
+            isOneToOne: false
+            referencedRelation: "household_meeting_snapshots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      household_meeting_snapshots: {
+        Row: {
+          created_at: string
+          household_id: string
+          id: string
+          meeting_id: string
+          membership_id: string | null
+          packet_version_id: string
+          payload: Json
+          projection: string
+          source_freshness: Json
+        }
+        Insert: {
+          created_at?: string
+          household_id: string
+          id?: string
+          meeting_id: string
+          membership_id?: string | null
+          packet_version_id: string
+          payload?: Json
+          projection: string
+          source_freshness?: Json
+        }
+        Update: {
+          created_at?: string
+          household_id?: string
+          id?: string
+          meeting_id?: string
+          membership_id?: string | null
+          packet_version_id?: string
+          payload?: Json
+          projection?: string
+          source_freshness?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "household_meeting_snapshots_meeting_id_household_id_fkey"
+            columns: ["meeting_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "household_meetings"
+            referencedColumns: ["id", "household_id"]
+          },
+          {
+            foreignKeyName: "household_meeting_snapshots_membership_id_fkey"
+            columns: ["membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "household_meeting_snapshots_packet_version_id_fkey"
+            columns: ["packet_version_id"]
+            isOneToOne: false
+            referencedRelation: "household_meeting_packet_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      household_meetings: {
+        Row: {
+          archived_at: string | null
+          calendar_event_id: string | null
+          cancelled_at: string | null
+          client_idempotency_key: string | null
+          comparison_period_end: string | null
+          comparison_period_start: string | null
+          completed_at: string | null
+          created_at: string
+          data_snapshot_at: string | null
+          household_id: string
+          id: string
+          locked_at: string | null
+          meeting_at: string | null
+          organizer_membership_id: string
+          packet_version: number
+          period_end: string
+          period_start: string
+          published_at: string | null
+          source_version: string
+          started_at: string | null
+          status: string
+          timezone: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          archived_at?: string | null
+          calendar_event_id?: string | null
+          cancelled_at?: string | null
+          client_idempotency_key?: string | null
+          comparison_period_end?: string | null
+          comparison_period_start?: string | null
+          completed_at?: string | null
+          created_at?: string
+          data_snapshot_at?: string | null
+          household_id: string
+          id?: string
+          locked_at?: string | null
+          meeting_at?: string | null
+          organizer_membership_id: string
+          packet_version?: number
+          period_end: string
+          period_start: string
+          published_at?: string | null
+          source_version?: string
+          started_at?: string | null
+          status?: string
+          timezone?: string
+          title?: string
+          updated_at?: string
+        }
+        Update: {
+          archived_at?: string | null
+          calendar_event_id?: string | null
+          cancelled_at?: string | null
+          client_idempotency_key?: string | null
+          comparison_period_end?: string | null
+          comparison_period_start?: string | null
+          completed_at?: string | null
+          created_at?: string
+          data_snapshot_at?: string | null
+          household_id?: string
+          id?: string
+          locked_at?: string | null
+          meeting_at?: string | null
+          organizer_membership_id?: string
+          packet_version?: number
+          period_end?: string
+          period_start?: string
+          published_at?: string | null
+          source_version?: string
+          started_at?: string | null
+          status?: string
+          timezone?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "household_meetings_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "household_meetings_organizer_membership_id_fkey"
+            columns: ["organizer_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
             referencedColumns: ["id"]
           },
         ]
@@ -12684,6 +13521,15 @@ export type Database = {
         }
         Returns: undefined
       }
+      _meeting_default_sections: {
+        Args: never
+        Returns: {
+          informational_only: boolean
+          section_key: string
+          sort_order: number
+          title: string
+        }[]
+      }
       _membership_user_id: {
         Args: { p_membership_id: string }
         Returns: string
@@ -12912,6 +13758,10 @@ export type Database = {
         Args: { p_decision: string; p_note?: string; p_proposal_id: string }
         Returns: undefined
       }
+      accept_suggested_agenda_item: {
+        Args: { p_item_id: string }
+        Returns: undefined
+      }
       acknowledge_governance_version: {
         Args: { p_comment?: string; p_version_id: string }
         Returns: string
@@ -12959,6 +13809,18 @@ export type Database = {
       }
       add_maintenance_comment: {
         Args: { p_body: string; p_request_id: string }
+        Returns: string
+      }
+      add_meeting_agenda_item: {
+        Args: {
+          p_meeting_id: string
+          p_section_key: string
+          p_source?: string
+          p_source_entity_id?: string
+          p_source_entity_type?: string
+          p_title: string
+          p_why_included?: string
+        }
         Returns: string
       }
       add_record_comment: {
@@ -13167,6 +14029,7 @@ export type Database = {
         Returns: string
       }
       cancel_meal_plan: { Args: { p_meal_plan_id: string }; Returns: string }
+      cancel_meeting: { Args: { p_meeting_id: string }; Returns: undefined }
       cancel_opening_balance: {
         Args: { p_entry_id: string }
         Returns: undefined
@@ -13434,6 +14297,7 @@ export type Database = {
         Args: { p_note?: string; p_task_id: string }
         Returns: string
       }
+      complete_meeting: { Args: { p_meeting_id: string }; Returns: undefined }
       complete_notification_delivery: {
         Args: {
           p_claim_token: string
@@ -13921,6 +14785,17 @@ export type Database = {
         }
         Returns: string
       }
+      create_meeting_action_item: {
+        Args: {
+          p_decision_id?: string
+          p_due_date?: string
+          p_idempotency_key?: string
+          p_meeting_id: string
+          p_owner_membership_id?: string
+          p_title: string
+        }
+        Returns: string
+      }
       create_one_time_chore: {
         Args: {
           p_all_day?: boolean
@@ -14140,6 +15015,7 @@ export type Database = {
         Args: { p_transfer_id: string }
         Returns: string
       }
+      delete_receipt_alias: { Args: { p_alias_id: string }; Returns: undefined }
       discard_meal_batch: { Args: { p_batch_id: string }; Returns: string }
       discard_pantry_item: {
         Args: { p_item_id: string; p_note?: string }
@@ -14171,6 +15047,10 @@ export type Database = {
       dismiss_recipe_feedback: {
         Args: { p_feedback_request_id: string }
         Returns: string
+      }
+      dismiss_suggested_agenda_item: {
+        Args: { p_item_id: string }
+        Returns: undefined
       }
       dispose_inventory_item: {
         Args: { p_disposition?: string; p_item_id: string; p_status: string }
@@ -14224,6 +15104,17 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      ensure_monthly_meeting: {
+        Args: {
+          p_household_id: string
+          p_idempotency_key?: string
+          p_meeting_at?: string
+          p_period_end: string
+          p_period_start: string
+          p_timezone?: string
+        }
+        Returns: string
       }
       ensure_profile: {
         Args: never
@@ -14363,6 +15254,10 @@ export type Database = {
         Args: { p_inventory_item_id: string; p_request_id: string }
         Returns: string
       }
+      link_meeting_calendar_event: {
+        Args: { p_calendar_event_id: string; p_meeting_id: string }
+        Returns: undefined
+      }
       link_resource_to_expense_item: {
         Args: {
           p_expense_item_id: string
@@ -14414,6 +15309,15 @@ export type Database = {
           visibility: string
         }[]
       }
+      lock_meeting_packet: {
+        Args: {
+          p_idempotency_key?: string
+          p_meeting_id: string
+          p_shared_payload: Json
+          p_source_freshness?: Json
+        }
+        Returns: string
+      }
       mark_all_notifications_read: {
         Args: { p_household_id?: string }
         Returns: number
@@ -14446,6 +15350,14 @@ export type Database = {
         Returns: string
       }
       mark_meal_preparing: { Args: { p_meal_plan_id: string }; Returns: string }
+      mark_meeting_section_discussed: {
+        Args: {
+          p_meeting_id: string
+          p_section_key: string
+          p_skipped?: boolean
+        }
+        Returns: undefined
+      }
       mark_notification_read: {
         Args: { p_notification_id: string }
         Returns: undefined
@@ -14550,6 +15462,14 @@ export type Database = {
         }
         Returns: string
       }
+      publish_meeting_recap: {
+        Args: {
+          p_idempotency_key?: string
+          p_meeting_id: string
+          p_recap_payload: Json
+        }
+        Returns: string
+      }
       rank_recipe_candidates: {
         Args: { p_meal_request_id: string }
         Returns: number
@@ -14623,6 +15543,26 @@ export type Database = {
           p_expires_at?: string
           p_notes?: string
           p_request_id: string
+        }
+        Returns: string
+      }
+      record_meeting_decision: {
+        Args: {
+          p_agenda_item_id?: string
+          p_decision_text: string
+          p_idempotency_key?: string
+          p_meeting_id: string
+          p_owner_membership_id?: string
+        }
+        Returns: string
+      }
+      record_meeting_note: {
+        Args: {
+          p_agenda_item_id?: string
+          p_body: string
+          p_meeting_id: string
+          p_parking_lot?: boolean
+          p_section_key?: string
         }
         Returns: string
       }
@@ -14977,6 +15917,15 @@ export type Database = {
         }
         Returns: string
       }
+      save_personal_meeting_addendum: {
+        Args: {
+          p_meeting_id: string
+          p_packet_version_id: string
+          p_payload: Json
+          p_source_freshness?: Json
+        }
+        Returns: string
+      }
       schedule_maintenance_appointment: {
         Args: {
           p_all_day?: boolean
@@ -15004,6 +15953,10 @@ export type Database = {
       set_meal_target_servings: {
         Args: { p_meal_plan_id: string; p_target_servings: number }
         Returns: string
+      }
+      set_meeting_status_preparing: {
+        Args: { p_meeting_id: string }
+        Returns: undefined
       }
       set_recipe_favorite: {
         Args: { p_is_favorite: boolean; p_recipe_id: string }
@@ -15051,6 +16004,25 @@ export type Database = {
       start_chore_occurrence: {
         Args: { p_occurrence_id: string }
         Returns: string
+      }
+      start_meeting: { Args: { p_meeting_id: string }; Returns: undefined }
+      submit_client_receipt_extraction: {
+        Args: {
+          p_adapter_name: string
+          p_confidence: number
+          p_content_hash: string
+          p_duplicate_outcome?: string
+          p_duplicate_signals?: Json
+          p_line_items: Json
+          p_match_expense_id?: string
+          p_match_receipt_id?: string
+          p_ocr_full_text?: string
+          p_ocr_lines_json?: Json
+          p_processing_meta?: Json
+          p_proposed: Json
+          p_receipt_id: string
+        }
+        Returns: undefined
       }
       submit_opening_balance_for_confirmation: {
         Args: { p_entry_id: string }
@@ -15247,6 +16219,17 @@ export type Database = {
         Args: { p_batch_id: string; p_remaining_state: string }
         Returns: string
       }
+      update_meeting_section: {
+        Args: {
+          p_included?: boolean
+          p_informational_only?: boolean
+          p_meeting_id: string
+          p_organizer_note?: string
+          p_section_key: string
+          p_sort_order?: number
+        }
+        Returns: undefined
+      }
       update_receipt_review: {
         Args: {
           p_currency?: string
@@ -15291,6 +16274,16 @@ export type Database = {
           p_p256dh: string
           p_platform_category?: string
           p_user_agent_summary?: string
+        }
+        Returns: string
+      }
+      upsert_receipt_alias: {
+        Args: {
+          p_household_id: string
+          p_kind: string
+          p_merchant_scope?: string
+          p_source_text: string
+          p_target_text: string
         }
         Returns: string
       }

@@ -111,6 +111,16 @@ export const HOUSEHOLD_NAV_ITEMS: readonly HouseholdNavItem[] = [
     moreSection: "household",
   },
   {
+    key: "meetings",
+    label: "Household meetings",
+    icon: "governance",
+    href: (id) => householdRoutes.meetings.index(id),
+    match: (pathname, id) => pathname.startsWith(`/app/${id}/meetings`),
+    enabled: true,
+    surface: "more",
+    moreSection: "household",
+  },
+  {
     key: "products",
     label: "Products",
     icon: "search",
