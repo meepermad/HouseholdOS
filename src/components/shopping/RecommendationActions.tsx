@@ -110,8 +110,22 @@ export function RecommendationItemActions({
           type="submit"
           disabled={dismissPending}
           className="inline-flex min-h-11 items-center rounded-md border border-border px-3 text-sm disabled:opacity-60"
+          data-testid="snooze-recommendation"
         >
           Remind next trip
+        </button>
+      </form>
+      <form action={dismissAction}>
+        <input type="hidden" name="householdId" value={householdId} />
+        <input type="hidden" name="itemId" value={itemId} />
+        <input type="hidden" name="decision" value="suppress_auto" />
+        <button
+          type="submit"
+          disabled={dismissPending}
+          className="inline-flex min-h-11 items-center rounded-md border border-border px-3 text-sm disabled:opacity-60"
+          data-testid="suppress-recommendation"
+        >
+          Do not suggest automatically
         </button>
       </form>
       {(addState && !addState.ok) || (dismissState && !dismissState.ok) ? (

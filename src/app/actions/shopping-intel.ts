@@ -163,6 +163,10 @@ export async function decideRediscoveryAction(
   const suggestionId = String(formData.get("suggestionId") ?? "");
   const decision = String(formData.get("decision") ?? "not_this_time");
   if (!householdId || !suggestionId) return fail("Missing suggestion.");
+  // add_ingredients must go through the reviewable proposal flow
+  if (decision === "add_ingredients") {
+    return fail("Review missing ingredients before adding them to a list.");
+  }
   await assertActiveMembership(householdId);
   const supabase = (await createClient()) as Untyped;
   const { error } = await supabase.rpc("decide_recipe_rediscovery", {
@@ -174,6 +178,57 @@ export async function decideRediscoveryAction(
   revalidatePath(`/app/${householdId}/house`);
   revalidatePath(`/app/${householdId}/house/recipes/rediscover`);
   return { ok: true };
+}
+
+export async function confirmRediscoveryIngredientsAction(
+  _prev: ActionResult | null,
+  formData: FormData,
+): Promise<ActionResult> {
+  const householdId = String(formData.get("householdId") ?? "");
+  const proposalId = String(formData.get("proposalId") ?? "");
+  if (!householdId || !proposalId) return fail("Missing proposal.");
+  await assertActiveMembership(householdId);
+
+  const excludedRaw = String(formData.get("excludedLineIdsJson") ?? "[]");
+  let excluded: string[] = [];
+  try {
+    excluded = JSON.parse(excludedRaw) as string[];
+  } catch {
+    excluded = [];
+  }
+
+  const overrides: Record<string, string> = {};
+  for (const [key, value] of formData.entries()) {
+    if (key.startsWith("qty-") && typeof value === "string" && value.trim()) {
+      overrides[key.slice(4)] = value.trim();
+    }
+  }
+
+  const supabase = (await createClient()) as Untyped;
+  const { data, error } = await supabase.rpc(
+    "confirm_rediscovery_ingredient_proposal",
+    {
+      p_proposal_id: proposalId,
+      p_excluded_line_ids: excluded,
+      p_quantity_overrides: overrides,
+      p_idempotency_key: String(formData.get("idempotencyKey") ?? "") || null,
+    },
+  );
+  if (error) return fail(error.message);
+
+  const result = data as {
+    results?: Array<{ lineId: string; ok: boolean; error?: string }>;
+    createdCount?: number;
+  };
+  const failures = (result.results ?? []).filter((r) => !r.ok);
+  revalidatePath(`/app/${householdId}/house/shopping`);
+  revalidatePath(`/app/${householdId}/house/recipes/rediscover`);
+  if (failures.length > 0 && (result.createdCount ?? 0) === 0) {
+    return fail(
+      failures[0]?.error ?? "Unable to add ingredients to the shopping list.",
+    );
+  }
+  redirect(`/app/${householdId}/house/shopping`);
 }
 
 export async function updateShoppingIntelSettingsAction(

@@ -11081,6 +11081,162 @@ export type Database = {
           },
         ]
       }
+      recipe_rediscovery_ingredient_proposal_lines: {
+        Row: {
+          already_on_list: boolean
+          display_name: string
+          excluded: boolean
+          existing_list_item_id: string | null
+          household_id: string
+          id: string
+          line_status: string
+          proposal_id: string
+          quantity_unit: string
+          recipe_ingredient_id: string | null
+          required: boolean
+          required_quantity: number | null
+          shopping_list_item_id: string | null
+          shortfall_quantity: number | null
+          sort_order: number
+          unit_mismatch: boolean
+        }
+        Insert: {
+          already_on_list?: boolean
+          display_name: string
+          excluded?: boolean
+          existing_list_item_id?: string | null
+          household_id: string
+          id?: string
+          line_status: string
+          proposal_id: string
+          quantity_unit?: string
+          recipe_ingredient_id?: string | null
+          required?: boolean
+          required_quantity?: number | null
+          shopping_list_item_id?: string | null
+          shortfall_quantity?: number | null
+          sort_order?: number
+          unit_mismatch?: boolean
+        }
+        Update: {
+          already_on_list?: boolean
+          display_name?: string
+          excluded?: boolean
+          existing_list_item_id?: string | null
+          household_id?: string
+          id?: string
+          line_status?: string
+          proposal_id?: string
+          quantity_unit?: string
+          recipe_ingredient_id?: string | null
+          required?: boolean
+          required_quantity?: number | null
+          shopping_list_item_id?: string | null
+          shortfall_quantity?: number | null
+          sort_order?: number
+          unit_mismatch?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recipe_rediscovery_ingredient_pro_proposal_id_household_id_fkey"
+            columns: ["proposal_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "recipe_rediscovery_ingredient_proposals"
+            referencedColumns: ["id", "household_id"]
+          },
+          {
+            foreignKeyName: "recipe_rediscovery_ingredient_proposal_lines_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recipe_rediscovery_ingredient_proposal_lines_proposal_id_fkey"
+            columns: ["proposal_id"]
+            isOneToOne: false
+            referencedRelation: "recipe_rediscovery_ingredient_proposals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recipe_rediscovery_ingredient_proposals: {
+        Row: {
+          built_by_membership_id: string
+          client_idempotency_key: string | null
+          confirmed_at: string | null
+          created_at: string
+          expires_at: string
+          household_id: string
+          id: string
+          list_id: string | null
+          policy_note: string
+          recipe_id: string
+          scoring_version: string
+          status: string
+          suggestion_id: string
+        }
+        Insert: {
+          built_by_membership_id: string
+          client_idempotency_key?: string | null
+          confirmed_at?: string | null
+          created_at?: string
+          expires_at?: string
+          household_id: string
+          id?: string
+          list_id?: string | null
+          policy_note?: string
+          recipe_id: string
+          scoring_version?: string
+          status?: string
+          suggestion_id: string
+        }
+        Update: {
+          built_by_membership_id?: string
+          client_idempotency_key?: string | null
+          confirmed_at?: string | null
+          created_at?: string
+          expires_at?: string
+          household_id?: string
+          id?: string
+          list_id?: string | null
+          policy_note?: string
+          recipe_id?: string
+          scoring_version?: string
+          status?: string
+          suggestion_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recipe_rediscovery_ingredient_p_suggestion_id_household_id_fkey"
+            columns: ["suggestion_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "recipe_rediscovery_suggestions"
+            referencedColumns: ["id", "household_id"]
+          },
+          {
+            foreignKeyName: "recipe_rediscovery_ingredient_propo_built_by_membership_id_fkey"
+            columns: ["built_by_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recipe_rediscovery_ingredient_proposa_list_id_household_id_fkey"
+            columns: ["list_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "shopping_lists"
+            referencedColumns: ["id", "household_id"]
+          },
+          {
+            foreignKeyName: "recipe_rediscovery_ingredient_proposals_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       recipe_rediscovery_preferences: {
         Row: {
           allow_push_reminders: boolean
@@ -11131,6 +11287,58 @@ export type Database = {
             columns: ["updated_by_membership_id"]
             isOneToOne: false
             referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recipe_rediscovery_shopping_item_links: {
+        Row: {
+          created_at: string
+          household_id: string
+          id: string
+          proposal_id: string
+          proposal_line_id: string
+          shopping_item_id: string
+          suggestion_id: string
+        }
+        Insert: {
+          created_at?: string
+          household_id: string
+          id?: string
+          proposal_id: string
+          proposal_line_id: string
+          shopping_item_id: string
+          suggestion_id: string
+        }
+        Update: {
+          created_at?: string
+          household_id?: string
+          id?: string
+          proposal_id?: string
+          proposal_line_id?: string
+          shopping_item_id?: string
+          suggestion_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recipe_rediscovery_shopping_ite_suggestion_id_household_id_fkey"
+            columns: ["suggestion_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "recipe_rediscovery_suggestions"
+            referencedColumns: ["id", "household_id"]
+          },
+          {
+            foreignKeyName: "recipe_rediscovery_shopping_item__proposal_id_household_id_fkey"
+            columns: ["proposal_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "recipe_rediscovery_ingredient_proposals"
+            referencedColumns: ["id", "household_id"]
+          },
+          {
+            foreignKeyName: "recipe_rediscovery_shopping_item_links_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
             referencedColumns: ["id"]
           },
         ]
@@ -13201,11 +13409,13 @@ export type Database = {
           default_list_id: string | null
           enabled: boolean
           forecast_confidence_threshold: string
+          forecast_formula_version: string
           household_id: string
           include_guest_needs: boolean
           include_proposed_meal_ingredients: boolean
           include_recurring_staples: boolean
           include_supply_forecasts: boolean
+          min_staple_purchase_count: number
           recommendation_horizon_days: number
           show_personal_separately: boolean
           updated_at: string
@@ -13215,11 +13425,13 @@ export type Database = {
           default_list_id?: string | null
           enabled?: boolean
           forecast_confidence_threshold?: string
+          forecast_formula_version?: string
           household_id: string
           include_guest_needs?: boolean
           include_proposed_meal_ingredients?: boolean
           include_recurring_staples?: boolean
           include_supply_forecasts?: boolean
+          min_staple_purchase_count?: number
           recommendation_horizon_days?: number
           show_personal_separately?: boolean
           updated_at?: string
@@ -13229,11 +13441,13 @@ export type Database = {
           default_list_id?: string | null
           enabled?: boolean
           forecast_confidence_threshold?: string
+          forecast_formula_version?: string
           household_id?: string
           include_guest_needs?: boolean
           include_proposed_meal_ingredients?: boolean
           include_recurring_staples?: boolean
           include_supply_forecasts?: boolean
+          min_staple_purchase_count?: number
           recommendation_horizon_days?: number
           show_personal_separately?: boolean
           updated_at?: string
@@ -13380,6 +13594,58 @@ export type Database = {
             columns: ["item_id"]
             isOneToOne: false
             referencedRelation: "shopping_recommendation_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shopping_staple_suppressions: {
+        Row: {
+          created_at: string
+          household_id: string
+          id: string
+          normalized_key: string
+          reason: string
+          related_supply_id: string | null
+          suppressed_by_membership_id: string
+        }
+        Insert: {
+          created_at?: string
+          household_id: string
+          id?: string
+          normalized_key: string
+          reason?: string
+          related_supply_id?: string | null
+          suppressed_by_membership_id: string
+        }
+        Update: {
+          created_at?: string
+          household_id?: string
+          id?: string
+          normalized_key?: string
+          reason?: string
+          related_supply_id?: string | null
+          suppressed_by_membership_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shopping_staple_suppressions_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shopping_staple_suppressions_related_supply_id_household_i_fkey"
+            columns: ["related_supply_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "supply_items"
+            referencedColumns: ["id", "household_id"]
+          },
+          {
+            foreignKeyName: "shopping_staple_suppressions_suppressed_by_membership_id_fkey"
+            columns: ["suppressed_by_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
             referencedColumns: ["id"]
           },
         ]
@@ -15214,6 +15480,15 @@ export type Database = {
         Args: { p_idempotency_key: string; p_receipt_id: string }
         Returns: string
       }
+      confirm_rediscovery_ingredient_proposal: {
+        Args: {
+          p_excluded_line_ids?: string[]
+          p_idempotency_key?: string
+          p_proposal_id: string
+          p_quantity_overrides?: Json
+        }
+        Returns: Json
+      }
       confirm_routed_settlement: {
         Args: { p_proposal_id: string }
         Returns: undefined
@@ -16228,6 +16503,15 @@ export type Database = {
         }
         Returns: number
       }
+      persist_rediscovery_ingredient_proposal: {
+        Args: {
+          p_idempotency_key?: string
+          p_lines: Json
+          p_list_id: string
+          p_suggestion_id: string
+        }
+        Returns: string
+      }
       persist_shopping_recommendation_run: {
         Args: {
           p_household_id: string
@@ -16902,6 +17186,15 @@ export type Database = {
           p_idempotency_key: string
           p_proposal_id: string
           p_public_note?: string
+        }
+        Returns: string
+      }
+      suppress_shopping_staple: {
+        Args: {
+          p_household_id: string
+          p_normalized_key: string
+          p_reason?: string
+          p_related_supply_id?: string
         }
         Returns: string
       }

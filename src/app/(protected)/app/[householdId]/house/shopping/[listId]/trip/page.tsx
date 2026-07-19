@@ -36,6 +36,11 @@ export default async function ShoppingTripPage({
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const loose = (await createClient()) as any;
+  const { data: household } = await loose
+    .from("households")
+    .select("name")
+    .eq("id", householdId)
+    .maybeSingle();
   const { data: stillNeeded } = await loose
     .from("shopping_trip_events")
     .select("shopping_item_id")
@@ -51,9 +56,12 @@ export default async function ShoppingTripPage({
   const stillItems = open.filter((i) => stillIds.has(i.id));
 
   return (
-    <main className="space-y-5 pb-24" data-testid="shopping-trip-mode">
+    <main className="space-y-5 pb-[max(6rem,env(safe-area-inset-bottom))]" data-testid="shopping-trip-mode">
       <AppBackButton fallbackHref={`/app/${householdId}/house/shopping/${listId}`} />
       <header className="space-y-1">
+        <p className="text-xs text-text-muted" data-testid="household-context-label">
+          Household: {String(household?.name ?? "Household")}
+        </p>
         <h1 className="font-[family-name:var(--font-display)] text-2xl font-semibold">
           Shopping{result.list.storeLabel ? ` at ${result.list.storeLabel}` : ""}
         </h1>

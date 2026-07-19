@@ -117,6 +117,47 @@ export async function generateRecipeRediscovery(params: {
     ]),
   );
 
+  const candidateRecipeIds = [
+    ...new Set(
+      ((history ?? []) as Array<Record<string, unknown>>)
+        .map((h) => String(h.recipe_id))
+        .filter(
+          (id) => positiveRecipeIds.has(id) || prefByRecipe.has(id),
+        ),
+    ),
+  ].slice(0, 80);
+
+  const { data: recipeBatch } = candidateRecipeIds.length
+    ? await supabase
+        .from("recipes")
+        .select("id,name,archived_at,visibility,created_by_membership_id")
+        .eq("household_id", params.householdId)
+        .in("id", candidateRecipeIds)
+    : { data: [] };
+  const recipeById = new Map(
+    ((recipeBatch ?? []) as Array<Record<string, unknown>>).map((r) => [
+      String(r.id),
+      r,
+    ]),
+  );
+
+  const { data: ingredientBatch } = candidateRecipeIds.length
+    ? await supabase
+        .from("recipe_ingredients")
+        .select("recipe_id,display_name,required")
+        .eq("household_id", params.householdId)
+        .in("recipe_id", candidateRecipeIds)
+        .eq("required", true)
+        .limit(600)
+    : { data: [] };
+  const ingredientsByRecipe = new Map<string, Array<{ display_name: string }>>();
+  for (const ing of (ingredientBatch ?? []) as Array<Record<string, unknown>>) {
+    const rid = String(ing.recipe_id);
+    const list = ingredientsByRecipe.get(rid) ?? [];
+    list.push({ display_name: String(ing.display_name) });
+    ingredientsByRecipe.set(rid, list);
+  }
+
   const results = [];
   for (const h of (history ?? []) as Array<Record<string, unknown>>) {
     const recipeId = String(h.recipe_id);
@@ -130,23 +171,15 @@ export async function generateRecipeRediscovery(params: {
         (snooze.snooze_until != null &&
           Date.parse(String(snooze.snooze_until)) > Date.now()));
 
-    const { data: recipe } = await supabase
-      .from("recipes")
-      .select("id,name,archived_at,visibility")
-      .eq("id", recipeId)
-      .eq("household_id", params.householdId)
-      .maybeSingle();
+    const recipe = recipeById.get(recipeId);
     if (!recipe || recipe.archived_at) continue;
     if (String(recipe.visibility) === "creator_only") continue;
+    if (String(recipe.visibility) === "selected_members") {
+      // Batch path: only household-visible recipes for shared rediscovery
+      continue;
+    }
 
-    const { data: ingredients } = await supabase
-      .from("recipe_ingredients")
-      .select("display_name,required")
-      .eq("recipe_id", recipeId)
-      .eq("required", true)
-      .limit(30);
-
-    const ings = (ingredients.data ?? []) as Array<{ display_name: string }>;
+    const ings = ingredientsByRecipe.get(recipeId) ?? [];
     let pantryHave = 0;
     let shoppingOverlap = 0;
     for (const ing of ings) {

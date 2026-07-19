@@ -99,14 +99,19 @@ export function buildShoppingRecommendations(
 
   for (const m of input.mealIngredients) {
     if (m.accepted) {
+      const guest = Boolean(m.guestRelated) && input.includeGuestNeeds;
       candidates.push(
         makeCandidate({
           name: m.name,
-          priorityBand: m.soon ? "urgent" : "recommended",
+          priorityBand: m.soon || guest ? "urgent" : "recommended",
           suggestedQuantity: m.quantity,
           suggestedUnit: m.unit,
-          explanation: `Needed for ${m.mealLabel}.`,
-          reasonCodes: ["accepted_meal_ingredient"],
+          explanation: guest
+            ? `Needed for ${m.mealLabel} (guest event).`
+            : `Needed for ${m.mealLabel}.`,
+          reasonCodes: guest
+            ? ["accepted_meal_ingredient", "guest_need"]
+            : ["accepted_meal_ingredient"],
           confidence: "high",
           quantityBreakdown: [
             {
@@ -119,13 +124,15 @@ export function buildShoppingRecommendations(
             {
               sourceType: "meal_plan",
               sourceId: m.mealId,
-              reasonCode: "accepted_meal_ingredient",
-              explanation: `Needed for ${m.mealLabel}.`,
+              reasonCode: guest ? "guest_need" : "accepted_meal_ingredient",
+              explanation: guest
+                ? `Needed for ${m.mealLabel} (guest event).`
+                : `Needed for ${m.mealLabel}.`,
               quantity: m.quantity,
               quantityUnit: m.unit,
             },
           ],
-          modeTags: m.guestRelated
+          modeTags: guest
             ? ["planned_meals", "guest_event"]
             : ["planned_meals"],
         }),
@@ -259,7 +266,7 @@ export function buildShoppingRecommendations(
           suggestedQuantity: st.lastQuantity,
           suggestedUnit: st.unit,
           relatedSupplyId: st.relatedSupplyId,
-          explanation: `Usually purchased every ${st.typicalIntervalDays} weeks-equivalent days and last purchased ${st.daysSinceLastPurchase} days ago.`,
+          explanation: `Usually purchased every ${Math.max(1, Math.round(st.typicalIntervalDays / 7))} weeks and last purchased ${st.daysSinceLastPurchase} days ago. Estimate based on ${st.purchaseCount} purchases.`,
           reasonCodes: ["recurring_staple"],
           confidence: st.purchaseCount >= 3 ? "medium" : "low",
           sources: [
@@ -267,7 +274,7 @@ export function buildShoppingRecommendations(
               sourceType: "purchase_history",
               sourceId: st.id,
               reasonCode: "recurring_staple",
-              explanation: "Recurring staple interval.",
+              explanation: `Usually purchased every ${Math.max(1, Math.round(st.typicalIntervalDays / 7))} weeks. Estimate based on ${st.purchaseCount} purchases.`,
               quantity: st.lastQuantity,
               quantityUnit: st.unit,
             },

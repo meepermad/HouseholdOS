@@ -16,6 +16,13 @@ export default async function RecipeRediscoverPage({
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const supabase = (await createClient()) as any;
+  const { data: household } = await supabase
+    .from("households")
+    .select("name")
+    .eq("id", householdId)
+    .maybeSingle();
+  const householdName = String(household?.name ?? "Household");
+
   const { data: defaultList } = await supabase.rpc("ensure_default_shopping_list", {
     p_household_id: householdId,
   });
@@ -58,6 +65,9 @@ export default async function RecipeRediscoverPage({
         <p className="mt-2 text-sm text-text-secondary">
           Occasional meal ideas you liked before. Preference authors stay private.
         </p>
+        <p className="text-xs text-text-muted" data-testid="household-context-label">
+          Household: {String(householdName)}
+        </p>
       </header>
 
       {rows.length === 0 ? (
@@ -85,6 +95,7 @@ export default async function RecipeRediscoverPage({
                 householdId={householdId}
                 suggestionId={String(r.id)}
                 recipeId={String(r.recipe_id)}
+                householdName={householdName}
               />
             </li>
           ))}

@@ -111,14 +111,15 @@ Deterministic, review-first shopping recommendations and occasional recipe redis
 
 | Concern | Approach |
 |---|---|
-| Candidate gather | Versioned TypeScript engine (`src/lib/shopping/recommendations/`) from meals, open requests, supplies/forecasts, guest/meal-prep needs, trip `still_needed`, and household-visible sources only |
-| Workflow | Gather → dedupe → quantity suggest → explain → user review → add via existing `create_shopping_item` |
-| Persistence | `shopping_recommendation_runs` / `_items` / `_sources` / `_decisions` + household prefs; trip sessions/events for in-store mode |
-| Rediscovery | Extends recipe preference signals (`src/lib/shopping/rediscovery/`); cadence-bounded; attendee-scoped without exposing private preference authors |
-| Mutations | Security-definer RPCs (`persist_shopping_recommendation_run`, `add_recommended_item_to_list`, `start_shopping_trip`, `decide_recipe_rediscovery`, …); actor from `auth.uid()` |
-| Surfaces | `/house/shopping/recommendations`, `/house/shopping/[listId]/trip`, `/house/recipes/rediscover`, `/settings/shopping`; Home attention cards; notification catalog under `shopping` category |
+| Candidate gather | Versioned TypeScript engine (`src/lib/shopping/recommendations/`) from meals, open requests, supplies/forecasts, recurring staples, guest/meal-prep needs, trip `still_needed`, and household-visible sources only |
+| Forecast | Deterministic formula v1 (`src/lib/shopping/forecast.ts`) from supply stock events; approximate language; threshold recommendations remain when confidence is insufficient |
+| Staples | Household restock history (`src/lib/shopping/staples.ts`) with min purchase count + per-item suppressions |
+| Forgotten Favorite ingredients | Review-first proposal (`prepareRediscoveryIngredients` → `confirm_rediscovery_ingredient_proposal`); recalculates pantry/list; never auto-adds from suggestion snapshot |
+| Workflow | Gather → dedupe → quantity suggest → explain → user review → add via existing shopping RPCs |
+| Persistence | `shopping_recommendation_*`, trip sessions/events, rediscovery suggestions/proposals/links |
+| Surfaces | `/house/shopping/recommendations`, `/house/shopping/[listId]/trip`, `/house/recipes/rediscover`, `/house/recipes/rediscover/[suggestionId]/ingredients`, `/settings/shopping` |
 
-Personal pantry and creator-only recipes must not appear in shared recommendation explanations or counts.
+Personal pantry and creator-only recipes must not appear in shared recommendation explanations or counts. Multi-household surfaces show the household name.
 
 ## Notifications (outbox + delivery)
 
