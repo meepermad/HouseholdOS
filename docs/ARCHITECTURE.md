@@ -302,11 +302,11 @@ Extends Phase 4 without replacing working calendar models:
 | Duplicates | Advisory file/content/merchant-date-total signals — never silent merge |
 | Resource links | Optional pantry/supply/inventory/shopping suggestions after review; void/amend does not delete physical resources |
 | CSV import | Review-first batches; same-household RPCs; chores/calendar execute via domain RPCs; opening-balance rows stay drafts until both parties confirm |
-| Opening balances | Pre-HouseholdOS debts via `opening_balance_entries`; both debtor and creditor must confirm (coordinator cannot bypass); confirmed entries create `obligation_kind = opening_balance` with null `expense_id` |
-| Routed settlements | One-intermediary A→B→C proposals under Money → Simplify balances; external A→C payment only; confirm atomically reduces both legs; reservations + stale revalidation |
+| Opening balances | Pre-HouseholdOS debts via `opening_balance_entries`; both debtor and creditor must confirm (coordinator cannot bypass); confirmed entries create `obligation_kind = opening_balance` with null `expense_id`. Schema status `reversed` is reserved — opening-balance reverse RPC/UI are not implemented. |
+| Routed settlements | One-intermediary A→B→C proposals under Money → Simplify balances; **only the payer** may create a binding proposal; idempotency keyed by household + actor; external A→C payment only; confirm atomically reduces both legs; reservations + stale revalidation. Confirmed-route correction requires participant review, recipient confirmation that money was returned, linked `payment_reversals` row, then atomic obligation restore. Unilateral `reverse_routed_settlement` is disabled. |
 | Receipt destinations | After confirm, `apply_receipt_line_destinations` applies pantry/supply/inventory/shopping actions (`proposed→applied|failed|skipped|reversed`); reverse is soft and does not delete stock |
 | Archive restore | Coordinator selective nonfinancial restore from export JSON into a household; financial/auth/secrets excluded |
-| Offline sync | IndexedDB snapshots + mutation outbox for allowlisted nonfinancial actions; money confirms/routes/export/restore stay online-only; `SYNC_WORKER_SECRET` gates `/api/internal/sync/process`; logout clears offline data |
+| Offline sync | IndexedDB snapshots + mutation outbox; allowlist is empty until domain apply handlers exist; drain requires `applied: true` (ack-only → `unsupported`, recoverable); money confirms/routes/export/restore stay online-only; `SYNC_WORKER_SECRET` gates `/api/internal/sync/process`; logout clears offline data |
 | Roommate ops | Shared purchases, meeting board, packages, directory, supply forecast, optional parking module, retention policy row |
 | Products | Browser one-shot barcode + manual digits; `ProductLookupAdapter` (fixture/manual); review required |
 | Calendar interop | Google PKCE + mock/live provider gate; Apple ICS subscribe/export/import only |

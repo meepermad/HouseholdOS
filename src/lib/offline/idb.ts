@@ -1,13 +1,22 @@
 /**
- * Completion-D: client offline store (IndexedDB).
+ * Client offline store (IndexedDB).
  * Never cache private financial records in the service worker; this IDB is
  * for non-financial snapshots + mutation outbox only.
  */
 
 export const OFFLINE_DB_NAME = "householdos-offline";
-export const OFFLINE_DB_VERSION = 1;
+export const OFFLINE_DB_VERSION = 2;
 
-export type OutboxStatus = "pending" | "syncing" | "synced" | "failed" | "conflict";
+export type OutboxStatus =
+  | "pending"
+  | "syncing"
+  | "applied"
+  | "unsupported"
+  | "conflict"
+  | "failed"
+  | "discarded"
+  /** @deprecated Legacy ack-only status; reconciled to unsupported. */
+  | "synced";
 
 export type OutboxMutation = {
   id: string;
@@ -29,6 +38,14 @@ export type SnapshotRecord = {
   payload: unknown;
   updatedAt: string;
 };
+
+const RECOVERABLE_STATUSES: OutboxStatus[] = [
+  "pending",
+  "failed",
+  "unsupported",
+  "conflict",
+  "synced",
+];
 
 function openDb(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
@@ -64,6 +81,40 @@ function txDone(tx: IDBTransaction): Promise<void> {
     tx.onerror = () => reject(tx.error ?? new Error("IndexedDB transaction failed"));
     tx.onabort = () => reject(tx.error ?? new Error("IndexedDB transaction aborted"));
   });
+}
+
+async function listAllOutbox(): Promise<OutboxMutation[]> {
+  const db = await openDb();
+  const tx = db.transaction("outbox", "readonly");
+  const req = tx.objectStore("outbox").getAll();
+  const rows = await new Promise<OutboxMutation[]>((resolve, reject) => {
+    req.onsuccess = () => resolve((req.result as OutboxMutation[]) ?? []);
+    req.onerror = () => reject(req.error);
+  });
+  await txDone(tx);
+  db.close();
+  return rows;
+}
+
+/**
+ * Preserve legacy ack-only ("synced") rows as unsupported so they are not
+ * treated as applied and are not auto-deleted.
+ */
+export async function reconcileOutboxStatuses(): Promise<number> {
+  const rows = await listAllOutbox();
+  let changed = 0;
+  for (const row of rows) {
+    if (row.status === "synced") {
+      await updateOutbox(row.id, {
+        status: "unsupported",
+        lastError:
+          row.lastError ??
+          "Server synchronization is not available for this action yet",
+      });
+      changed += 1;
+    }
+  }
+  return changed;
 }
 
 export async function putSnapshot(record: SnapshotRecord): Promise<void> {
@@ -109,18 +160,21 @@ export async function enqueueOutbox(
 export async function listPendingOutbox(
   householdId?: string,
 ): Promise<OutboxMutation[]> {
-  const db = await openDb();
-  const tx = db.transaction("outbox", "readonly");
-  const store = tx.objectStore("outbox");
-  const req = store.getAll();
-  const rows = await new Promise<OutboxMutation[]>((resolve, reject) => {
-    req.onsuccess = () => resolve((req.result as OutboxMutation[]) ?? []);
-    req.onerror = () => reject(req.error);
-  });
-  await txDone(tx);
-  db.close();
+  await reconcileOutboxStatuses();
+  const rows = await listAllOutbox();
   return rows
     .filter((r) => r.status === "pending" || r.status === "failed")
+    .filter((r) => (householdId ? r.householdId === householdId : true))
+    .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+}
+
+export async function listRecoverableOutbox(
+  householdId?: string,
+): Promise<OutboxMutation[]> {
+  await reconcileOutboxStatuses();
+  const rows = await listAllOutbox();
+  return rows
+    .filter((r) => RECOVERABLE_STATUSES.includes(r.status) || r.status === "unsupported")
     .filter((r) => (householdId ? r.householdId === householdId : true))
     .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
 }
@@ -142,6 +196,13 @@ export async function updateOutbox(
   }
   await txDone(tx);
   db.close();
+}
+
+export async function discardOutbox(id: string): Promise<void> {
+  await updateOutbox(id, {
+    status: "discarded",
+    lastError: "Discarded by user",
+  });
 }
 
 export async function getMeta<T = unknown>(key: string): Promise<T | null> {

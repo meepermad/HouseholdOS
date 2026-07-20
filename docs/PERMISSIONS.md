@@ -58,6 +58,7 @@ Enforced in:
 - Only the **confirming recipient** may reverse a confirmed payment through the reverse RPC (senders request reversal via dispute).
 - Only the **creditor** may create a waiver; the debtor cannot waive their own debt.
 - Coordinator status alone does **not** grant silent edits of payment history.
+- **Routed settlements:** only the **payer** may create a binding proposal. Confirmed-route correction requires the three participants (recipient confirms external return; payer and intermediary approve). A financial coordinator may *request* an administrative correction but cannot unilaterally restore obligations while leaving the linked payment confirmed. Opening-balance **reverse** is not implemented (schema status reserved only).
 
 \*\*\*\*`household_coordinator` may cancel or update **household-visible** operational events through an audited `coordinator_override` path. Coordinator override is **refused** for `participants` and `private_busy` events. `financial_coordinator` has no special calendar authority. Organizer identity is always derived from `auth.uid()` membership — callers cannot name another organizer.
 

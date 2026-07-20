@@ -18,7 +18,7 @@ export default async function SimplifyBalancesPage({
   params: Promise<{ householdId: string }>;
 }) {
   const { householdId } = await params;
-  await assertActiveMembership(householdId);
+  const ctx = await assertActiveMembership(householdId);
 
   const [suggestions, proposals, members] = await Promise.all([
     loadSimplifySuggestions(householdId),
@@ -40,7 +40,7 @@ export default async function SimplifyBalancesPage({
           When A owes B and B owes C, a routed payment lets A pay C outside the app
           (Venmo, Cash App, Zelle, cash, etc.). After everyone agrees and C confirms
           receipt, HouseholdOS reduces both related balances. Money never moves through
-          this app.
+          this app. Only the payer can create a binding proposal.
         </p>
       </div>
 
@@ -50,6 +50,7 @@ export default async function SimplifyBalancesPage({
           householdId={householdId}
           suggestions={suggestions}
           memberLabel={label}
+          currentMembershipId={ctx.membershipId}
         />
       </section>
 

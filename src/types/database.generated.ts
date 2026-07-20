@@ -12488,6 +12488,131 @@ export type Database = {
           },
         ]
       }
+      routed_settlement_correction_requests: {
+        Row: {
+          applied_at: string | null
+          correction_path: string
+          created_at: string
+          household_id: string
+          id: string
+          payment_reversal_id: string | null
+          proposal_id: string
+          reason: string
+          recipient_decided_at: string | null
+          recipient_decision: string | null
+          requested_by_membership_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          applied_at?: string | null
+          correction_path: string
+          created_at?: string
+          household_id: string
+          id?: string
+          payment_reversal_id?: string | null
+          proposal_id: string
+          reason: string
+          recipient_decided_at?: string | null
+          recipient_decision?: string | null
+          requested_by_membership_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          applied_at?: string | null
+          correction_path?: string
+          created_at?: string
+          household_id?: string
+          id?: string
+          payment_reversal_id?: string | null
+          proposal_id?: string
+          reason?: string
+          recipient_decided_at?: string | null
+          recipient_decision?: string | null
+          requested_by_membership_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "routed_settlement_correction_re_requested_by_membership_id_fkey"
+            columns: ["requested_by_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "routed_settlement_correction_requ_proposal_id_household_id_fkey"
+            columns: ["proposal_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "routed_settlement_proposals"
+            referencedColumns: ["id", "household_id"]
+          },
+          {
+            foreignKeyName: "routed_settlement_correction_requests_payment_reversal_id_fkey"
+            columns: ["payment_reversal_id"]
+            isOneToOne: false
+            referencedRelation: "payment_reversals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      routed_settlement_correction_responses: {
+        Row: {
+          created_at: string
+          decision: string
+          household_id: string
+          id: string
+          membership_id: string
+          note: string | null
+          request_id: string
+          role: string
+        }
+        Insert: {
+          created_at?: string
+          decision: string
+          household_id: string
+          id?: string
+          membership_id: string
+          note?: string | null
+          request_id: string
+          role: string
+        }
+        Update: {
+          created_at?: string
+          decision?: string
+          household_id?: string
+          id?: string
+          membership_id?: string
+          note?: string | null
+          request_id?: string
+          role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "routed_settlement_correction_responses_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "routed_settlement_correction_responses_membership_id_fkey"
+            columns: ["membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "routed_settlement_correction_responses_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "routed_settlement_correction_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       routed_settlement_events: {
         Row: {
           actor_membership_id: string | null
@@ -14850,6 +14975,10 @@ export type Database = {
         Args: { p_receipt_id: string }
         Returns: undefined
       }
+      apply_routed_settlement_correction: {
+        Args: { p_request_id: string }
+        Returns: undefined
+      }
       approve_chore_reassignment: {
         Args: { p_request_id: string; p_resolution_note?: string }
         Returns: string
@@ -16808,6 +16937,14 @@ export type Database = {
         Args: { p_area_id: string; p_note?: string; p_to_membership_id: string }
         Returns: string
       }
+      request_routed_settlement_correction: {
+        Args: {
+          p_correction_path: string
+          p_proposal_id: string
+          p_reason: string
+        }
+        Returns: string
+      }
       reserve_calendar_resource: {
         Args: {
           p_confirmed?: boolean
@@ -16861,6 +16998,10 @@ export type Database = {
       }
       respond_opening_balance: {
         Args: { p_decision: string; p_entry_id: string; p_note?: string }
+        Returns: undefined
+      }
+      respond_routed_settlement_correction: {
+        Args: { p_decision: string; p_note?: string; p_request_id: string }
         Returns: undefined
       }
       respond_to_calendar_event: {

@@ -54,3 +54,16 @@ Supabase Dashboard may still label keys as **anon** and **service_role**. Map:
 
 - anon / publishable → `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
 - service_role / secret → `SUPABASE_SECRET_KEY`
+
+## Credential rotation (operator)
+
+If production credentials were ever included in a shared local archive (for example a source ZIP that contained `.env.local`), rotate them in the provider dashboards — do **not** attempt rotation through application source code.
+
+Rotate and re-verify, in order:
+
+1. `SUPABASE_SECRET_KEY` (Supabase Dashboard → Project Settings → API) — update Vercel env + local `.env.local`, then confirm privileged server ops and workers.
+2. Worker bearer secrets: `NOTIFICATION_WORKER_SECRET`, `DOCUMENT_JOB_WORKER_SECRET`, `EXPORT_WORKER_SECRET`, `SYNC_WORKER_SECRET` — update Vercel and any cron/Vault references; hit each `/api/internal/*` endpoint with the new secret.
+3. `VAPID_PRIVATE_KEY` / `NEXT_PUBLIC_VAPID_PUBLIC_KEY` if the private half may have leaked (requires a production rebuild after public key change).
+4. Optional provider secrets (`OPENAI_API_KEY`, Google Calendar client secret, email API keys) if present in the archive.
+
+Never commit `.env.local` or other real environment files. Never print secret values into chat, logs, tests, or reports. After rotation, smoke-test notification dispatch, document/OCR jobs, export processing, and sync worker auth.

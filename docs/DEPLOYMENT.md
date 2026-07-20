@@ -34,6 +34,10 @@ Set in the Vercel project (Production + Preview as appropriate):
 
 Never set the secret key, worker secret, VAPID private key, or email API key as `NEXT_PUBLIC_*`.
 
+### After a leaked local env archive
+
+If `.env.local` (or similar) was shared outside the private operator machine, manually rotate `SUPABASE_SECRET_KEY` and all worker secrets in Supabase + Vercel before treating production as trustworthy. See [ENVIRONMENT.md](./ENVIRONMENT.md#credential-rotation-operator). Do not rotate credentials via git commits.
+
 ## Calendar feeds
 
 Personal iCalendar feeds are served at `/api/calendar/feed/{token}.ics` using the privileged Supabase client. Ensure `APP_URL` matches the public origin so feed URLs shown at create/regenerate are correct. Treat feed URLs like passwords; revoking a token stops future access (clients may keep a cached copy briefly).

@@ -1,6 +1,9 @@
 import { assertActiveMembership } from "@/lib/household-context";
 import { listActiveMemberOptions } from "@/lib/expenses/queries";
-import { getRoutedProposal } from "@/lib/payments/opening-routed-queries";
+import {
+  getOpenRoutedCorrection,
+  getRoutedProposal,
+} from "@/lib/payments/opening-routed-queries";
 import { RoutedProposalActions } from "@/components/payments/RoutedProposalActions";
 import { AppBackButton } from "@/components/app-back-button";
 import { formatMoney } from "@/lib/expenses/display";
@@ -16,9 +19,10 @@ export default async function RoutedProposalDetailPage({
 }) {
   const { householdId, proposalId } = await params;
   const ctx = await assertActiveMembership(householdId);
-  const [proposal, members] = await Promise.all([
+  const [proposal, members, correction] = await Promise.all([
     getRoutedProposal(householdId, proposalId),
     listActiveMemberOptions(householdId),
+    getOpenRoutedCorrection(householdId, proposalId),
   ]);
   if (!proposal) notFound();
 
@@ -63,6 +67,11 @@ export default async function RoutedProposalDetailPage({
         proposalId={proposal.id}
         status={proposal.status}
         role={role}
+        correction={
+          correction
+            ? { id: correction.id, status: correction.status }
+            : null
+        }
       />
     </main>
   );

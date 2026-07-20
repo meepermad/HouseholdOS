@@ -17,10 +17,12 @@ export function SimplifySuggestionList({
   householdId,
   suggestions,
   memberLabel,
+  currentMembershipId,
 }: {
   householdId: string;
   suggestions: RoutedSettlementSuggestion[];
   memberLabel: (membershipId: string) => string;
+  currentMembershipId: string;
 }) {
   if (suggestions.length === 0) {
     return (
@@ -37,6 +39,7 @@ export function SimplifySuggestionList({
         const payer = memberLabel(s.payerMembershipId);
         const intermediary = memberLabel(s.intermediaryMembershipId);
         const recipient = memberLabel(s.recipientMembershipId);
+        const isPayer = currentMembershipId === s.payerMembershipId;
         return (
           <li
             key={`${s.obligationAbId}-${s.obligationBcId}-${s.amountCents}`}
@@ -92,12 +95,20 @@ export function SimplifySuggestionList({
               <p className="mt-2 text-xs text-text-muted">
                 Participants: {payer}, {intermediary}, and {recipient}. If balances
                 change before confirmation, the proposal may become stale and should
-                be reviewed or cancelled. Reversing a confirmed routed settlement
-                restores the prior obligations.
+                be reviewed or cancelled. Only {payer} can propose this route. Correcting
+                a confirmed route requires participant review, recipient confirmation that
+                the external payment was returned, and a linked payment reversal before
+                both obligation legs are restored.
               </p>
             </div>
 
-            <ProposeForm householdId={householdId} suggestion={s} />
+            {isPayer ? (
+              <ProposeForm householdId={householdId} suggestion={s} />
+            ) : (
+              <p className="mt-3 text-sm text-text-muted" data-testid="propose-payer-only">
+                Only {payer} can propose this routed payment.
+              </p>
+            )}
           </li>
         );
       })}

@@ -54,6 +54,7 @@
 - `dispute.resolved`
 - `dispute.withdrawn`
 - `refund_obligation.created`
+- Routed settlement lifecycle events on `routed_settlement_events` (not all mirrored to `audit_events`): `settlement.route_proposed`, `settlement.correction_requested`, `settlement.correction_recipient_decision`, `settlement.correction_applied`, `settlement.route_reversed`
 
 ## Event types (Phase 4 calendar)
 

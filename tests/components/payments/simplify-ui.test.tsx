@@ -23,6 +23,7 @@ describe("SimplifySuggestionList", () => {
         householdId="hhhhhhhh-hhhh-hhhh-hhhh-hhhhhhhhhhhh"
         suggestions={suggestions}
         memberLabel={(id) => id.slice(0, 1).toUpperCase()}
+        currentMembershipId="aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
       />,
     );
     expect(screen.getAllByText(/Suggested routed payment/i).length).toBeGreaterThan(0);

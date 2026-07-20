@@ -48,6 +48,12 @@ export async function proposeRoutedSettlementAction(
     if (!can(ctx.roles, "payment.create")) {
       return { ok: false, error: "Not allowed to propose routed payments." };
     }
+    if (ctx.membershipId !== parsed.data.payerMembershipId) {
+      return {
+        ok: false,
+        error: "Only the payer may create a routed settlement proposal.",
+      };
+    }
 
     const { createClient } = await import("@/lib/supabase/server");
     const supabase = await createClient();
@@ -277,5 +283,98 @@ export async function cancelRoutedSettlementAction(
   } catch (e) {
     logServerError("cancelRoutedSettlement", e);
     return { ok: false, error: "Could not cancel proposal." };
+  }
+}
+
+export async function requestRoutedCorrectionAction(
+  _prev: ActionResult | null,
+  formData: FormData,
+): Promise<ActionResult> {
+  try {
+    const parsed = z
+      .object({
+        householdId: uuid,
+        proposalId: uuid,
+        correctionPath: z.enum([
+          "external_payment_returned",
+          "accounting_correction",
+          "payment_confirmation_disputed",
+          "administrative_correction",
+        ]),
+        reason: z.string().trim().min(3).max(1000),
+      })
+      .safeParse({
+        householdId: formData.get("householdId"),
+        proposalId: formData.get("proposalId"),
+        correctionPath: formData.get("correctionPath"),
+        reason: formData.get("reason"),
+      });
+    if (!parsed.success) {
+      return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid request." };
+    }
+    await assertActiveMembership(parsed.data.householdId);
+    const { createClient } = await import("@/lib/supabase/server");
+    const supabase = await createClient();
+    const { error } = await supabase.rpc("request_routed_settlement_correction", {
+      p_proposal_id: parsed.data.proposalId,
+      p_correction_path: parsed.data.correctionPath,
+      p_reason: parsed.data.reason,
+    });
+    if (error) {
+      logServerError("requestRoutedCorrection", error);
+      return { ok: false, error: error.message };
+    }
+    revalidatePath(moneyPath(parsed.data.householdId, `/simplify/${parsed.data.proposalId}`));
+    return { ok: true };
+  } catch (e) {
+    logServerError("requestRoutedCorrection", e);
+    return { ok: false, error: "Could not request correction." };
+  }
+}
+
+export async function respondRoutedCorrectionAction(
+  _prev: ActionResult | null,
+  formData: FormData,
+): Promise<ActionResult> {
+  try {
+    const parsed = z
+      .object({
+        householdId: uuid,
+        requestId: uuid,
+        decision: z.enum([
+          "confirmed_return",
+          "declined_return",
+          "disputed_receipt",
+          "approved",
+          "declined",
+        ]),
+        note: z.string().max(1000).optional().nullable(),
+      })
+      .safeParse({
+        householdId: formData.get("householdId"),
+        requestId: formData.get("requestId"),
+        decision: formData.get("decision"),
+        note: formData.get("note") || null,
+      });
+    if (!parsed.success) {
+      return { ok: false, error: "Invalid decision." };
+    }
+    await assertActiveMembership(parsed.data.householdId);
+    const { createClient } = await import("@/lib/supabase/server");
+    const supabase = await createClient();
+    const { error } = await supabase.rpc("respond_routed_settlement_correction", {
+      p_request_id: parsed.data.requestId,
+      p_decision: parsed.data.decision,
+      p_note: parsed.data.note ?? undefined,
+    });
+    if (error) {
+      logServerError("respondRoutedCorrection", error);
+      return { ok: false, error: error.message };
+    }
+    revalidatePath(moneyPath(parsed.data.householdId));
+    return { ok: true };
+  } catch (e) {
+    logServerError("respondRoutedCorrection", e);
+    return { ok: false, error: "Could not record correction response." };
   }
 }

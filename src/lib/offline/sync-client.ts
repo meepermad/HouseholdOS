@@ -2,14 +2,24 @@
 
 import {
   clearOfflineDatabase,
+  discardOutbox,
   enqueueOutbox,
   getMeta,
   listPendingOutbox,
+  listRecoverableOutbox,
+  reconcileOutboxStatuses,
   setMeta,
   updateOutbox,
   type OutboxMutation,
 } from "@/lib/offline/idb";
 import { assertOfflineAllowed } from "@/lib/offline/online-only";
+
+export type PushFlushResult = {
+  applied: boolean;
+  unsupported?: boolean;
+  conflict?: boolean;
+  error?: string;
+};
 
 export async function queueOfflineMutation(input: {
   householdId: string;
@@ -33,16 +43,23 @@ export async function queueOfflineMutation(input: {
 
 export async function getSyncStatus(householdId?: string): Promise<{
   pendingCount: number;
+  unsupportedCount: number;
+  recoverableCount: number;
   lastSyncedAt: string | null;
   offlineEnabled: boolean;
 }> {
-  const [pending, lastSyncedAt, offlineEnabled] = await Promise.all([
+  await reconcileOutboxStatuses();
+  const [pending, recoverable, lastSyncedAt, offlineEnabled] = await Promise.all([
     listPendingOutbox(householdId),
+    listRecoverableOutbox(householdId),
     getMeta<string>("lastSyncedAt"),
     getMeta<boolean>("offlineEnabled"),
   ]);
+  const unsupportedCount = recoverable.filter((r) => r.status === "unsupported").length;
   return {
     pendingCount: pending.length,
+    unsupportedCount,
+    recoverableCount: recoverable.length,
     lastSyncedAt,
     offlineEnabled: offlineEnabled !== false,
   };
@@ -59,22 +76,84 @@ export async function clearOfflineData(): Promise<void> {
   await clearOfflineDatabase();
 }
 
-export async function drainOutbox(
-  flush: (mutation: OutboxMutation) => Promise<void>,
+export async function discardOfflineMutation(id: string): Promise<void> {
+  await discardOutbox(id);
+}
+
+export async function listOfflineRecoverable(
   householdId?: string,
-): Promise<{ synced: number; failed: number }> {
+): Promise<OutboxMutation[]> {
+  return listRecoverableOutbox(householdId);
+}
+
+/**
+ * Drain pending/failed outbox rows. Only marks applied when the flush
+ * callback reports applied: true. Unapplied acknowledgements become
+ * unsupported and remain recoverable.
+ */
+export async function drainOutbox(
+  flush: (mutation: OutboxMutation) => Promise<PushFlushResult>,
+  householdId?: string,
+): Promise<{
+  applied: number;
+  failed: number;
+  unsupported: number;
+  conflict: number;
+}> {
   const pending = await listPendingOutbox(householdId);
-  let synced = 0;
+  let applied = 0;
   let failed = 0;
+  let unsupported = 0;
+  let conflict = 0;
+
   for (const mutation of pending) {
+    // Never submit a mutation under a different household context.
+    if (householdId && mutation.householdId !== householdId) {
+      await updateOutbox(mutation.id, {
+        status: "conflict",
+        lastError: "Household mismatch; mutation kept for original household",
+      });
+      conflict += 1;
+      continue;
+    }
+
     await updateOutbox(mutation.id, {
       status: "syncing",
       attempts: mutation.attempts + 1,
     });
     try {
-      await flush(mutation);
-      await updateOutbox(mutation.id, { status: "synced", lastError: undefined });
-      synced += 1;
+      const result = await flush(mutation);
+      if (result.conflict) {
+        await updateOutbox(mutation.id, {
+          status: "conflict",
+          lastError: result.error ?? "Sync conflict",
+        });
+        conflict += 1;
+        continue;
+      }
+      if (result.unsupported || result.applied === false) {
+        await updateOutbox(mutation.id, {
+          status: "unsupported",
+          lastError:
+            result.error ??
+            "Server synchronization is not available for this action yet",
+        });
+        unsupported += 1;
+        continue;
+      }
+      if (result.applied === true) {
+        await updateOutbox(mutation.id, {
+          status: "applied",
+          lastError: undefined,
+        });
+        applied += 1;
+        continue;
+      }
+      await updateOutbox(mutation.id, {
+        status: "failed",
+        lastError: result.error ?? "Unexpected sync response",
+      });
+      failed += 1;
     } catch (e) {
       await updateOutbox(mutation.id, {
         status: "failed",
@@ -83,6 +162,10 @@ export async function drainOutbox(
       failed += 1;
     }
   }
-  await setMeta("lastSyncedAt", new Date().toISOString());
-  return { synced, failed };
+
+  if (applied > 0) {
+    await setMeta("lastSyncedAt", new Date().toISOString());
+  }
+
+  return { applied, failed, unsupported, conflict };
 }

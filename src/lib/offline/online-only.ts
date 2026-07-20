@@ -16,6 +16,7 @@ export const ONLINE_ONLY_ACTIONS = new Set([
   "acceptRoutedSettlement",
   "submitRoutedPayment",
   "confirmRoutedSettlement",
+  "requestRoutedCorrection",
   "createOpeningBalance",
   "respondOpeningBalance",
   "confirmReceiptAsExpense",
@@ -25,16 +26,18 @@ export const ONLINE_ONLY_ACTIONS = new Set([
   "governancePublish",
 ]);
 
-export const OFFLINE_ALLOWED_ACTIONS = new Set([
-  "addComment",
-  "createShoppingItem",
-  "markShoppingPurchased",
-  "createPantryNote",
-  "createChoreCompletionDraft",
-]);
+/**
+ * Empty until each action has an idempotent domain apply handler on
+ * POST /api/sync/push. Do not advertise synchronizable actions without handlers.
+ */
+export const OFFLINE_ALLOWED_ACTIONS = new Set<string>([]);
 
 export function isOnlineOnlyAction(action: string): boolean {
   return ONLINE_ONLY_ACTIONS.has(action);
+}
+
+export function isOfflineAllowedAction(action: string): boolean {
+  return OFFLINE_ALLOWED_ACTIONS.has(action);
 }
 
 export function assertOfflineAllowed(action: string): void {

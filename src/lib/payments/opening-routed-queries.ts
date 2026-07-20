@@ -99,6 +99,42 @@ export async function getRoutedProposal(
   return data as RoutedProposalListItem | null;
 }
 
+export type RoutedCorrectionRequest = {
+  id: string;
+  proposal_id: string;
+  status: string;
+  correction_path: string;
+  reason: string;
+  recipient_decision: string | null;
+  created_at: string;
+};
+
+export async function getOpenRoutedCorrection(
+  householdId: string,
+  proposalId: string,
+): Promise<RoutedCorrectionRequest | null> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("routed_settlement_correction_requests")
+    .select(
+      "id, proposal_id, status, correction_path, reason, recipient_decision, created_at",
+    )
+    .eq("household_id", householdId)
+    .eq("proposal_id", proposalId)
+    .in("status", [
+      "pending",
+      "awaiting_recipient",
+      "awaiting_participants",
+      "approved",
+      "applied",
+    ])
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw error;
+  return data as RoutedCorrectionRequest | null;
+}
+
 export async function loadSimplifySuggestions(
   householdId: string,
 ): Promise<RoutedSettlementSuggestion[]> {
