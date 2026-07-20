@@ -14948,6 +14948,10 @@ export type Database = {
         }
         Returns: string
       }
+      add_poll_option: {
+        Args: { p_label: string; p_poll_id: string }
+        Returns: string
+      }
       add_recommended_item_to_list: {
         Args: {
           p_idempotency_key?: string
@@ -15069,8 +15073,13 @@ export type Database = {
         Args: { p_document_id: string }
         Returns: boolean
       }
+      can_manage_poll: { Args: { p_poll_id: string }; Returns: boolean }
       can_manage_transition_workflow: {
         Args: { p_workflow_id: string }
+        Returns: boolean
+      }
+      can_participate_in_opening_balance: {
+        Args: { p_entry_id: string }
         Returns: boolean
       }
       can_view_calendar: { Args: { p_calendar_id: string }; Returns: boolean }
@@ -15119,10 +15128,22 @@ export type Database = {
       }
       can_view_meal_batch: { Args: { p_batch_id: string }; Returns: boolean }
       can_view_meal_plan: { Args: { p_meal_plan_id: string }; Returns: boolean }
+      can_view_opening_balance_entry: {
+        Args: { p_entry_id: string }
+        Returns: boolean
+      }
       can_view_pantry_item: { Args: { p_item_id: string }; Returns: boolean }
       can_view_recipe: { Args: { p_recipe_id: string }; Returns: boolean }
+      can_view_recipe_rediscovery_suggestion: {
+        Args: { p_suggestion_id: string }
+        Returns: boolean
+      }
       can_view_routed_settlement: {
         Args: { p_proposal_id: string }
+        Returns: boolean
+      }
+      can_view_shopping_recommendation_item: {
+        Args: { p_item_id: string }
         Returns: boolean
       }
       can_view_supply_item: { Args: { p_item_id: string }; Returns: boolean }
@@ -15215,6 +15236,10 @@ export type Database = {
         Returns: undefined
       }
       cancel_shopping_item: { Args: { p_item_id: string }; Returns: string }
+      cast_poll_vote: {
+        Args: { p_option_ids: string[]; p_poll_id: string }
+        Returns: undefined
+      }
       change_inventory_condition: {
         Args: {
           p_item_id: string
@@ -15389,6 +15414,7 @@ export type Database = {
         Args: { p_request_id: string }
         Returns: string
       }
+      close_poll: { Args: { p_poll_id: string }; Returns: undefined }
       complete_chore_occurrence: {
         Args: { p_completion_note?: string; p_occurrence_id: string }
         Returns: string
@@ -15999,6 +16025,17 @@ export type Database = {
           p_use_by?: string
           p_use_soon_at?: string
           p_visibility?: string
+        }
+        Returns: string
+      }
+      create_poll: {
+        Args: {
+          p_allow_multiple?: boolean
+          p_anonymous?: boolean
+          p_deadline_at?: string
+          p_household_id: string
+          p_options: string[]
+          p_question: string
         }
         Returns: string
       }
@@ -16614,6 +16651,7 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      open_poll: { Args: { p_poll_id: string }; Returns: undefined }
       override_governance_approval: {
         Args: { p_activate?: boolean; p_reason: string; p_request_id: string }
         Returns: string
@@ -16653,6 +16691,19 @@ export type Database = {
         }
         Returns: string
       }
+      poll_current_member_has_voted: {
+        Args: { p_poll_id: string }
+        Returns: boolean
+      }
+      poll_option_tallies: {
+        Args: { p_poll_id: string }
+        Returns: {
+          label: string
+          option_id: string
+          sort_order: number
+          vote_count: number
+        }[]
+      }
       process_due_scheduled_notifications: {
         Args: { p_limit?: number }
         Returns: number
@@ -16673,6 +16724,7 @@ export type Database = {
         }
         Returns: string
       }
+      publish_poll_results: { Args: { p_poll_id: string }; Returns: undefined }
       rank_recipe_candidates: {
         Args: { p_meal_request_id: string }
         Returns: number
@@ -16904,6 +16956,7 @@ export type Database = {
         Args: { p_attachment_id: string }
         Returns: string
       }
+      remove_poll_vote: { Args: { p_poll_id: string }; Returns: undefined }
       rename_household_location: {
         Args: { p_location_id: string; p_name: string }
         Returns: string
@@ -17469,6 +17522,15 @@ export type Database = {
           p_organizer_note?: string
           p_section_key: string
           p_sort_order?: number
+        }
+        Returns: undefined
+      }
+      update_poll: {
+        Args: {
+          p_clear_deadline?: boolean
+          p_deadline_at?: string
+          p_poll_id: string
+          p_question?: string
         }
         Returns: undefined
       }

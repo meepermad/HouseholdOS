@@ -31,10 +31,22 @@ describe("export privacy", () => {
         { id: "1", visibility: "personal", owner_membership_id: "other" },
         { id: "2", visibility: "personal", owner_membership_id: "me" },
         { id: "3", visibility: "household" },
+        {
+          id: "4",
+          visibility: "owner_only",
+          ownership_mode: "personal",
+          owner_membership_id: "other",
+        },
+        {
+          id: "5",
+          visibility: "household",
+          ownership_mode: "personal",
+          owner_membership_id: "me",
+        },
       ],
       ctx,
     );
-    expect(pantry.map((p) => p.id)).toEqual(["2", "3"]);
+    expect(pantry.map((p) => p.id)).toEqual(["2", "3", "5"]);
 
     const recipes = filterRecipesForExport(
       [
@@ -44,6 +56,25 @@ describe("export privacy", () => {
       ctx,
     );
     expect(recipes.map((r) => r.id)).toEqual(["r2"]);
+  });
+
+  it("never treats coordinator export as automatic personal-pantry override", () => {
+    const pantry = filterPantryForExport(
+      [
+        {
+          id: "x",
+          visibility: "owner_only",
+          ownership_mode: "personal",
+          owner_membership_id: "someone-else",
+        },
+      ],
+      {
+        canViewOthersPersonalPantry: false,
+        canViewOthersPrivateRecipes: false,
+        requesterMembershipId: "coordinator",
+      },
+    );
+    expect(pantry).toHaveLength(0);
   });
 
   it("detects push/feed secret paths", () => {

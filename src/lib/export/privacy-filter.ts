@@ -50,11 +50,18 @@ export function filterPantryForExport(
 ): Array<Record<string, unknown>> {
   return items
     .filter((item) => {
-      const visibility = String(item.visibility ?? item.owner_scope ?? "household");
+      const visibility = String(item.visibility ?? "household");
+      const ownershipMode = String(item.ownership_mode ?? "household");
       const ownerId = String(
         item.owner_membership_id ?? item.created_by_membership_id ?? "",
       );
-      if (visibility === "personal" || visibility === "creator_only") {
+      const isPersonal =
+        visibility === "owner_only" ||
+        visibility === "personal" ||
+        visibility === "creator_only" ||
+        ownershipMode === "personal" ||
+        ownershipMode === "temporary";
+      if (isPersonal) {
         if (ownerId === ctx.requesterMembershipId) return true;
         return ctx.canViewOthersPersonalPantry;
       }

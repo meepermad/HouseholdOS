@@ -39,40 +39,24 @@ export async function createPollAction(
     if (optionLabels.length < 2) {
       return { ok: false, error: "Add at least two options (one per line)." };
     }
-    const ctx = await assertActiveMembership(parsed.data.householdId);
+    await assertActiveMembership(parsed.data.householdId);
     const supabase = await createClient();
-    const { data: poll, error } = await supabase
-      .from("household_polls")
-      .insert({
-        household_id: parsed.data.householdId,
-        created_by_membership_id: ctx.membershipId,
-        question: parsed.data.question,
-        allow_multiple: parsed.data.allowMultiple ?? false,
-        anonymous: parsed.data.anonymous ?? false,
-        deadline_at: parsed.data.deadlineAt
-          ? new Date(parsed.data.deadlineAt).toISOString()
-          : null,
-      })
-      .select("id")
-      .maybeSingle();
-    if (error || !poll) {
+    const { data: pollId, error } = await supabase.rpc("create_poll", {
+      p_household_id: parsed.data.householdId,
+      p_question: parsed.data.question,
+      p_options: optionLabels,
+      p_allow_multiple: parsed.data.allowMultiple ?? false,
+      p_anonymous: parsed.data.anonymous ?? false,
+      p_deadline_at: parsed.data.deadlineAt
+        ? new Date(parsed.data.deadlineAt).toISOString()
+        : undefined,
+    });
+    if (error || !pollId) {
       logServerError("create_poll", error, parsed.data);
       return { ok: false, error: "Unable to create poll." };
     }
-    const { error: optError } = await supabase.from("household_poll_options").insert(
-      optionLabels.map((label, sort_order) => ({
-        poll_id: poll.id,
-        household_id: parsed.data.householdId,
-        label,
-        sort_order,
-      })),
-    );
-    if (optError) {
-      logServerError("create_poll_options", optError, { pollId: poll.id });
-      return { ok: false, error: "Poll created but options failed." };
-    }
     revalidatePath(`/app/${parsed.data.householdId}/polls`);
-    return { ok: true, id: poll.id };
+    return { ok: true, id: pollId as string };
   } catch (error) {
     if (error instanceof AppError) return { ok: false, error: error.publicMessage };
     return { ok: false, error: toPublicErrorMessage(error) };
@@ -90,19 +74,15 @@ export async function votePollAction(
     if (!householdId || !pollId || optionIds.length === 0) {
       return { ok: false, error: "Select at least one option." };
     }
-    const ctx = await assertActiveMembership(householdId);
+    await assertActiveMembership(householdId);
     const supabase = await createClient();
-    const { error } = await supabase.from("household_poll_votes").insert(
-      optionIds.map((option_id) => ({
-        poll_id: pollId,
-        option_id,
-        household_id: householdId,
-        membership_id: ctx.membershipId,
-      })),
-    );
+    const { error } = await supabase.rpc("cast_poll_vote", {
+      p_poll_id: pollId,
+      p_option_ids: optionIds,
+    });
     if (error) {
       logServerError("vote_poll", error, { pollId });
-      return { ok: false, error: "Unable to record vote." };
+      return { ok: false, error: error.message || "Unable to record vote." };
     }
     revalidatePath(`/app/${householdId}/polls/${pollId}`);
     return { ok: true };

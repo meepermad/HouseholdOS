@@ -59,6 +59,11 @@ Enforced in:
 - Only the **creditor** may create a waiver; the debtor cannot waive their own debt.
 - Coordinator status alone does **not** grant silent edits of payment history.
 - **Routed settlements:** only the **payer** may create a binding proposal. Confirmed-route correction requires the three participants (recipient confirms external return; payer and intermediary approve). A financial coordinator may *request* an administrative correction but cannot unilaterally restore obligations while leaving the linked payment confirmed. Opening-balance **reverse** is not implemented (schema status reserved only).
+- **Polls:** creator or household coordinator manages; ordinary members cannot edit others’ polls. Anonymous polls do not expose other members’ vote identity through vote rows or aggregates.
+- **Exports:** coordinator status does not override personal pantry/recipe privacy. Export job metadata is limited to the requester and household coordinators.
+- **Opening-balance children** (approvals/events/import links) inherit parent entry visibility.
+- **Shopping-intelligence children** inherit parent recommendation/suggestion visibility (viewer-scoped rediscovery).
+- Roommate ops (purchases, packages, meetings, directory, parking) are **beta** until full lifecycle suites pass; updates require creator/owner/coordinator.
 
 \*\*\*\*`household_coordinator` may cancel or update **household-visible** operational events through an audited `coordinator_override` path. Coordinator override is **refused** for `participants` and `private_busy` events. `financial_coordinator` has no special calendar authority. Organizer identity is always derived from `auth.uid()` membership — callers cannot name another organizer.
 

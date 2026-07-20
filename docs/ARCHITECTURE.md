@@ -307,6 +307,9 @@ Extends Phase 4 without replacing working calendar models:
 | Receipt destinations | After confirm, `apply_receipt_line_destinations` applies pantry/supply/inventory/shopping actions (`proposed→applied|failed|skipped|reversed`); reverse is soft and does not delete stock |
 | Archive restore | Coordinator selective nonfinancial restore from export JSON into a household; financial/auth/secrets excluded |
 | Offline sync | IndexedDB snapshots + mutation outbox; allowlist is empty until domain apply handlers exist; drain requires `applied: true` (ack-only → `unsupported`, recoverable); money confirms/routes/export/restore stay online-only; `SYNC_WORKER_SECRET` gates `/api/internal/sync/process`; logout clears offline data |
+| Polls | Binding writes via RPCs (`create_poll`, `cast_poll_vote`, …); creator/coordinator manage; single-choice replace; deadline/status enforced; anonymous polls expose aggregates + `has_voted` only |
+| Export privacy | Coordinator export does **not** include others’ personal pantry by default; export jobs visible to requester + household coordinators |
+| Roommate ops | Shared purchases, packages, meeting notes, directory, parking are **beta**; writes tightened to creator/owner/coordinator |
 | Roommate ops | Shared purchases, meeting board, packages, directory, supply forecast, optional parking module, retention policy row |
 | Products | Browser one-shot barcode + manual digits; `ProductLookupAdapter` (fixture/manual); review required |
 | Calendar interop | Google PKCE + mock/live provider gate; Apple ICS subscribe/export/import only |

@@ -17,27 +17,24 @@ export default async function PollDetailPage({
   const supabase = await createClient();
   const { data: poll } = await supabase
     .from("household_polls")
-    .select("id, question, status, allow_multiple, anonymous")
+    .select("id, question, status, allow_multiple, anonymous, deadline_at")
     .eq("household_id", householdId)
     .eq("id", pollId)
     .maybeSingle();
   if (!poll) notFound();
 
-  const { data: options } = await supabase
-    .from("household_poll_options")
-    .select("id, label, sort_order")
-    .eq("poll_id", pollId)
-    .order("sort_order");
-  const opts = options ?? [];
+  const { data: tallies } = await supabase.rpc("poll_option_tallies", {
+    p_poll_id: pollId,
+  });
+  const { data: hasVoted } = await supabase.rpc("poll_current_member_has_voted", {
+    p_poll_id: pollId,
+  });
 
-  const { data: votes } = await supabase
-    .from("household_poll_votes")
-    .select("option_id")
-    .eq("poll_id", pollId);
-  const voteRows = votes ?? [];
-  const tallies = Object.fromEntries(
-    opts.map((o) => [o.id, voteRows.filter((v) => v.option_id === o.id).length]),
-  );
+  const opts = (tallies ?? []).map((row) => ({
+    id: row.option_id,
+    label: row.label,
+    count: Number(row.vote_count ?? 0),
+  }));
 
   return (
     <main className="space-y-4" data-testid="poll-detail">
@@ -47,18 +44,20 @@ export default async function PollDetailPage({
       <p className="text-xs text-text-muted">
         Results are coordination inputs only — they do not change permissions or
         finances.
+        {poll.anonymous
+          ? " This poll is anonymous: only aggregate counts are shown."
+          : ""}
+        {hasVoted ? " You have already responded." : ""}
       </p>
 
-      <ul className="space-y-2">
+      <ul className="space-y-2" data-testid="poll-tallies">
         {opts.map((o) => (
           <li
             key={o.id}
             className="flex items-center justify-between rounded-md border border-border px-3 py-2 text-sm"
           >
             <span>{o.label}</span>
-            <span className="tabular-nums text-text-muted">
-              {tallies[o.id] ?? 0}
-            </span>
+            <span className="tabular-nums text-text-muted">{o.count}</span>
           </li>
         ))}
       </ul>
@@ -84,7 +83,7 @@ export default async function PollDetailPage({
               </label>
             ))}
           </fieldset>
-          <SubmitButton>Submit vote</SubmitButton>
+          <SubmitButton>{hasVoted ? "Replace vote" : "Submit vote"}</SubmitButton>
         </ActionForm>
       ) : null}
     </main>

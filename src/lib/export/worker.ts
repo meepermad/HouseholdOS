@@ -106,7 +106,7 @@ export async function processHouseholdExportJobs(options?: {
         polls: asRecords(polls.data),
         utilities: asRecords(utilities.data),
         privacy: {
-          canViewOthersPersonalPantry: true,
+          canViewOthersPersonalPantry: false,
           canViewOthersPrivateRecipes: false,
           requesterMembershipId: job.requested_by_membership_id,
         },
