@@ -22,6 +22,7 @@
     "db:types:local": "npx supabase gen types typescript --local > src/types/database.generated.ts",
     "db:link": "npx supabase link",
     "secret-scan": "node scripts/secret-scan.mjs",
+    "package:source": "node scripts/package-source.mjs",
     "test:integration": "vitest run tests/integration --fileParallelism=false",
     "test:prepush": "npm run typecheck && npm run lint && npm test && npm run build && npm run test:e2e && npm run secret-scan"
   },

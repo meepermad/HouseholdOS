@@ -39,6 +39,59 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: __dirname,
   },
+  async headers() {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+    let supabaseOrigin = "";
+    try {
+      supabaseOrigin = supabaseUrl ? new URL(supabaseUrl).origin : "";
+    } catch {
+      supabaseOrigin = "";
+    }
+    const connectSrc = [
+      "'self'",
+      supabaseOrigin,
+      "https://*.supabase.co",
+      "wss://*.supabase.co",
+    ]
+      .filter(Boolean)
+      .join(" ");
+    const csp = [
+      "default-src 'self'",
+      "base-uri 'self'",
+      "object-src 'none'",
+      "frame-ancestors 'none'",
+      "form-action 'self'",
+      "img-src 'self' data: blob: https:",
+      "font-src 'self' data:",
+      "style-src 'self' 'unsafe-inline'",
+      // Next.js + Tesseract WASM need unsafe-eval in workers; keep script self + blob workers
+      "script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' blob:",
+      "worker-src 'self' blob:",
+      `connect-src ${connectSrc}`,
+      "media-src 'self' blob:",
+      "manifest-src 'self'",
+    ].join("; ");
+
+    return [
+      {
+        source: "/:path*",
+        headers: [
+          { key: "Content-Security-Policy", value: csp },
+          {
+            key: "Strict-Transport-Security",
+            value: "max-age=63072000; includeSubDomains; preload",
+          },
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          {
+            key: "Permissions-Policy",
+            value: "camera=(self), microphone=(), geolocation=()",
+          },
+          { key: "X-Frame-Options", value: "DENY" },
+        ],
+      },
+    ];
+  },
 };
 
 export default withPWA(nextConfig);

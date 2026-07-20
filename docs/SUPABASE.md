@@ -50,3 +50,20 @@ If local and remote histories diverge:
 ## Secret key usage
 
 Use `SUPABASE_SECRET_KEY` only through `src/lib/supabase/privileged.ts` for tests/recovery. Ordinary app queries use the cookie SSR client and RLS.
+
+## Disposable test environment
+
+Do not run destructive or mutation-heavy security suites against production.
+
+Use a separate Supabase project with test-only credentials for:
+
+- Release-required integration RLS tests (`npm run test:integration`)
+- Seeded controlled accounts and automatic cleanup helpers under `tests/helpers`
+
+Local optional integration tests may skip when `SUPABASE_SECRET_KEY` is unset. Release CI must fail when required security suites are expected and configuration is missing.
+
+| Kind | Purpose |
+|---|---|
+| Local optional integration | Developer machine; may skip without secrets |
+| Release-required integration | Disposable test project; must fail closed when misconfigured |
+| Production smoke | Authenticated feature checks after deploy (not health/login alone) |

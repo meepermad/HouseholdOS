@@ -43,9 +43,20 @@ export class ManualProductLookupAdapter implements ProductLookupAdapter {
 }
 
 export function getProductLookupAdapter(): ProductLookupAdapter {
-  const mode = process.env.PRODUCT_LOOKUP_ADAPTER ?? "fixture";
-  if (mode === "manual") return new ManualProductLookupAdapter();
-  return new FixtureProductLookupAdapter();
+  const mode = process.env.PRODUCT_LOOKUP_ADAPTER;
+  if (mode === "fixture") {
+    if (process.env.APP_ENV === "production" || process.env.NODE_ENV === "production") {
+      return new ManualProductLookupAdapter();
+    }
+    return new FixtureProductLookupAdapter();
+  }
+  if (mode === "manual" || !mode) {
+    if (!mode && process.env.NODE_ENV !== "production" && process.env.APP_ENV !== "production") {
+      return new FixtureProductLookupAdapter();
+    }
+    return new ManualProductLookupAdapter();
+  }
+  return new ManualProductLookupAdapter();
 }
 
 export function normalizeBarcode(raw: string): string {

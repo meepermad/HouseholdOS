@@ -311,8 +311,9 @@ Extends Phase 4 without replacing working calendar models:
 | Export privacy | Coordinator export does **not** include others’ personal pantry by default; export jobs visible to requester + household coordinators |
 | Roommate ops | Shared purchases, packages, meeting notes, directory, parking are **beta**; writes tightened to creator/owner/coordinator |
 | Roommate ops | Shared purchases, meeting board, packages, directory, supply forecast, optional parking module, retention policy row |
-| Products | Browser one-shot barcode + manual digits; `ProductLookupAdapter` (fixture/manual); review required |
-| Calendar interop | Google PKCE + mock/live provider gate; Apple ICS subscribe/export/import only |
+| Products | Browser one-shot barcode + manual digits; production defaults to manual fallback (fixture adapter never serves production users); auth + rate limit on lookup route |
+| Calendar interop | Google OAuth hidden/disabled in production until live provider I/O; Apple ICS **preview** only until create path lands |
+| Notifications | Push preferences immediate/off; daily digest delivery not wired — option hidden |
 | Export | Coordinator async JSON/CSV archive via `EXPORT_WORKER_SECRET` worker; excludes secrets, push endpoints, feed tokens; not a full database restore |
 | Document jobs | Receipt OCR claim/complete via `DOCUMENT_JOB_WORKER_SECRET` at `/api/internal/documents/process` |
 | Notifications worker | `/api/internal/notifications/dispatch` uses `NOTIFICATION_WORKER_SECRET` only |

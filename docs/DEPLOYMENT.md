@@ -100,3 +100,19 @@ Operator sketch (configure in Dashboard / SQL editor — do **not** commit secre
 ```
 
 Empty worker runs exit quickly when delivery is disabled or the queue is empty. Overlapping invocations are safe (SKIP LOCKED claim).
+
+## Source packaging
+
+```bash
+npm run package:source
+```
+
+Creates a `git archive` tarball of tracked source only. The packaging gate rejects `.env*` (except `.env.example`), `node_modules`, `.next`, test artifacts, and OCR/PDF build outputs.
+
+## Dependency advisories
+
+After `npm audit --omit=dev` / `npm outdated` (Security-D):
+
+- **Accepted (deferred):** `@ducanh2912/next-pwa` / Workbox `serialize-javascript` advisories — force-fix would downgrade next-pwa to 8.x / Next to 9.x (breaking). Prefer waiting for a compatible Workbox/plugin release; re-test PWA install, NetworkOnly `/app`, OCR workers, and push after any update.
+- **Accepted (deferred):** transitive `postcss` XSS advisory via Next 16.2.x — `npm audit fix --force` proposes Next 9.3.3 (unsafe). Track Next patch releases.
+- Patch non-breaking wanted updates (`@supabase/supabase-js`, Tailwind) on a routine maintenance window after PWA/OCR smoke.

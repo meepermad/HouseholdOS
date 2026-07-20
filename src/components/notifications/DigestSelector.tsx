@@ -10,7 +10,6 @@ import { CATEGORY_PREFERENCE_DEFAULTS } from "@/lib/notifications/catalog";
 
 const MODES: { value: DeliveryMode; label: string }[] = [
   { value: "immediate", label: "Immediate" },
-  { value: "daily_digest", label: "Daily digest" },
   { value: "off", label: "Off" },
 ];
 
@@ -21,12 +20,17 @@ function resolvePushMode(
   const found = prefs.find(
     (p) => p.category === category && p.channel === "push",
   );
-  if (found) return found.deliveryMode;
+  if (found) {
+    // Digest delivery is not wired — treat stored digest as immediate until claim RPC lands.
+    if (found.deliveryMode === "daily_digest") return "immediate";
+    return found.deliveryMode;
+  }
   const defaults =
     CATEGORY_PREFERENCE_DEFAULTS[
       category as keyof typeof CATEGORY_PREFERENCE_DEFAULTS
     ];
-  return defaults?.deliveryMode ?? "immediate";
+  const mode = defaults?.deliveryMode ?? "immediate";
+  return mode === "daily_digest" ? "immediate" : mode;
 }
 
 const LABELS: Record<(typeof PREFERENCE_CATEGORIES)[number], string> = {
@@ -56,8 +60,8 @@ export function DigestSelector({
     >
       <input type="hidden" name="householdId" value={householdId} />
       <p className="text-sm text-text-secondary">
-        Choose whether push alerts for each category arrive immediately or in a
-        daily digest.
+        Choose whether push alerts for each category arrive immediately or are
+        turned off. Daily digest delivery is not implemented yet and is hidden.
       </p>
       <ul className="space-y-2">
         {PREFERENCE_CATEGORIES.map((category) => (

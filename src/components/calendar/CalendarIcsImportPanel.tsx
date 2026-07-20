@@ -18,9 +18,9 @@ export function CalendarIcsImportPanel({
   return (
     <div className="space-y-3">
       <p className="text-sm text-text-secondary">
-        Upload an <code>.ics</code> file. Duplicates are skipped by UID.
-        Confirming import creates native HouseholdOS events (not Apple
-        two-way sync).
+        <strong>Preview ICS import</strong> — upload an <code>.ics</code> file to
+        parse events and skip duplicate UIDs. Creating native HouseholdOS events
+        from this preview is not available yet.
       </p>
       <input
         type="file"
@@ -66,9 +66,16 @@ export function CalendarIcsImportPanel({
             ))}
           </ul>
           <p className="text-xs text-text-secondary">
-            Confirm import from the server action in a follow-up deploy step —
-            preview verifies parse and UID dedupe first.
+            Confirm is disabled until the create path is implemented. This preview
+            only verifies parse and UID dedupe.
           </p>
+          <button
+            type="button"
+            disabled
+            className="inline-flex min-h-11 items-center rounded-md border border-border px-4 text-sm font-semibold opacity-50"
+          >
+            Confirm import (not available yet)
+          </button>
         </div>
       ) : null}
     </div>

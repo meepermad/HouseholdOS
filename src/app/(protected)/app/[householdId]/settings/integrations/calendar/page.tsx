@@ -70,11 +70,27 @@ export default async function CalendarIntegrationsSettingsPage({
           <section className="space-y-3">
             <h2 className="text-lg font-semibold">Google Calendar</h2>
             <p className="text-sm text-text-secondary">
-              Minimum scopes · refresh tokens encrypted at rest · two-way sync
-              is opt-in for native HouseholdOS events only. Live account
-              verification requires deployment credentials.
+              Live Google OAuth and provider sync are not available in production
+              yet. Connection controls stay disabled until server-side state,
+              PKCE, and token exchange are verified.
             </p>
-            <GoogleConnectButton householdId={householdId} />
+            {process.env.APP_ENV === "production" ||
+            process.env.NODE_ENV === "production" ? (
+              <p
+                className="rounded-md border border-border bg-surface px-3 py-2 text-sm text-text-muted"
+                data-testid="google-calendar-unavailable"
+              >
+                Google Calendar connect is unavailable (development scaffold only).
+              </p>
+            ) : (
+              <>
+                <p className="text-xs text-amber-700 dark:text-amber-400">
+                  Development only — do not treat mock or callback_received as a
+                  successful provider sync.
+                </p>
+                <GoogleConnectButton householdId={householdId} />
+              </>
+            )}
             <ul className="space-y-2">
               {((connections ?? []) as Array<Record<string, string | null>>)
                 .filter((c) => c.provider === "google")

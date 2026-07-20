@@ -6,9 +6,10 @@ import { redirect } from "next/navigation";
 import type { ActionResult } from "@/app/actions/auth";
 import { assertActiveMembership } from "@/lib/household-context";
 import { toPublicErrorMessage } from "@/lib/errors";
-import { RECEIPT_BUCKET, RECEIPT_MAX_IMAGE_PIXELS } from "@/lib/receipts/types";
 import {
-  guardImageDecompression,
+  RECEIPT_BUCKET,
+} from "@/lib/receipts/types";
+import {
   validateReceiptUpload,
 } from "@/lib/receipts/validate";
 import { detectDuplicateReceipts } from "@/lib/receipts/duplicates";
@@ -47,16 +48,14 @@ export async function uploadReceiptAction(
       return { ok: false, error: "Choose a receipt photo or PDF." };
     }
 
+    const bytes = new Uint8Array(await file.arrayBuffer());
     const validation = validateReceiptUpload({
       mimeType: file.type || "application/octet-stream",
       fileName: file.name,
       sizeBytes: file.size,
+      bytes,
     });
     if (!validation.ok) return { ok: false, error: validation.error };
-
-    const bytes = new Uint8Array(await file.arrayBuffer());
-    const bomb = guardImageDecompression(bytes, RECEIPT_MAX_IMAGE_PIXELS);
-    if (!bomb.ok) return { ok: false, error: bomb.error };
 
     const fileHash = createHash("sha256").update(bytes).digest("hex");
     const { ctx, supabase } = await db(householdId);
@@ -90,7 +89,18 @@ export async function uploadReceiptAction(
       p_file_hash: fileHash,
       p_perceptual_hash: undefined,
     });
-    if (error) return { ok: false, error: error.message };
+    if (error) {
+      const { error: removeError } = await supabase.storage
+        .from(RECEIPT_BUCKET)
+        .remove([storagePath]);
+      if (removeError) {
+        console.error("receipt orphan cleanup failed", {
+          storagePath,
+          message: removeError.message,
+        });
+      }
+      return { ok: false, error: error.message };
+    }
 
     const dup = detectDuplicateReceipts(
       {
@@ -199,11 +209,27 @@ export async function confirmReceiptAsExpenseAction(
       },
     );
     if (error) return { ok: false, error: error.message };
-    // Best-effort resource destinations after expense draft exists
-    await supabase.rpc("apply_receipt_line_destinations", {
-      p_receipt_id: receiptId,
-    });
+    const { data: applyResult, error: applyError } = await supabase.rpc(
+      "apply_receipt_line_destinations",
+      { p_receipt_id: receiptId },
+    );
     invalidate(householdId, receiptId);
+    if (applyError) {
+      redirect(
+        `/app/${householdId}/money/receipts/${receiptId}?destination=failed&expenseId=${expenseId}`,
+      );
+    }
+    const failedCount =
+      typeof applyResult === "object" &&
+      applyResult &&
+      "failed" in applyResult
+        ? Number((applyResult as { failed?: number }).failed ?? 0)
+        : 0;
+    if (failedCount > 0) {
+      redirect(
+        `/app/${householdId}/money/receipts/${receiptId}?destination=needs_review&expenseId=${expenseId}`,
+      );
+    }
     redirect(`/app/${householdId}/money/expenses/${expenseId}/edit`);
   } catch (e) {
     if (e && typeof e === "object" && "digest" in e) throw e;
