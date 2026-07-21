@@ -32,8 +32,12 @@ function clearSupabaseAuthCookies(
 
 export async function updateSession(
   request: NextRequest,
+  options?: { requestHeaders?: Headers },
 ): Promise<SessionUpdateResult> {
-  let supabaseResponse = NextResponse.next({ request });
+  const requestHeaders = options?.requestHeaders;
+  let supabaseResponse = NextResponse.next(
+    requestHeaders ? { request: { headers: requestHeaders } } : { request },
+  );
 
   let url: string;
   let publishableKey: string;
@@ -64,7 +68,11 @@ export async function updateSession(
         cookiesToSet.forEach(({ name, value }) => {
           request.cookies.set(name, value);
         });
-        supabaseResponse = NextResponse.next({ request });
+        supabaseResponse = NextResponse.next(
+          requestHeaders
+            ? { request: { headers: requestHeaders } }
+            : { request },
+        );
         cookiesToSet.forEach(({ name, value, options }) => {
           supabaseResponse.cookies.set(name, value, options);
         });

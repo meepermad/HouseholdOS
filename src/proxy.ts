@@ -7,6 +7,11 @@ import {
   isAuthCleanupPath,
   urlHasSensitiveQueryKeys,
 } from "@/lib/security/sensitive-query";
+import {
+  buildContentSecurityPolicy,
+  createCspNonce,
+} from "@/lib/security/csp";
+import { getServerBuildInfo } from "@/lib/build-info";
 
 const AUTH_PAGES = new Set([
   "/login",
@@ -31,11 +36,31 @@ const PRODUCTION_ALIAS_HOSTS = new Set([
   "household-os-meepermad.vercel.app",
 ]);
 
+function supabaseOriginFromEnv(): string {
+  try {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    return url ? new URL(url).origin : "";
+  } catch {
+    return "";
+  }
+}
+
 function withAuthPageHeaders(res: NextResponse): NextResponse {
   for (const [key, value] of Object.entries(AUTH_NO_STORE_HEADERS)) {
     res.headers.set(key, value);
   }
   return res;
+}
+
+function withSecurityHeaders(
+  response: NextResponse,
+  csp: string,
+): NextResponse {
+  response.headers.set("Content-Security-Policy", csp);
+  const build = getServerBuildInfo();
+  response.headers.set("X-HouseholdOS-Build", build.commitSha);
+  response.headers.set("X-HouseholdOS-Deployment", build.deploymentId);
+  return response;
 }
 
 function withSessionCookies(
@@ -113,13 +138,25 @@ function canonicalRedirectIfNeeded(request: NextRequest): NextResponse | null {
 }
 
 export async function proxy(request: NextRequest) {
+  const nonce = createCspNonce();
+  const csp = buildContentSecurityPolicy({
+    nonce,
+    supabaseOrigin: supabaseOriginFromEnv(),
+  });
+
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-nonce", nonce);
+  // Next.js reads the nonce from the request CSP header during SSR.
+  requestHeaders.set("Content-Security-Policy", csp);
+
   const cleanup = sensitiveQueryCleanupIfNeeded(request);
-  if (cleanup) return cleanup;
+  if (cleanup) return withSecurityHeaders(cleanup, csp);
 
   const canonical = canonicalRedirectIfNeeded(request);
-  if (canonical) return canonical;
+  if (canonical) return withSecurityHeaders(canonical, csp);
 
-  const { response } = await updateSession(request);
+  const { response } = await updateSession(request, { requestHeaders });
+  withSecurityHeaders(response, csp);
   if (response.status >= 400) {
     return response;
   }
@@ -155,7 +192,10 @@ export async function proxy(request: NextRequest) {
     login.searchParams.set("next", safeRedirectPath(pathname));
     return withSessionCookies(
       response,
-      withAuthPageHeaders(NextResponse.redirect(login)),
+      withSecurityHeaders(
+        withAuthPageHeaders(NextResponse.redirect(login)),
+        csp,
+      ),
     );
   }
 

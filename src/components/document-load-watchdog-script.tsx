@@ -1,9 +1,10 @@
 import { DOCUMENT_LOAD_WATCHDOG_SCRIPT } from "@/lib/document-load-watchdog-script";
 
 /** Blocking inline watchdog — does not depend on React hydration. */
-export function DocumentLoadWatchdogScript() {
+export function DocumentLoadWatchdogScript({ nonce }: { nonce?: string }) {
   return (
     <script
+      nonce={nonce}
       dangerouslySetInnerHTML={{ __html: DOCUMENT_LOAD_WATCHDOG_SCRIPT }}
     />
   );
