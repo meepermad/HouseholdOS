@@ -76,6 +76,12 @@ function parsePayload(event: PushEvent): {
   return { title, body, url };
 }
 
+self.addEventListener("message", (event: ExtendableMessageEvent) => {
+  if (event.data && event.data.type === "SKIP_WAITING") {
+    void self.skipWaiting();
+  }
+});
+
 self.addEventListener("push", (event: PushEvent) => {
   const { title, body, url } = parsePayload(event);
 

@@ -57,13 +57,26 @@ npm run build
 
 Add production Site URL and `https://<your-domain>/auth/callback` in the Supabase Dashboard redirect allowlist.
 
+## Deploy skew (Server Actions)
+
+After each production deploy, open tabs (especially the installed PWA) may still hold Server Action IDs from the previous build. Invoking those actions logs:
+
+`Failed to find Server Action. This request might be from an older or newer deployment.`
+
+That is expected version skew, not data corruption. Users should hard-refresh or use the in-app “Refresh to update” banner. Error boundaries auto-reload once when this message is detected.
+
+Optional hardening on Vercel:
+
+- Enable **Skew Protection** for the project when your plan supports it.
+- Set a stable `NEXT_SERVER_ACTIONS_ENCRYPTION_KEY` (base64 AES-256) at **build and runtime** so multi-instance encryption stays consistent (see [Next.js docs](https://nextjs.org/docs/messages/failed-to-find-server-action)). Generate once and store only in Vercel env — never commit the key.
+
 ## PWA
 
 Service worker is enabled in production via `@ducanh2912/next-pwa` (`next.config.ts`).
 
 - Authenticated navigations under `/app`, `/onboarding`, and `/join` use Workbox **NetworkOnly** — do not cache household HTML or financial responses for offline reuse.
-- Custom worker source (`worker/index.ts`) handles `push` and `notificationclick` with same-origin deep-link validation.
-- Static assets may be cached; a client banner prompts “Refresh to update” when a waiting worker is detected.
+- Custom worker source (`worker/index.ts`) handles `push`, `notificationclick`, and `SKIP_WAITING` for update activation.
+- Static assets may be cached; a client banner prompts “Refresh to update” when a waiting worker is detected (activates the new worker, then reloads).
 - Manifest (`public/manifest.webmanifest`): `display: standalone`, `start_url: /app`, theme/background colors aligned with the light page background (`#f3efe6`). Runtime `theme-color` meta tracks light/dark resolution.
 - The site remains fully usable without installation.
 - iPhone Web Push requires Add to Home Screen + opening the installed PWA before “Enable notifications”.

@@ -11,6 +11,11 @@ export function ServiceWorkerUpdateBanner() {
     }
 
     let registration: ServiceWorkerRegistration | undefined;
+    let cancelled = false;
+
+    const onControllerChange = () => {
+      window.location.reload();
+    };
 
     const onUpdateFound = () => {
       const installing = registration?.installing;
@@ -26,13 +31,24 @@ export function ServiceWorkerUpdateBanner() {
     };
 
     void navigator.serviceWorker.ready.then((reg) => {
+      if (cancelled) return;
       registration = reg;
       if (reg.waiting) setWaiting(true);
       reg.addEventListener("updatefound", onUpdateFound);
     });
 
+    navigator.serviceWorker.addEventListener(
+      "controllerchange",
+      onControllerChange,
+    );
+
     return () => {
+      cancelled = true;
       registration?.removeEventListener("updatefound", onUpdateFound);
+      navigator.serviceWorker.removeEventListener(
+        "controllerchange",
+        onControllerChange,
+      );
     };
   }, []);
 
@@ -49,7 +65,13 @@ export function ServiceWorkerUpdateBanner() {
       <button
         type="button"
         className="font-semibold underline"
-        onClick={() => window.location.reload()}
+        onClick={() => {
+          void navigator.serviceWorker.ready.then((reg) => {
+            reg.waiting?.postMessage({ type: "SKIP_WAITING" });
+            // If nothing is waiting, still reload to clear deploy skew.
+            if (!reg.waiting) window.location.reload();
+          });
+        }}
       >
         Refresh to update
       </button>
