@@ -5,6 +5,13 @@ import { getServerEnv } from "@/lib/env/server";
 import { mapAuthError } from "@/lib/errors";
 import { resolvePostAuthDestination } from "@/lib/auth/post-auth-destination";
 import { isAllowedSignInOrigin } from "@/lib/auth/sign-in-origin";
+import {
+  detectSignInContentMode,
+  mapSignInErrorMessage,
+  parseFormUrlEncoded,
+  signInErrorLoginPath,
+  type SignInErrorCode,
+} from "@/lib/auth/sign-in-request";
 import { validateCurrentHouseholdSelection } from "@/lib/navigation";
 import { safeRedirectPath } from "@/lib/navigation";
 import { authEmailPasswordSchema } from "@/lib/validations/household";
@@ -36,82 +43,109 @@ type SignInOk = { ok: true; redirectTo: string };
 type SignInErr = {
   ok: false;
   error: string;
-  category:
-    | "validation"
-    | "auth"
-    | "profile"
-    | "rate_limit"
-    | "origin"
-    | "server";
+  category: SignInErrorCode;
   actionHref?: string;
   actionLabel?: string;
 };
 
+type PendingCookie = {
+  name: string;
+  value: string;
+  options?: Parameters<NextResponse["cookies"]["set"]>[2];
+};
+
+function applyCookies(res: NextResponse, cookies: PendingCookie[]) {
+  cookies.forEach(({ name, value, options }) => {
+    res.cookies.set(name, value, options);
+  });
+}
+
+function jsonError(
+  code: SignInErrorCode,
+  status: number,
+  extras?: Partial<SignInErr>,
+  cookies: PendingCookie[] = [],
+): NextResponse {
+  const res = NextResponse.json(
+    {
+      ok: false,
+      error: mapSignInErrorMessage(code),
+      category: code,
+      ...extras,
+    } satisfies SignInErr,
+    { status },
+  );
+  applyCookies(res, cookies);
+  return res;
+}
+
+function formRedirect(
+  absoluteOrPath: string,
+  requestUrl: string,
+  cookies: PendingCookie[],
+): NextResponse {
+  const location = absoluteOrPath.startsWith("http")
+    ? absoluteOrPath
+    : new URL(absoluteOrPath, requestUrl).toString();
+  const res = NextResponse.redirect(location, 303);
+  applyCookies(res, cookies);
+  return res;
+}
+
 export async function POST(request: NextRequest) {
+  const mode = detectSignInContentMode(request.headers.get("content-type"));
+  const preferForm =
+    mode === "form" ||
+    (mode === "unsupported" &&
+      !(request.headers.get("accept") ?? "").includes("application/json"));
+
+  const fail = (code: SignInErrorCode, status: number, cookies: PendingCookie[] = []) => {
+    if (preferForm) {
+      return formRedirect(signInErrorLoginPath(code), request.url, cookies);
+    }
+    return jsonError(code, status, undefined, cookies);
+  };
+
+  if (mode === "unsupported") {
+    return fail("unsupported", 415);
+  }
+
   const env = getServerEnv();
   const origin = request.headers.get("origin");
-  if (!isAllowedSignInOrigin(origin, env.APP_URL, request.url)) {
-    return NextResponse.json(
-      {
-        ok: false,
-        error: "Sign-in request origin was rejected.",
-        category: "origin",
-      } satisfies SignInErr,
-      { status: 403 },
-    );
+  const referer = request.headers.get("referer");
+  if (!isAllowedSignInOrigin(origin, env.APP_URL, request.url, referer)) {
+    return fail("origin", 403);
   }
 
   if (!rateLimit(clientKey(request))) {
-    return NextResponse.json(
-      {
-        ok: false,
-        error: "Too many sign-in attempts. Wait a minute and try again.",
-        category: "rate_limit",
-      } satisfies SignInErr,
-      { status: 429 },
-    );
+    return fail("rate_limit", 429);
   }
 
-  let body: unknown;
+  let record: Record<string, unknown> = {};
   try {
     const text = await request.text();
     if (text.length > 8_192) {
-      return NextResponse.json(
-        {
-          ok: false,
-          error: "Request is too large.",
-          category: "validation",
-        } satisfies SignInErr,
-        { status: 413 },
-      );
+      return fail("validation", 413);
     }
-    body = text ? JSON.parse(text) : {};
+    if (mode === "json") {
+      const parsedJson = text ? (JSON.parse(text) as unknown) : {};
+      record =
+        parsedJson && typeof parsedJson === "object"
+          ? (parsedJson as Record<string, unknown>)
+          : {};
+    } else {
+      record = parseFormUrlEncoded(text);
+    }
   } catch {
-    return NextResponse.json(
-      {
-        ok: false,
-        error: "Invalid sign-in payload.",
-        category: "validation",
-      } satisfies SignInErr,
-      { status: 400 },
-    );
+    return fail("validation", 400);
   }
 
-  const record =
-    body && typeof body === "object" ? (body as Record<string, unknown>) : {};
   const parsed = authEmailPasswordSchema.safeParse({
     email: record.email,
     password: record.password,
   });
   if (!parsed.success) {
-    return NextResponse.json(
-      {
-        ok: false,
-        error: "Valid email and password are required.",
-        category: "validation",
-      } satisfies SignInErr,
-      { status: 400 },
-    );
+    return fail("validation", 400);
   }
 
   const requestedNext = safeRedirectPath(
@@ -120,11 +154,7 @@ export async function POST(request: NextRequest) {
   );
 
   const publicEnv = getPublicEnv();
-  const pendingCookies: {
-    name: string;
-    value: string;
-    options?: Parameters<NextResponse["cookies"]["set"]>[2];
-  }[] = [];
+  const pendingCookies: PendingCookie[] = [];
 
   const supabase = createServerClient<Database>(
     publicEnv.NEXT_PUBLIC_SUPABASE_URL,
@@ -137,7 +167,6 @@ export async function POST(request: NextRequest) {
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value, options }) => {
             pendingCookies.push({ name, value, options });
-            // Keep in-request cookie view current for follow-up queries.
             request.cookies.set(name, value);
           });
         },
@@ -150,39 +179,34 @@ export async function POST(request: NextRequest) {
     password: parsed.data.password,
   });
   if (error) {
-    return NextResponse.json(
-      {
-        ok: false,
-        error: mapAuthError(error).publicMessage,
-        category: "auth",
-      } satisfies SignInErr,
-      { status: 401 },
-    );
+    // Map to safe code only — never include Supabase message in Location.
+    void mapAuthError(error);
+    return fail("invalid_credentials", 401);
   }
 
   const { error: profileError } = await supabase.rpc("ensure_profile");
   if (profileError) {
-    const res = NextResponse.json(
+    if (mode === "form") {
+      return formRedirect(
+        "/login?error=profile",
+        request.url,
+        pendingCookies,
+      );
+    }
+    return jsonError(
+      "profile",
+      503,
       {
-        ok: false,
-        error:
-          "Signed in, but your profile could not be initialized. Open recovery or try again.",
-        category: "profile",
         actionHref: "/recovery",
         actionLabel: "Open recovery",
-      } satisfies SignInErr,
-      { status: 503 },
+      },
+      pendingCookies,
     );
-    pendingCookies.forEach(({ name, value, options }) => {
-      res.cookies.set(name, value, options);
-    });
-    return res;
   }
 
   const userId = signInData.user?.id;
   let redirectTo = requestedNext;
   if (userId) {
-    // Use the same authenticated client — do not open a fresh cookie store.
     const { data: memberships } = await supabase
       .from("household_memberships")
       .select("household_id")
@@ -207,10 +231,12 @@ export async function POST(request: NextRequest) {
     });
   }
 
+  if (mode === "form") {
+    return formRedirect(redirectTo, request.url, pendingCookies);
+  }
+
   const payload: SignInOk = { ok: true, redirectTo };
   const res = NextResponse.json(payload, { status: 200 });
-  pendingCookies.forEach(({ name, value, options }) => {
-    res.cookies.set(name, value, options);
-  });
+  applyCookies(res, pendingCookies);
   return res;
 }

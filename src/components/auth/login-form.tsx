@@ -27,9 +27,13 @@ export function LoginForm({
   const [redirecting, setRedirecting] = useState(false);
   const submitting = useRef(false);
 
-  async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (submitting.current || pending || redirecting) return;
+
+    if (submitting.current || pending || redirecting) {
+      return;
+    }
+
     submitting.current = true;
     setError(null);
     setActionHref(null);
@@ -96,7 +100,14 @@ export function LoginForm({
   const busy = pending || redirecting;
 
   return (
-    <form className="mt-8 space-y-4" noValidate onSubmit={onSubmit}>
+    <form
+      method="post"
+      action="/api/auth/sign-in"
+      className="mt-8 space-y-4"
+      noValidate
+      onSubmit={handleSubmit}
+      data-testid="login-form"
+    >
       <fieldset disabled={busy} className="contents">
         <input type="hidden" name="next" value={next} />
         <label className="block text-sm text-text-primary">
@@ -106,6 +117,7 @@ export function LoginForm({
             type="email"
             required
             autoComplete="email"
+            inputMode="email"
             className="mt-1 min-h-11 w-full rounded-md border border-border bg-input-bg px-3 py-2"
           />
         </label>
@@ -135,7 +147,7 @@ export function LoginForm({
         </button>
       </fieldset>
       {error ? (
-        <div className="space-y-1" role="alert">
+        <div className="space-y-2" role="alert">
           <p className="text-sm text-destructive">{error}</p>
           {actionHref ? (
             <p className="text-sm">

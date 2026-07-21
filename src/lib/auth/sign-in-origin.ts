@@ -3,8 +3,8 @@ export function isAllowedSignInOrigin(
   origin: string | null,
   appUrl: string,
   requestUrl: string,
+  referer?: string | null,
 ): boolean {
-  if (!origin) return false;
   let allowed: string;
   let requestOrigin: string;
   try {
@@ -13,5 +13,21 @@ export function isAllowedSignInOrigin(
   } catch {
     return false;
   }
-  return origin === allowed || origin === requestOrigin;
+
+  if (origin) {
+    return origin === allowed || origin === requestOrigin;
+  }
+
+  // Some no-JS / older clients omit Origin on same-origin navigational POST.
+  // Accept only when Referer is same-origin (never allow blank both).
+  if (referer) {
+    try {
+      const refOrigin = new URL(referer).origin;
+      return refOrigin === allowed || refOrigin === requestOrigin;
+    } catch {
+      return false;
+    }
+  }
+
+  return false;
 }

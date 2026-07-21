@@ -9,6 +9,25 @@ import {
   safeRecoveryDestination,
 } from "@/lib/recovery";
 import { getPublicBuildInfo } from "@/lib/build-info";
+import {
+  mapSignInErrorMessage,
+  type SignInErrorCode,
+} from "@/lib/auth/sign-in-request";
+
+const SIGN_IN_ERROR_CODES = new Set<string>([
+  "invalid_credentials",
+  "validation",
+  "rate_limit",
+  "origin",
+  "profile",
+  "unsupported",
+  "server",
+]);
+
+function loginErrorMessage(code: string | undefined): string | null {
+  if (!code || !SIGN_IN_ERROR_CODES.has(code)) return null;
+  return mapSignInErrorMessage(code as SignInErrorCode);
+}
 
 export default async function LoginPage({
   searchParams,
@@ -32,6 +51,7 @@ export default async function LoginPage({
       ? recoveryCopy(reasonState)
       : null;
   const build = getPublicBuildInfo();
+  const formError = loginErrorMessage(params.error);
 
   return (
     <main className="safe-pt safe-pb mx-auto flex min-h-dvh w-full max-w-md flex-col justify-center px-5 py-10">
@@ -53,15 +73,16 @@ export default async function LoginPage({
         <div
           className="mt-6 rounded-md border border-border bg-surface px-4 py-3"
           role="status"
+          data-testid="login-security-notice"
         >
           <p className="text-sm font-medium text-text-primary">{reasonCopy.title}</p>
           <p className="mt-1 text-sm text-text-secondary">{reasonCopy.body}</p>
         </div>
       ) : null}
 
-      {params.error ? (
+      {formError ? (
         <p className="mt-4 text-sm text-destructive" role="alert">
-          {params.error}
+          {formError}
         </p>
       ) : null}
 

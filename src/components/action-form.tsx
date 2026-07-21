@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useEffect } from "react";
 import type { ActionResult } from "@/app/actions/auth";
 import {
   isDeploymentSkewError,
@@ -18,6 +18,21 @@ function redirectTarget(state: ActionResult | null): string | null {
   if (!state?.ok || !state.data) return null;
   const target = state.data.redirectTo;
   return typeof target === "string" && target.startsWith("/") ? target : null;
+}
+
+function skewCopyForState(
+  state: ActionResult | null,
+  actionCategory: "critical" | "financial" | "ordinary" | "convenience",
+): string | null {
+  if (!state || state.ok) return null;
+  if (!isDeploymentSkewError(state.error)) return null;
+  if (actionCategory === "financial") {
+    return "Your app was updated while this page was open. Reload, then review Money before submitting again — this action was not retried.";
+  }
+  if (hasExhaustedSkewReload()) {
+    return "Your app was updated while this page was open. Reload the latest version.";
+  }
+  return null;
 }
 
 /**
@@ -40,8 +55,8 @@ export function ActionForm({
   actionCategory?: "critical" | "financial" | "ordinary" | "convenience";
 }) {
   const [state, formAction, pending] = useActionState(action, null);
-  const [skewMessage, setSkewMessage] = useState<string | null>(null);
   const hardRedirect = redirectTarget(state);
+  const skewMessage = skewCopyForState(state, actionCategory);
 
   useEffect(() => {
     if (!hardRedirect) return;
@@ -51,23 +66,13 @@ export function ActionForm({
   useEffect(() => {
     if (!state || state.ok) return;
     if (!isDeploymentSkewError(state.error)) return;
-    if (actionCategory === "financial") {
-      setSkewMessage(
-        "Your app was updated while this page was open. Reload, then review Money before submitting again — this action was not retried.",
-      );
-      return;
-    }
-    if (hasExhaustedSkewReload()) {
-      setSkewMessage(
-        "Your app was updated while this page was open. Reload the latest version.",
-      );
-      return;
-    }
+    if (actionCategory === "financial") return;
+    if (hasExhaustedSkewReload()) return;
     reloadOnceForDeploymentSkew();
   }, [state, actionCategory]);
 
   return (
-    <form action={formAction} className={className} noValidate>
+    <form method="post" action={formAction} className={className} noValidate>
       <fieldset disabled={pending || Boolean(hardRedirect)} className="contents">
         {children}
       </fieldset>

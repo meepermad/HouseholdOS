@@ -20,7 +20,11 @@ const withPWA = withPWAInit({
             url.pathname === "/signup" ||
             url.pathname.startsWith("/signup") ||
             url.pathname === "/recovery" ||
-            url.pathname.startsWith("/recovery")),
+            url.pathname.startsWith("/recovery") ||
+            url.pathname === "/forgot-password" ||
+            url.pathname.startsWith("/forgot-password") ||
+            url.pathname === "/reset-password" ||
+            url.pathname.startsWith("/reset-password")),
         handler: "NetworkOnly",
       },
       {
@@ -84,24 +88,44 @@ const nextConfig: NextConfig = {
       "manifest-src 'self'",
     ].join("; ");
 
+    const globalHeaders = [
+      { key: "Content-Security-Policy", value: csp },
+      {
+        key: "Strict-Transport-Security",
+        value: "max-age=63072000; includeSubDomains; preload",
+      },
+      { key: "X-Content-Type-Options", value: "nosniff" },
+      { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+      {
+        key: "Permissions-Policy",
+        value: "camera=(self), microphone=(), geolocation=()",
+      },
+      { key: "X-Frame-Options", value: "DENY" },
+    ];
+
+    const authNoStore = [
+      { key: "Cache-Control", value: "no-store" },
+      { key: "Referrer-Policy", value: "no-referrer" },
+      { key: "X-Content-Type-Options", value: "nosniff" },
+    ];
+
+    const authPaths = [
+      "/login",
+      "/signup",
+      "/forgot-password",
+      "/reset-password",
+      "/recovery",
+    ];
+
     return [
       {
         source: "/:path*",
-        headers: [
-          { key: "Content-Security-Policy", value: csp },
-          {
-            key: "Strict-Transport-Security",
-            value: "max-age=63072000; includeSubDomains; preload",
-          },
-          { key: "X-Content-Type-Options", value: "nosniff" },
-          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-          {
-            key: "Permissions-Policy",
-            value: "camera=(self), microphone=(), geolocation=()",
-          },
-          { key: "X-Frame-Options", value: "DENY" },
-        ],
+        headers: globalHeaders,
       },
+      ...authPaths.map((source) => ({
+        source,
+        headers: authNoStore,
+      })),
     ];
   },
 };

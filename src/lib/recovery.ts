@@ -18,7 +18,8 @@ export type RecoveryState =
   | "stale_selection"
   | "session_expired"
   | "database_unavailable"
-  | "signed_out";
+  | "signed_out"
+  | "cleared_sensitive_query";
 
 export function classifyRecoveryReason(
   reason: string | null | undefined,
@@ -30,6 +31,7 @@ export function classifyRecoveryReason(
     case "session_expired":
     case "database_unavailable":
     case "signed_out":
+    case "cleared_sensitive_query":
       return reason;
     default:
       return "unexpected";
@@ -70,6 +72,11 @@ export function recoveryCopy(state: RecoveryState): {
       return {
         title: "Signed out",
         body: "You have been signed out of HouseholdOS.",
+      };
+    case "cleared_sensitive_query":
+      return {
+        title: "For your security, the exposed login URL was cleared.",
+        body: "Please reset your password before signing in again.",
       };
     default:
       return {

@@ -65,7 +65,15 @@ After each production deploy, open tabs (especially the installed PWA) may still
 
 That is expected version skew, not data corruption.
 
-**Password login does not use Server Actions.** It posts to stable `POST /api/auth/sign-in`, then hard-navigates with `window.location.assign`.
+**Password login does not use Server Actions.** It uses a progressive-enhancement form:
+
+```html
+<form method="post" action="/api/auth/sign-in">
+```
+
+- With JavaScript: JSON `POST` then hard `window.location.assign`
+- Without JavaScript / before hydration: native **POST** body (never GET query credentials)
+- Auth pages strip denylisted query keys and prompt a password reset
 
 Other Server Actions still depend on matching builds. Recovery:
 

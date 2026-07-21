@@ -16,6 +16,8 @@ export default function PasteInvitePage() {
         Paste a raw invitation token or a full `/join/&lt;token&gt;` link.
       </p>
       <form
+        method="post"
+        action="/join/paste"
         className="mt-6 space-y-3"
         onSubmit={(e) => {
           e.preventDefault();

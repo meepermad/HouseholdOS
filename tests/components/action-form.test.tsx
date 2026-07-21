@@ -4,6 +4,17 @@ import { describe, expect, it, vi } from "vitest";
 import { ActionForm } from "@/components/action-form";
 
 describe("ActionForm", () => {
+  it("renders method=post for sensitive progressive enhancement", () => {
+    const action = vi.fn(async () => ({ ok: true as const }));
+    const { container } = render(
+      <ActionForm action={action}>
+        <button type="submit">Submit</button>
+      </ActionForm>,
+    );
+    const form = container.querySelector("form");
+    expect(form?.getAttribute("method")).toBe("post");
+  });
+
   it("shows validation error from action result", async () => {
     const user = userEvent.setup();
     const action = vi.fn(async () => ({

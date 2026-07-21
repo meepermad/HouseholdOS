@@ -46,6 +46,17 @@ describe("isAllowedSignInOrigin", () => {
       ),
     ).toBe(false);
   });
+
+  it("accepts same-origin referer when origin is missing", () => {
+    expect(
+      isAllowedSignInOrigin(
+        null,
+        "https://household-os-five.vercel.app",
+        "https://household-os-five.vercel.app/api/auth/sign-in",
+        "https://household-os-five.vercel.app/login",
+      ),
+    ).toBe(true);
+  });
 });
 
 describe("deployment skew helpers", () => {
