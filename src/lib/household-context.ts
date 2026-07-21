@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
@@ -68,60 +69,76 @@ export async function getMembershipRoles(
  * Verify active membership for a household URL.
  * Must not mutate cookies — layouts call this during RSC render, and Next.js
  * only allows cookie writes from Server Actions / Route Handlers.
+ * Cached per request so layout + page do not double-write preferences.
  */
-export async function assertActiveMembership(
+export const assertActiveMembership = cache(
+  async function assertActiveMembership(
+    householdId: string,
+  ): Promise<HouseholdContext> {
+    if (!isHouseholdId(householdId)) {
+      throw new AppError("not_found", "Household not found.");
+    }
+
+    const { supabase, user } = await requireUser();
+    if (!user) {
+      redirect(`/login?next=${encodeURIComponent(`/app/${householdId}`)}`);
+    }
+
+    const { data: membership, error } = await supabase
+      .from("household_memberships")
+      .select("id, household_id, user_id, status")
+      .eq("household_id", householdId)
+      .eq("user_id", user.id)
+      .eq("status", "active")
+      .maybeSingle();
+
+    if (error) {
+      throw new AppError(
+        "database_failure",
+        "Unable to verify household membership right now.",
+      );
+    }
+
+    if (!membership) {
+      throw new AppError(
+        "authorization",
+        "You do not have access to this household.",
+      );
+    }
+
+    // Roles + preference sync are independent after membership is known.
+    const [roles] = await Promise.all([
+      getMembershipRoles(membership.id),
+      syncCurrentHouseholdPreference(householdId, user.id).catch(() => {
+        // Preference write must not block authorized dashboard access.
+      }),
+    ]);
+
+    return {
+      userId: user.id,
+      householdId,
+      roles,
+      membershipId: membership.id,
+    };
+  },
+);
+
+/** DB preference only — safe from Server Components. Skips no-op writes. */
+export async function syncCurrentHouseholdPreference(
   householdId: string,
-): Promise<HouseholdContext> {
-  if (!isHouseholdId(householdId)) {
-    throw new AppError("not_found", "Household not found.");
-  }
-
-  const { supabase, user } = await requireUser();
-  if (!user) {
-    redirect(`/login?next=${encodeURIComponent(`/app/${householdId}`)}`);
-  }
-
-  const { data: membership, error } = await supabase
-    .from("household_memberships")
-    .select("id, household_id, user_id, status")
-    .eq("household_id", householdId)
-    .eq("user_id", user.id)
-    .eq("status", "active")
-    .maybeSingle();
-
-  if (error) {
-    throw new AppError(
-      "database_failure",
-      "Unable to verify household membership right now.",
-    );
-  }
-
-  if (!membership) {
-    throw new AppError(
-      "authorization",
-      "You do not have access to this household.",
-    );
-  }
-
-  // Roles + preference sync are independent after membership is known.
-  const [roles] = await Promise.all([
-    getMembershipRoles(membership.id),
-    syncCurrentHouseholdPreference(householdId).catch(() => {
-      // Preference write must not block authorized dashboard access.
-    }),
-  ]);
-
-  return {
-    userId: user.id,
-    householdId,
-    roles,
-    membershipId: membership.id,
-  };
-}
-
-/** DB preference only — safe from Server Components. */
-export async function syncCurrentHouseholdPreference(householdId: string) {
+  userId?: string,
+) {
   const supabase = await createClient();
+  if (userId) {
+    const { data: prefs } = await supabase
+      .from("user_preferences")
+      .select("current_household_id")
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (prefs?.current_household_id === householdId) {
+      return;
+    }
+  }
   const { error } = await supabase.rpc("set_current_household", {
     p_household_id: householdId,
   });

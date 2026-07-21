@@ -114,9 +114,12 @@ export async function signInAction(
       return { ok: false, error: "Valid email and password are required." };
     }
 
-    const next = safeRedirectPath(String(formData.get("next") ?? ""), "/app");
+    const requestedNext = safeRedirectPath(
+      String(formData.get("next") ?? ""),
+      "/app",
+    );
     const supabase = await createClient();
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data: signInData, error } = await supabase.auth.signInWithPassword({
       email: parsed.data.email,
       password: parsed.data.password,
     });
@@ -124,8 +127,37 @@ export async function signInAction(
       return { ok: false, error: mapAuthError(error).publicMessage };
     }
 
-    await supabase.rpc("ensure_profile");
-    redirect(next);
+    const { error: profileError } = await supabase.rpc("ensure_profile");
+    if (profileError) {
+      return {
+        ok: false,
+        error:
+          "Signed in, but your profile could not be initialized. Open recovery or try again.",
+        actionHref: "/recovery",
+        actionLabel: "Open recovery",
+      };
+    }
+
+    const userId = signInData.user?.id;
+    let authorized: string[] = [];
+    let preferred: string | null = null;
+    if (userId) {
+      const { listAuthorizedHouseholdIds, resolvePreferredHouseholdId } =
+        await import("@/lib/household-context");
+      const { resolvePostAuthDestination } =
+        await import("@/lib/auth/post-auth-destination");
+      authorized = await listAuthorizedHouseholdIds(userId);
+      preferred = await resolvePreferredHouseholdId(userId);
+      const redirectTo = resolvePostAuthDestination({
+        requestedNext,
+        authorizedHouseholdIds: authorized,
+        preferredHouseholdId: preferred,
+      });
+      // Hard client navigation via ActionForm — do not soft-redirect here.
+      return { ok: true, data: { redirectTo } };
+    }
+
+    return { ok: true, data: { redirectTo: requestedNext } };
   } catch (error) {
     if (error && typeof error === "object" && "digest" in error) throw error;
     return { ok: false, error: toPublicErrorMessage(error) };

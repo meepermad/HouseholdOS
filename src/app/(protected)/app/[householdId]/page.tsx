@@ -7,6 +7,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { can } from "@/lib/permissions";
 import { SetupReminderCard } from "@/components/setup/SetupReminderCard";
 import { loadSetupReminder } from "@/lib/setup/queries";
+import { logServerError } from "@/lib/errors";
 
 export const dynamic = "force-dynamic";
 
@@ -16,13 +17,27 @@ export default async function HouseholdHomePage({
   params: Promise<{ householdId: string }>;
 }) {
   const { householdId } = await params;
+  // Cached with layout — preference sync runs once per request.
   const ctx = await assertActiveMembership(householdId);
-  const data = await loadHomeActionCenter({
-    householdId,
-    membershipId: ctx.membershipId,
-    userId: ctx.userId,
-  });
-  const setupReminder = await loadSetupReminder(householdId);
+
+  let data;
+  try {
+    data = await loadHomeActionCenter({
+      householdId,
+      membershipId: ctx.membershipId,
+      userId: ctx.userId,
+    });
+  } catch (error) {
+    logServerError("home.attention", error, { householdId });
+    throw error;
+  }
+
+  let setupReminder = null;
+  try {
+    setupReminder = await loadSetupReminder(householdId);
+  } catch (error) {
+    logServerError("home.setup", error, { householdId });
+  }
 
   const net = data.money.youAreOwedCents - data.money.youOweCents;
 
