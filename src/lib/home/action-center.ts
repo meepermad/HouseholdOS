@@ -58,6 +58,54 @@ function prioritizeAttention(items: HomeAttentionItem[]): HomeAttentionItem[] {
   return [...items].sort((a, b) => rank[a.urgency] - rank[b.urgency]);
 }
 
+async function loadShoppingIntel(householdId: string): Promise<{
+  sugCount: number;
+  favorite: { id: string; explanation: string } | null;
+}> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const supabase = (await createClient()) as any;
+  const [{ count: sugCount }, { data: favorite }] = await Promise.all([
+    supabase
+      .from("shopping_recommendation_items")
+      .select("id", { count: "exact", head: true })
+      .eq("household_id", householdId)
+      .eq("status", "suggested"),
+    supabase
+      .from("recipe_rediscovery_suggestions")
+      .select("id,explanation")
+      .eq("household_id", householdId)
+      .eq("status", "suggested")
+      .order("score", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+  ]);
+  return {
+    sugCount: sugCount ?? 0,
+    favorite: favorite?.id
+      ? { id: String(favorite.id), explanation: String(favorite.explanation) }
+      : null,
+  };
+}
+
+async function loadNextMeeting(householdId: string) {
+  const { meetingTable } = await import("@/lib/meetings/client");
+  const meetingsT = await meetingTable("household_meetings");
+  const { data: nextMeeting } = await meetingsT
+    .select("id, title, meeting_at, status")
+    .eq("household_id", householdId)
+    .in("status", [
+      "draft",
+      "preparing",
+      "ready_for_review",
+      "locked",
+      "in_progress",
+    ])
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  return nextMeeting;
+}
+
 export async function loadHomeActionCenter(options: {
   householdId: string;
   membershipId: string;
@@ -81,12 +129,43 @@ export async function loadHomeActionCenter(options: {
     awaitingConfirmation: 0,
   };
 
-  try {
-    const moneyItems = await listActionCenterItems(
+  const [
+    moneyItems,
+    balances,
+    choreItems,
+    events,
+    upcomingEvents,
+    approvals,
+    acks,
+    maintenance,
+    nextMeeting,
+    shoppingIntel,
+  ] = await Promise.all([
+    listActionCenterItems(householdId, membershipId, userId).catch(() => null),
+    getSettlementBalancesForMembership(householdId, membershipId).catch(
+      () => null,
+    ),
+    listChoreActionCenterItems(householdId, membershipId).catch(() => null),
+    listOccurrencesInRange(
       householdId,
       membershipId,
-      userId,
-    );
+      todayStart.toISOString(),
+      todayEnd.toISOString(),
+    ).catch(() => null),
+    listOccurrencesInRange(
+      householdId,
+      membershipId,
+      todayEnd.toISOString(),
+      weekEnd.toISOString(),
+    ).catch(() => null),
+    listOpenApprovalRequests(householdId).catch(() => null),
+    listPendingAcknowledgments(householdId, membershipId).catch(() => null),
+    listMaintenanceRequests(householdId).catch(() => null),
+    loadNextMeeting(householdId).catch(() => null),
+    loadShoppingIntel(householdId).catch(() => null),
+  ]);
+
+  if (moneyItems) {
     for (const p of moneyItems.awaitingConfirm) {
       attention.push({
         id: `pay-${p.id}`,
@@ -119,26 +198,14 @@ export async function loadHomeActionCenter(options: {
       });
     }
     money.awaitingConfirmation = moneyItems.awaitingConfirm.length;
-  } catch {
-    /* degrade */
   }
 
-  try {
-    const balances = await getSettlementBalancesForMembership(
-      householdId,
-      membershipId,
-    );
+  if (balances) {
     money.youOweCents = balances.summary.officialYouOweCents;
     money.youAreOwedCents = balances.summary.officialYouAreOwedCents;
-  } catch {
-    /* degrade */
   }
 
-  try {
-    const choreItems = await listChoreActionCenterItems(
-      householdId,
-      membershipId,
-    );
+  if (choreItems) {
     for (const item of choreItems.overdue) {
       attention.push({
         id: `chore-overdue-${item.id}`,
@@ -189,17 +256,9 @@ export async function loadHomeActionCenter(options: {
         href: householdRoutes.responsibilities(householdId),
       });
     }
-  } catch {
-    /* degrade */
   }
 
-  try {
-    const events = await listOccurrencesInRange(
-      householdId,
-      membershipId,
-      todayStart.toISOString(),
-      todayEnd.toISOString(),
-    );
+  if (events) {
     for (const occ of events.slice(0, 8)) {
       today.push({
         id: `evt-${occ.occurrenceId}`,
@@ -207,13 +266,9 @@ export async function loadHomeActionCenter(options: {
         href: householdRoutes.calendar.event(householdId, occ.eventId),
       });
     }
+  }
 
-    const upcomingEvents = await listOccurrencesInRange(
-      householdId,
-      membershipId,
-      todayEnd.toISOString(),
-      weekEnd.toISOString(),
-    );
+  if (upcomingEvents) {
     for (const occ of upcomingEvents.slice(0, 5)) {
       upcoming.push({
         id: `up-${occ.occurrenceId}`,
@@ -221,12 +276,9 @@ export async function loadHomeActionCenter(options: {
         href: householdRoutes.calendar.event(householdId, occ.eventId),
       });
     }
-  } catch {
-    /* degrade */
   }
 
-  try {
-    const approvals = await listOpenApprovalRequests(householdId);
+  if (approvals) {
     for (const a of approvals.slice(0, 5)) {
       attention.push({
         id: `gov-appr-${a.id}`,
@@ -236,7 +288,9 @@ export async function loadHomeActionCenter(options: {
         href: householdRoutes.governance.approvals(householdId),
       });
     }
-    const acks = await listPendingAcknowledgments(householdId, membershipId);
+  }
+
+  if (acks) {
     for (const a of acks.slice(0, 5)) {
       attention.push({
         id: `gov-ack-${a.id}`,
@@ -246,13 +300,10 @@ export async function loadHomeActionCenter(options: {
         href: householdRoutes.governance.acknowledgments(householdId),
       });
     }
-  } catch {
-    /* degrade */
   }
 
-  try {
-    const maintenance = await listMaintenanceRequests(householdId);
-    const open = (maintenance ?? []).filter((r) =>
+  if (maintenance) {
+    const open = maintenance.filter((r) =>
       [
         "reported",
         "triaged",
@@ -279,77 +330,39 @@ export async function loadHomeActionCenter(options: {
         });
       }
     }
-  } catch {
-    /* degrade */
   }
 
-  try {
-    const { meetingTable } = await import("@/lib/meetings/client");
-    const meetingsT = await meetingTable("household_meetings");
-    const { data: nextMeeting } = await meetingsT
-      .select("id, title, meeting_at, status")
-      .eq("household_id", householdId)
-      .in("status", [
-        "draft",
-        "preparing",
-        "ready_for_review",
-        "locked",
-        "in_progress",
-      ])
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    if (nextMeeting?.id) {
-      attention.push({
-        id: `meeting-${nextMeeting.id}`,
-        title: "Monthly household meeting",
-        detail: nextMeeting.meeting_at
-          ? `Scheduled ${String(nextMeeting.meeting_at)}. Agenda items need review.`
-          : "Prepare the monthly review packet before the meeting.",
-        urgency: "normal",
-        href: householdRoutes.meetings.detail(householdId, String(nextMeeting.id)),
-      });
-    }
-  } catch {
-    /* degrade when meetings schema not yet applied */
+  if (nextMeeting?.id) {
+    attention.push({
+      id: `meeting-${nextMeeting.id}`,
+      title: "Monthly household meeting",
+      detail: nextMeeting.meeting_at
+        ? `Scheduled ${String(nextMeeting.meeting_at)}. Agenda items need review.`
+        : "Prepare the monthly review packet before the meeting.",
+      urgency: "normal",
+      href: householdRoutes.meetings.detail(householdId, String(nextMeeting.id)),
+    });
   }
 
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const supabase = (await createClient()) as any;
-    const { count: sugCount } = await supabase
-      .from("shopping_recommendation_items")
-      .select("id", { count: "exact", head: true })
-      .eq("household_id", householdId)
-      .eq("status", "suggested");
-    if ((sugCount ?? 0) >= 3) {
+  if (shoppingIntel) {
+    if (shoppingIntel.sugCount >= 3) {
       attention.push({
         id: "shopping-recommendations",
         title: "Shopping suggestions ready",
-        detail: `${sugCount} items may be needed for the next trip.`,
+        detail: `${shoppingIntel.sugCount} items may be needed for the next trip.`,
         urgency: "normal",
         href: householdRoutes.house.shoppingRecommendations(householdId),
       });
     }
-    const { data: favorite } = await supabase
-      .from("recipe_rediscovery_suggestions")
-      .select("id,explanation")
-      .eq("household_id", householdId)
-      .eq("status", "suggested")
-      .order("score", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    if (favorite?.id) {
+    if (shoppingIntel.favorite) {
       attention.push({
-        id: `rediscovery-${favorite.id}`,
+        id: `rediscovery-${shoppingIntel.favorite.id}`,
         title: "Forgotten favorite",
-        detail: String(favorite.explanation).slice(0, 140),
+        detail: shoppingIntel.favorite.explanation.slice(0, 140),
         urgency: "normal",
         href: householdRoutes.house.recipesRediscover(householdId),
       });
     }
-  } catch {
-    /* degrade when shopping intelligence schema not applied */
   }
 
   return {

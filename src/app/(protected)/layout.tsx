@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import {
   RecoveryClearHouseholdForm,
   RecoveryLogoutForm,
@@ -7,6 +6,11 @@ import {
 import { RecoveryScreen, recoveryControlClass } from "@/components/recovery-screen";
 import { ensureProfileOrRecover } from "@/lib/household-context";
 import { AppError } from "@/lib/errors";
+import {
+  LAYOUT_DEADLINE_MS,
+  withDeadline,
+} from "@/lib/async/with-deadline";
+import { redirect } from "next/navigation";
 
 function isNextRedirectError(error: unknown): boolean {
   return (
@@ -24,7 +28,10 @@ export default async function ProtectedLayout({
   children: React.ReactNode;
 }) {
   try {
-    await ensureProfileOrRecover();
+    await withDeadline(ensureProfileOrRecover(), {
+      ms: LAYOUT_DEADLINE_MS,
+      stage: "profile",
+    });
   } catch (error) {
     if (isNextRedirectError(error)) throw error;
     if (error instanceof AppError && error.code === "database_failure") {
@@ -34,7 +41,10 @@ export default async function ProtectedLayout({
           body={error.publicMessage}
           primary={
             <>
-              <Link href="/recovery" className={recoveryControlClass.primary}>
+              <a href="." className={recoveryControlClass.primary}>
+                Retry
+              </a>
+              <Link href="/recovery" className={recoveryControlClass.secondary}>
                 Open recovery
               </Link>
               <RecoveryLogoutForm

@@ -55,12 +55,21 @@ function classifyHouseholdPageError(error: Error & { digest?: string }): {
       };
     }
     if (error.code === "database_failure") {
+      const timedOut = error.publicMessage.toLowerCase().includes("timed out");
       return {
-        title: "Database unavailable",
+        title: timedOut ? "Load timed out" : "Database unavailable",
         body: error.publicMessage,
         showLogout: true,
       };
     }
+  }
+
+  if (message.includes("timed out")) {
+    return {
+      title: "Load timed out",
+      body: error.message,
+      showLogout: true,
+    };
   }
 
   return {
@@ -112,8 +121,19 @@ export default function HouseholdError({
             >
               {skew ? "Refresh now" : "Try again"}
             </button>
+            <button
+              type="button"
+              className={recoveryControlClass.secondary}
+              onClick={() => {
+                const url = new URL(window.location.href);
+                url.searchParams.set("_hos_dpl", String(Date.now()));
+                window.location.assign(url.toString());
+              }}
+            >
+              Reload latest version
+            </button>
             <Link href="/app" className={recoveryControlClass.secondary}>
-              Home
+              Choose household
             </Link>
             {copy.showLogout && !skew ? (
               <RecoveryLogoutForm variant="secondary" />

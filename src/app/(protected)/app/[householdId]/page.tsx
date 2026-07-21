@@ -1,57 +1,40 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import { assertActiveMembership } from "@/lib/household-context";
 import { formatUsdFromCents, toCents } from "@/lib/money";
 import { FINANCE_COPY } from "@/lib/presentation";
-import { loadHomeActionCenter } from "@/lib/home/action-center";
+import {
+  loadHomeActionCenter,
+  type HomeActionCenterData,
+} from "@/lib/home/action-center";
 import { EmptyState } from "@/components/ui/empty-state";
 import { can } from "@/lib/permissions";
 import { SetupReminderCard } from "@/components/setup/SetupReminderCard";
 import { loadSetupReminder } from "@/lib/setup/queries";
 import { logServerError } from "@/lib/errors";
+import {
+  HOME_DEADLINE_MS,
+  withDeadline,
+} from "@/lib/async/with-deadline";
+import { RouteLoadGuard } from "@/components/route-load-guard";
 
 export const dynamic = "force-dynamic";
 
-export default async function HouseholdHomePage({
-  params,
+function HomeSections({
+  householdId,
+  data,
+  setupReminder,
+  showSettingsLinks,
 }: {
-  params: Promise<{ householdId: string }>;
+  householdId: string;
+  data: HomeActionCenterData;
+  setupReminder: Awaited<ReturnType<typeof loadSetupReminder>>;
+  showSettingsLinks: boolean;
 }) {
-  const { householdId } = await params;
-  // Cached with layout — preference sync runs once per request.
-  const ctx = await assertActiveMembership(householdId);
-
-  let data;
-  try {
-    data = await loadHomeActionCenter({
-      householdId,
-      membershipId: ctx.membershipId,
-      userId: ctx.userId,
-    });
-  } catch (error) {
-    logServerError("home.attention", error, { householdId });
-    throw error;
-  }
-
-  let setupReminder = null;
-  try {
-    setupReminder = await loadSetupReminder(householdId);
-  } catch (error) {
-    logServerError("home.setup", error, { householdId });
-  }
-
   const net = data.money.youAreOwedCents - data.money.youOweCents;
 
   return (
-    <main className="app-page-accent space-y-6" data-testid="home-action-center">
-      <section>
-        <h1 className="font-[family-name:var(--font-display)] text-2xl text-text-primary md:text-3xl">
-          Home
-        </h1>
-        <p className="mt-1 text-sm text-text-secondary">
-          What needs attention in your household today.
-        </p>
-      </section>
-
+    <>
       {setupReminder ? (
         <SetupReminderCard householdId={householdId} progress={setupReminder} />
       ) : null}
@@ -224,7 +207,7 @@ export default async function HouseholdHomePage({
         </section>
       ) : null}
 
-      {can(ctx.roles, "member.invite") || can(ctx.roles, "household.update") ? (
+      {showSettingsLinks ? (
         <p className="text-center text-xs text-text-muted">
           <Link
             href={`/app/${householdId}/settings/household`}
@@ -241,6 +224,79 @@ export default async function HouseholdHomePage({
           </Link>
         </p>
       ) : null}
+    </>
+  );
+}
+
+async function HomeActionCenterBody({
+  householdId,
+  membershipId,
+  userId,
+  showSettingsLinks,
+}: {
+  householdId: string;
+  membershipId: string;
+  userId: string;
+  showSettingsLinks: boolean;
+}) {
+  let data: HomeActionCenterData;
+  try {
+    data = await withDeadline(
+      loadHomeActionCenter({ householdId, membershipId, userId }),
+      { ms: HOME_DEADLINE_MS, stage: "home" },
+    );
+  } catch (error) {
+    logServerError("home.attention", error, { householdId });
+    throw error;
+  }
+
+  let setupReminder = null;
+  try {
+    setupReminder = await loadSetupReminder(householdId);
+  } catch (error) {
+    logServerError("home.setup", error, { householdId });
+  }
+
+  return (
+    <HomeSections
+      householdId={householdId}
+      data={data}
+      setupReminder={setupReminder}
+      showSettingsLinks={showSettingsLinks}
+    />
+  );
+}
+
+export default async function HouseholdHomePage({
+  params,
+}: {
+  params: Promise<{ householdId: string }>;
+}) {
+  const { householdId } = await params;
+  // Cached with layout — preference sync runs once per request.
+  const ctx = await assertActiveMembership(householdId);
+  const showSettingsLinks =
+    can(ctx.roles, "member.invite") || can(ctx.roles, "household.update");
+
+  return (
+    <main className="app-page-accent space-y-6" data-testid="home-action-center">
+      <section>
+        <h1 className="font-[family-name:var(--font-display)] text-2xl text-text-primary md:text-3xl">
+          Home
+        </h1>
+        <p className="mt-1 text-sm text-text-secondary">
+          What needs attention in your household today.
+        </p>
+      </section>
+
+      <Suspense fallback={<RouteLoadGuard stage="home" label="Loading home content" />}>
+        <HomeActionCenterBody
+          householdId={householdId}
+          membershipId={ctx.membershipId}
+          userId={ctx.userId}
+          showSettingsLinks={showSettingsLinks}
+        />
+      </Suspense>
     </main>
   );
 }

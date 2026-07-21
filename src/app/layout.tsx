@@ -4,8 +4,7 @@ import { Fraunces, Source_Sans_3 } from "next/font/google";
 import { ThemeBootstrapScript } from "@/components/theme-bootstrap-script";
 import { DocumentLoadWatchdogScript } from "@/components/document-load-watchdog-script";
 import { AppProviders } from "@/components/app-providers";
-import { Skeleton } from "@/components/ui/skeleton";
-import { LoadingStuckRecovery } from "@/components/loading-stuck-recovery";
+import { RouteLoadGuard } from "@/components/route-load-guard";
 import "./globals.css";
 
 const fraunces = Fraunces({
@@ -44,23 +43,6 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
-function RootRouteFallback() {
-  return (
-    <div
-      className="mx-auto max-w-3xl space-y-6 px-4 py-10"
-      aria-busy="true"
-      aria-label="Loading HouseholdOS"
-      data-testid="root-route-fallback"
-    >
-      <Skeleton className="h-10 w-64" />
-      <Skeleton className="h-4 w-40" />
-      <Skeleton className="h-24 w-full" />
-      <Skeleton className="h-16 w-full" />
-      <LoadingStuckRecovery label="HouseholdOS" />
-    </div>
-  );
-}
-
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -79,10 +61,10 @@ export default function RootLayout({
       <body className="min-h-full bg-background antialiased text-text-primary">
         <AppProviders>
           {/*
-            Stream the shell immediately. Without Suspense, a hung auth/theme/layout
+            Stream the shell immediately. Without Suspense, a hung auth/layout
             await blocks the entire HTML document — including recovery UI.
           */}
-          <Suspense fallback={<RootRouteFallback />}>{children}</Suspense>
+          <Suspense fallback={<RouteLoadGuard stage="app" />}>{children}</Suspense>
         </AppProviders>
       </body>
     </html>
