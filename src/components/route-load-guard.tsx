@@ -78,9 +78,15 @@ export function RouteLoadGuard({
             >
               Reload latest version
             </button>
-            <a href="/app" className={recoveryControlClass.secondary}>
+            <button
+              type="button"
+              className={recoveryControlClass.secondary}
+              onClick={() => {
+                window.location.assign("/app");
+              }}
+            >
               Choose household
-            </a>
+            </button>
             <RecoveryLogoutForm variant="secondary" />
           </>
         }

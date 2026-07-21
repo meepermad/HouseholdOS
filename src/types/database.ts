@@ -25,6 +25,12 @@ export type InvitationStatus =
   | "revoked"
   | "expired";
 
+export type InvitationDeliveryStatus =
+  | "not_attempted"
+  | "sent"
+  | "existing_account"
+  | "failed";
+
 export type OnboardingStatus = "pending" | "in_progress" | "complete";
 
 export type ReimbursementPolicy = "external_reimbursement";

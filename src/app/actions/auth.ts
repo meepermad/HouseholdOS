@@ -14,7 +14,12 @@ import {
 import { hashInviteToken } from "@/lib/tokens";
 
 export type ActionResult =
-  | { ok: true; message?: string; data?: Record<string, string> }
+  | {
+      ok: true;
+      message?: string;
+      warning?: string;
+      data?: Record<string, string>;
+    }
   | {
       ok: false;
       error: string;

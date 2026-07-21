@@ -4,7 +4,6 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { can, canChangeRoles, normalizeRoles } from "@/lib/permissions";
-import { getServerEnv } from "@/lib/env/server";
 import {
   AppError,
   logServerError,
@@ -19,10 +18,10 @@ import {
   requireUser,
 } from "@/lib/household-context";
 import {
-  generateInviteToken,
-  hashInviteToken,
-  invitationExpiresAt,
-} from "@/lib/tokens";
+  createHouseholdInvitationOrchestrated,
+  retryInvitationDeliveryOrchestrated,
+} from "@/lib/invitations/orchestration";
+import { hashInviteToken } from "@/lib/tokens";
 import { CURRENT_HOUSEHOLD_COOKIE } from "@/lib/navigation";
 import {
   acceptInviteSchema,
@@ -32,6 +31,7 @@ import {
   inviteMemberSchema,
   leaveHouseholdSchema,
   removeMemberSchema,
+  retryInviteDeliverySchema,
   revokeInviteSchema,
   switchHouseholdSchema,
   updateHouseholdSchema,
@@ -332,32 +332,72 @@ export async function inviteMemberAction(
       return { ok: false, error: "Not allowed to invite members." };
     }
 
-    const env = getServerEnv();
-    const token = generateInviteToken();
-    const tokenHash = hashInviteToken(token);
-    const expiresAt = invitationExpiresAt(env.INVITATION_TTL_HOURS).toISOString();
     const roles = normalizeRoles(parsed.data.roles);
-
     const { supabase } = await requireUser();
-    const { error } = await supabase!.rpc("create_household_invitation", {
-      p_household_id: parsed.data.householdId,
-      p_email: parsed.data.email,
-      p_token_hash: tokenHash,
-      p_expires_at: expiresAt,
-      p_intended_roles: roles,
-      p_message: parsed.data.message || undefined,
+
+    // Persist pending invitation first; Auth Admin invite runs only after commit.
+    const result = await createHouseholdInvitationOrchestrated({
+      supabase: supabase!,
+      householdId: parsed.data.householdId,
+      email: parsed.data.email,
+      intendedRoles: roles,
+      message: parsed.data.message || undefined,
     });
 
-    if (error) {
-      return { ok: false, error: "Unable to create invitation." };
-    }
-
-    const inviteUrl = `${env.APP_URL}/join/${token}`;
     revalidatePath(`/app/${parsed.data.householdId}/settings/members`);
     return {
       ok: true,
-      message: "Invitation created. Copy the link and share it in your group chat.",
-      data: { inviteUrl },
+      message: result.message,
+      warning: result.warning,
+      data: {
+        inviteUrl: result.inviteUrl,
+        invitationId: result.invitationId,
+        invitedEmail: result.invitedEmail,
+        householdName: result.householdName,
+        intendedRoles: result.intendedRoles.join(", "),
+        expiresAt: result.expiresAt,
+        deliveryStatus: result.deliveryStatus,
+        ...(result.diagnostic ? { diagnostic: result.diagnostic } : {}),
+      },
+    };
+  } catch (error) {
+    return { ok: false, error: toPublicErrorMessage(error) };
+  }
+}
+
+export async function retryInviteDeliveryAction(
+  _prev: ActionResult | null,
+  formData: FormData,
+): Promise<ActionResult> {
+  try {
+    const parsed = retryInviteDeliverySchema.safeParse({
+      householdId: formData.get("householdId"),
+      invitationId: formData.get("invitationId"),
+    });
+    if (!parsed.success) {
+      return { ok: false, error: "Invalid invitation." };
+    }
+
+    const ctx = await assertActiveMembership(parsed.data.householdId);
+    if (!can(ctx.roles, "member.invite")) {
+      return { ok: false, error: "Not allowed to invite members." };
+    }
+
+    const { supabase } = await requireUser();
+    const result = await retryInvitationDeliveryOrchestrated({
+      supabase: supabase!,
+      householdId: parsed.data.householdId,
+      invitationId: parsed.data.invitationId,
+    });
+
+    revalidatePath(`/app/${parsed.data.householdId}/settings/members`);
+    return {
+      ok: true,
+      message: result.message,
+      warning: result.warning,
+      data: {
+        deliveryStatus: result.deliveryStatus,
+      },
     };
   } catch (error) {
     return { ok: false, error: toPublicErrorMessage(error) };

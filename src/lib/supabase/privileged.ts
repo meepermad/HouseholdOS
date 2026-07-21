@@ -7,6 +7,8 @@
  * - Notification delivery worker (`src/lib/notifications/worker.ts`)
  * - Document / receipt OCR worker (`src/lib/receipts/worker.ts`)
  * - Export archive worker (`src/lib/export/worker.ts`)
+ * - Household invitation Auth email (`src/lib/invitations/auth-invite.ts`)
+ *   after a pending household_invitations row is already committed
  *
  * Never use this client for ordinary authenticated household queries.
  * Never import this module from Client Components.

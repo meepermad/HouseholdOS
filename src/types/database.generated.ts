@@ -4590,6 +4590,9 @@ export type Database = {
           accepted_at: string | null
           created_at: string
           declined_at: string | null
+          delivery_attempted_at: string | null
+          delivery_error_category: string | null
+          delivery_status: string
           expires_at: string
           household_id: string
           id: string
@@ -4605,6 +4608,9 @@ export type Database = {
           accepted_at?: string | null
           created_at?: string
           declined_at?: string | null
+          delivery_attempted_at?: string | null
+          delivery_error_category?: string | null
+          delivery_status?: string
           expires_at: string
           household_id: string
           id?: string
@@ -4620,6 +4626,9 @@ export type Database = {
           accepted_at?: string | null
           created_at?: string
           declined_at?: string | null
+          delivery_attempted_at?: string | null
+          delivery_error_category?: string | null
+          delivery_status?: string
           expires_at?: string
           household_id?: string
           id?: string
@@ -16766,6 +16775,15 @@ export type Database = {
           p_summary: string
         }
         Returns: string
+      }
+      record_invitation_delivery: {
+        Args: {
+          p_delivery_status: string
+          p_error_category?: string
+          p_household_id: string
+          p_invitation_id: string
+        }
+        Returns: undefined
       }
       record_maintenance_condition_change: {
         Args: {

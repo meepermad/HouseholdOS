@@ -108,6 +108,11 @@ export function ActionForm({
           {state.message}
         </p>
       ) : null}
+      {state?.ok && state.warning && !hardRedirect ? (
+        <p className="text-sm text-amber-800" role="status">
+          {state.warning}
+        </p>
+      ) : null}
       {pending || hardRedirect ? (
         <p className="text-sm text-text-muted" aria-live="polite" role="status">
           {hardRedirect ? "Opening HouseholdOS…" : pendingLabel}

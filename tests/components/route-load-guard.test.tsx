@@ -25,10 +25,7 @@ describe("RouteLoadGuard", () => {
     expect(screen.getByTestId("route-load-guard-recovery")).toBeInTheDocument();
     expect(screen.getByTestId("route-load-guard-retry")).toBeInTheDocument();
     expect(screen.getByTestId("route-load-guard-reload-latest")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /choose household/i })).toHaveAttribute(
-      "href",
-      "/app",
-    );
+    expect(screen.getByRole("button", { name: /choose household/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /sign out/i })).toBeInTheDocument();
     expect(screen.getByText(/Home data is taking too long/i)).toBeInTheDocument();
   });
