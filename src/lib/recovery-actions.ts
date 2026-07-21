@@ -22,7 +22,9 @@ export async function clearHouseholdOsContextCookies(): Promise<void> {
 export async function performEmergencyLogout(route = "/auth/logout"): Promise<void> {
   try {
     const supabase = await createClient();
-    const { error } = await supabase.auth.signOut();
+    // Local scope clears cookies even when the refresh token is already gone
+    // (global revoke would re-hit Auth with the same stale token).
+    const { error } = await supabase.auth.signOut({ scope: "local" });
     if (error) {
       logRecoveryEvent("emergency_logout", error, {
         category: "session",

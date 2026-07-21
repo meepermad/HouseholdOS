@@ -19,8 +19,18 @@ const PUBLIC_PREFIXES = [
   "/recovery",
 ];
 
+function withSessionCookies(
+  from: NextResponse,
+  to: NextResponse,
+): NextResponse {
+  from.cookies.getAll().forEach((cookie) => {
+    to.cookies.set(cookie);
+  });
+  return to;
+}
+
 export async function proxy(request: NextRequest) {
-  const response = await updateSession(request);
+  const { response, user } = await updateSession(request);
   if (response.status >= 400) {
     return response;
   }
@@ -46,18 +56,17 @@ export async function proxy(request: NextRequest) {
     pathname.startsWith("/onboarding") ||
     pathname === "/";
 
-  const hasAuthCookie = request.cookies
-    .getAll()
-    .some((c) => c.name.includes("auth-token") || c.name.startsWith("sb-"));
-
-  if (isProtected && !hasAuthCookie && pathname !== "/") {
+  if (isProtected && !user && pathname !== "/") {
     const login = new URL("/login", request.url);
     login.searchParams.set("next", safeRedirectPath(pathname));
-    return NextResponse.redirect(login);
+    return withSessionCookies(response, NextResponse.redirect(login));
   }
 
-  if (isAuthPage && hasAuthCookie && pathname !== "/reset-password") {
-    // Defer to page-level getUser() so expired cookies are not forced into /app.
+  if (isAuthPage && user && pathname !== "/reset-password") {
+    return withSessionCookies(
+      response,
+      NextResponse.redirect(new URL("/app", request.url)),
+    );
   }
 
   return response;
