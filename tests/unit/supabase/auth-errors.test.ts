@@ -1,22 +1,28 @@
 import { describe, expect, it } from "vitest";
-import { isStaleAuthSessionError } from "@/lib/supabase/auth-errors";
+import {
+  isRefreshTokenRaceError,
+  isRevokedRefreshTokenError,
+  isStaleAuthSessionError,
+} from "@/lib/supabase/auth-errors";
 
-describe("isStaleAuthSessionError", () => {
-  it("matches refresh_token_not_found", () => {
-    expect(
-      isStaleAuthSessionError({
-        code: "refresh_token_not_found",
-        message: "Invalid Refresh Token: Refresh Token Not Found",
-      }),
-    ).toBe(true);
+describe("auth session errors", () => {
+  it("treats already_used as a race, not a revoke", () => {
+    const err = {
+      code: "refresh_token_already_used",
+      message: "Invalid Refresh Token: Already Used",
+    };
+    expect(isRefreshTokenRaceError(err)).toBe(true);
+    expect(isRevokedRefreshTokenError(err)).toBe(false);
+    expect(isStaleAuthSessionError(err)).toBe(true);
   });
 
-  it("matches message fallback", () => {
-    expect(
-      isStaleAuthSessionError({
-        message: "Invalid Refresh Token",
-      }),
-    ).toBe(true);
+  it("matches refresh_token_not_found as revoked", () => {
+    const err = {
+      code: "refresh_token_not_found",
+      message: "Invalid Refresh Token: Refresh Token Not Found",
+    };
+    expect(isRevokedRefreshTokenError(err)).toBe(true);
+    expect(isRefreshTokenRaceError(err)).toBe(false);
   });
 
   it("rejects unrelated auth errors", () => {

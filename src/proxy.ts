@@ -29,8 +29,14 @@ function withSessionCookies(
   return to;
 }
 
+function hasSupabaseAuthCookie(request: NextRequest): boolean {
+  return request.cookies
+    .getAll()
+    .some((c) => c.name.includes("auth-token") || c.name.startsWith("sb-"));
+}
+
 export async function proxy(request: NextRequest) {
-  const { response, user } = await updateSession(request);
+  const { response } = await updateSession(request);
   if (response.status >= 400) {
     return response;
   }
@@ -56,17 +62,18 @@ export async function proxy(request: NextRequest) {
     pathname.startsWith("/onboarding") ||
     pathname === "/";
 
-  if (isProtected && !user && pathname !== "/") {
+  // Gate on cookie presence, not getUser(), so a refresh-token race cannot
+  // bounce login ↔ /app while the client is stuck on “Signing in…”.
+  const hasAuthCookie = hasSupabaseAuthCookie(request);
+
+  if (isProtected && !hasAuthCookie && pathname !== "/") {
     const login = new URL("/login", request.url);
     login.searchParams.set("next", safeRedirectPath(pathname));
     return withSessionCookies(response, NextResponse.redirect(login));
   }
 
-  if (isAuthPage && user && pathname !== "/reset-password") {
-    return withSessionCookies(
-      response,
-      NextResponse.redirect(new URL("/app", request.url)),
-    );
+  if (isAuthPage && hasAuthCookie && pathname !== "/reset-password") {
+    // Defer to page-level getUser() so expired cookies are not forced into /app.
   }
 
   return response;

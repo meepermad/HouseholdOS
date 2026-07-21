@@ -8,6 +8,16 @@ import { RecoveryScreen, recoveryControlClass } from "@/components/recovery-scre
 import { ensureProfileOrRecover } from "@/lib/household-context";
 import { AppError } from "@/lib/errors";
 
+function isNextRedirectError(error: unknown): boolean {
+  return (
+    !!error &&
+    typeof error === "object" &&
+    "digest" in error &&
+    typeof (error as { digest?: unknown }).digest === "string" &&
+    String((error as { digest: string }).digest).startsWith("NEXT_REDIRECT")
+  );
+}
+
 export default async function ProtectedLayout({
   children,
 }: {
@@ -16,6 +26,7 @@ export default async function ProtectedLayout({
   try {
     await ensureProfileOrRecover();
   } catch (error) {
+    if (isNextRedirectError(error)) throw error;
     if (error instanceof AppError && error.code === "database_failure") {
       return (
         <RecoveryScreen
