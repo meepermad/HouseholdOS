@@ -1,4 +1,5 @@
 import { Skeleton } from "@/components/ui/skeleton";
+import { LoadingStuckRecovery } from "@/components/loading-stuck-recovery";
 
 export default function HouseholdLoading() {
   return (
@@ -19,6 +20,7 @@ export default function HouseholdLoading() {
         <Skeleton className="h-16 w-full" />
         <Skeleton className="h-16 w-full" />
       </div>
+      <LoadingStuckRecovery />
     </div>
   );
 }

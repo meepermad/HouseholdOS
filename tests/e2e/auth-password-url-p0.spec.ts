@@ -55,7 +55,11 @@ test.describe("P0 password-in-URL — structural", () => {
     assertNoCredentialLeak(request.url(), FIXTURE_EMAIL);
     assertNoCredentialLeak(page.url(), FIXTURE_EMAIL);
     expect(request.method()).toBe("POST");
-    expect(request.postData() ?? "").toContain("email");
+    const postData = request.postData() ?? "";
+    expect(postData).toContain("email=");
+    expect(postData).toContain("password=");
+    // Native form body — not a query string.
+    expect(request.url()).not.toContain("password=");
   });
 
   test("form-urlencoded POST returns clean 303 without credentials in Location", async ({
