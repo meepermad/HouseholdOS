@@ -76,7 +76,7 @@ describe("sign-in request helpers", () => {
     );
     expect(record.email).toBe("user@example.com");
     expect(record.next).toBe("/app");
-    expect(mapSignInErrorMessage("origin")).toMatch(/origin/i);
+    expect(mapSignInErrorMessage("origin")).toMatch(/security|login/i);
   });
 });
 

@@ -89,6 +89,11 @@ function sanitizedSearchForCanonical(searchParams: URLSearchParams): string {
 
 function canonicalRedirectIfNeeded(request: NextRequest): NextResponse | null {
   try {
+    // Never cross-host redirect auth API POSTs — that can null the Origin and
+    // break sign-in (308 from alias → canonical).
+    const { pathname } = request.nextUrl;
+    if (pathname.startsWith("/api/")) return null;
+
     const appEnv = process.env.APP_ENV;
     const appUrl = process.env.APP_URL;
     if (appEnv !== "production" || !appUrl) return null;

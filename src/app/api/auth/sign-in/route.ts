@@ -113,7 +113,16 @@ export async function POST(request: NextRequest) {
   const env = getServerEnv();
   const origin = request.headers.get("origin");
   const referer = request.headers.get("referer");
-  if (!isAllowedSignInOrigin(origin, env.APP_URL, request.url, referer)) {
+  const secFetchSite = request.headers.get("sec-fetch-site");
+  if (
+    !isAllowedSignInOrigin(
+      origin,
+      env.APP_URL,
+      request.url,
+      referer,
+      secFetchSite,
+    )
+  ) {
     return fail("origin", 403);
   }
 

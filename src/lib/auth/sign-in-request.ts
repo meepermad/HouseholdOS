@@ -39,7 +39,7 @@ export function mapSignInErrorMessage(code: SignInErrorCode): string {
     case "rate_limit":
       return "Too many sign-in attempts. Wait a minute and try again.";
     case "origin":
-      return "Sign-in request origin was rejected.";
+      return "Sign-in was blocked for security. Open https://household-os-five.vercel.app/login and try again.";
     case "profile":
       return "Signed in, but your profile could not be initialized. Open recovery or try again.";
     case "unsupported":

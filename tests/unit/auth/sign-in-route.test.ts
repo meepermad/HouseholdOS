@@ -27,6 +27,16 @@ describe("isAllowedSignInOrigin", () => {
     ).toBe(true);
   });
 
+  it("accepts production alias origin", () => {
+    expect(
+      isAllowedSignInOrigin(
+        "https://household-os-meepermad.vercel.app",
+        "https://household-os-five.vercel.app",
+        "https://household-os-five.vercel.app/api/auth/sign-in",
+      ),
+    ).toBe(true);
+  });
+
   it("rejects foreign origins", () => {
     expect(
       isAllowedSignInOrigin(
@@ -37,10 +47,20 @@ describe("isAllowedSignInOrigin", () => {
     ).toBe(false);
   });
 
-  it("rejects missing origin", () => {
+  it("rejects missing origin without fallbacks", () => {
     expect(
       isAllowedSignInOrigin(
         null,
+        "https://household-os-five.vercel.app",
+        "https://household-os-five.vercel.app/api/auth/sign-in",
+      ),
+    ).toBe(false);
+  });
+
+  it("treats Origin null string as missing", () => {
+    expect(
+      isAllowedSignInOrigin(
+        "null",
         "https://household-os-five.vercel.app",
         "https://household-os-five.vercel.app/api/auth/sign-in",
       ),
@@ -54,6 +74,18 @@ describe("isAllowedSignInOrigin", () => {
         "https://household-os-five.vercel.app",
         "https://household-os-five.vercel.app/api/auth/sign-in",
         "https://household-os-five.vercel.app/login",
+      ),
+    ).toBe(true);
+  });
+
+  it("accepts sec-fetch-site same-origin when origin is missing", () => {
+    expect(
+      isAllowedSignInOrigin(
+        null,
+        "https://household-os-five.vercel.app",
+        "https://household-os-five.vercel.app/api/auth/sign-in",
+        null,
+        "same-origin",
       ),
     ).toBe(true);
   });
