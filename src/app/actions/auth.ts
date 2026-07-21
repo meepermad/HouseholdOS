@@ -101,67 +101,22 @@ export async function signUpAction(
   }
 }
 
+/**
+ * @deprecated Password login uses POST /api/auth/sign-in (stable Route Handler).
+ * Kept only for non-UI callers / transitional tests — do not wire to login forms.
+ */
 export async function signInAction(
   _prev: ActionResult | null,
   formData: FormData,
 ): Promise<ActionResult> {
-  try {
-    const parsed = authEmailPasswordSchema.safeParse({
-      email: formData.get("email"),
-      password: formData.get("password"),
-    });
-    if (!parsed.success) {
-      return { ok: false, error: "Valid email and password are required." };
-    }
-
-    const requestedNext = safeRedirectPath(
-      String(formData.get("next") ?? ""),
-      "/app",
-    );
-    const supabase = await createClient();
-    const { data: signInData, error } = await supabase.auth.signInWithPassword({
-      email: parsed.data.email,
-      password: parsed.data.password,
-    });
-    if (error) {
-      return { ok: false, error: mapAuthError(error).publicMessage };
-    }
-
-    const { error: profileError } = await supabase.rpc("ensure_profile");
-    if (profileError) {
-      return {
-        ok: false,
-        error:
-          "Signed in, but your profile could not be initialized. Open recovery or try again.",
-        actionHref: "/recovery",
-        actionLabel: "Open recovery",
-      };
-    }
-
-    const userId = signInData.user?.id;
-    let authorized: string[] = [];
-    let preferred: string | null = null;
-    if (userId) {
-      const { listAuthorizedHouseholdIds, resolvePreferredHouseholdId } =
-        await import("@/lib/household-context");
-      const { resolvePostAuthDestination } =
-        await import("@/lib/auth/post-auth-destination");
-      authorized = await listAuthorizedHouseholdIds(userId);
-      preferred = await resolvePreferredHouseholdId(userId);
-      const redirectTo = resolvePostAuthDestination({
-        requestedNext,
-        authorizedHouseholdIds: authorized,
-        preferredHouseholdId: preferred,
-      });
-      // Hard client navigation via ActionForm — do not soft-redirect here.
-      return { ok: true, data: { redirectTo } };
-    }
-
-    return { ok: true, data: { redirectTo: requestedNext } };
-  } catch (error) {
-    if (error && typeof error === "object" && "digest" in error) throw error;
-    return { ok: false, error: toPublicErrorMessage(error) };
-  }
+  void formData;
+  return {
+    ok: false,
+    error:
+      "Password sign-in moved to a stable API route. Refresh the login page and try again.",
+    actionHref: "/login",
+    actionLabel: "Open login",
+  };
 }
 
 export async function signOutAction(): Promise<void> {

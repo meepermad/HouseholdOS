@@ -63,18 +63,45 @@ After each production deploy, open tabs (especially the installed PWA) may still
 
 `Failed to find Server Action. This request might be from an older or newer deployment.`
 
-That is expected version skew, not data corruption. Users should hard-refresh or use the in-app “Refresh to update” banner. Error boundaries auto-reload once when this message is detected.
+That is expected version skew, not data corruption.
 
-Optional hardening on Vercel:
+**Password login does not use Server Actions.** It posts to stable `POST /api/auth/sign-in`, then hard-navigates with `window.location.assign`.
 
-- Enable **Skew Protection** for the project when your plan supports it.
-- Set a stable `NEXT_SERVER_ACTIONS_ENCRYPTION_KEY` (base64 AES-256) at **build and runtime** so multi-instance encryption stays consistent (see [Next.js docs](https://nextjs.org/docs/messages/failed-to-find-server-action)). Generate once and store only in Vercel env — never commit the key.
+Other Server Actions still depend on matching builds. Recovery:
+
+- One-shot hard reload (`householdos_action_skew_reload_attempted`)
+- Visible “Your app was updated…” screen after a failed reload
+- PWA update banner with build label
+- NetworkOnly caching for `/login`, `/app`, and `/api/auth/*`
+
+### Canonical production origin
+
+Use **`https://household-os-five.vercel.app`** as the canonical host (`APP_URL`).
+
+Known production alias `household-os-meepermad.vercel.app` redirects (308) to the canonical host when `APP_ENV=production`. Preview / git branch aliases are not redirected.
+
+### Operator: Vercel Skew Protection
+
+Some settings are dashboard-only:
+
+1. Open the project → **Settings → Advanced**.
+2. Confirm **Enable access to System Environment Variables** is on (required for deployment IDs).
+3. Enable **Skew Protection** if the switch is available on your plan.
+4. Optionally set retention (default is fine for short deploys).
+5. **Redeploy** production after enabling so `VERCEL_SKEW_PROTECTION_ENABLED=1` and `VERCEL_DEPLOYMENT_ID` are present at build time.
+6. In runtime logs / request headers, look for skew pinning (`x-deployment-id`, `dpl` query, or `__vdpl` cookie) when a stale client posts.
+7. Deployments for this project are **Git-based** (push to `main`), not `vercel deploy --prebuilt`.
+
+Do **not** set `NEXT_SERVER_ACTIONS_ENCRYPTION_KEY` as the primary skew fix — it does not preserve removed action IDs across builds.
+
+Do **not** add a custom `deploymentId` unless switching to prebuilt artifacts without Vercel’s build-time ID.
 
 ## PWA
 
 Service worker is enabled in production via `@ducanh2912/next-pwa` (`next.config.ts`).
 
 - Authenticated navigations under `/app`, `/onboarding`, and `/join` use Workbox **NetworkOnly** — do not cache household HTML or financial responses for offline reuse.
+- Login, signup, recovery navigations and `/api/auth/*` are also **NetworkOnly** so stale Server Action references are not retained in HTML shells.
 - Custom worker source (`worker/index.ts`) handles `push`, `notificationclick`, and `SKIP_WAITING` for update activation.
 - Static assets may be cached; a client banner prompts “Refresh to update” when a waiting worker is detected (activates the new worker, then reloads).
 - Manifest (`public/manifest.webmanifest`): `display: standalone`, `start_url: /app`, theme/background colors aligned with the light page background (`#f3efe6`). Runtime `theme-color` meta tracks light/dark resolution.

@@ -39,6 +39,13 @@ test.describe("auth login production path", () => {
       page.getByText(/Signing in|Opening HouseholdOS/),
     ).toBeVisible({ timeout: 5000 });
 
+    // Password login must hit the stable Route Handler, not a Server Action.
+    await page.waitForResponse(
+      (res) =>
+        res.url().includes("/api/auth/sign-in") && res.request().method() === "POST",
+      { timeout: 15000 },
+    );
+
     await expect(page).toHaveURL(new RegExp(`/app/${householdId}`), {
       timeout: 30000,
     });

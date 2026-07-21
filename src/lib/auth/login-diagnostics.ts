@@ -24,7 +24,11 @@ export async function loadLoginDiagnostics(): Promise<LoginDiagnostics> {
 
   const bundleHint =
     process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ??
-    process.env.NEXT_PUBLIC_BUILD_ID?.slice(0, 7) ??
+    process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ??
+    "local";
+  const deploymentHint =
+    process.env.VERCEL_DEPLOYMENT_ID?.slice(0, 12) ??
+    process.env.NEXT_PUBLIC_VERCEL_DEPLOYMENT_ID?.slice(0, 12) ??
     "local";
 
   const base: LoginDiagnostics = {
@@ -33,7 +37,7 @@ export async function loadLoginDiagnostics(): Promise<LoginDiagnostics> {
     profileInitialized: null,
     activeHouseholdCount: null,
     selectedHouseholdValid: null,
-    clientBundleHint: bundleHint,
+    clientBundleHint: `${bundleHint} · ${deploymentHint}`,
   };
 
   try {

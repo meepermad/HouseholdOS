@@ -2,7 +2,11 @@
 
 import { useEffect, useState } from "react";
 
-export function ServiceWorkerUpdateBanner() {
+export function ServiceWorkerUpdateBanner({
+  buildLabel,
+}: {
+  buildLabel?: string;
+}) {
   const [waiting, setWaiting] = useState(false);
 
   useEffect(() => {
@@ -61,14 +65,16 @@ export function ServiceWorkerUpdateBanner() {
       className="sticky top-0 z-40 border-b border-info bg-info-soft px-4 py-2 text-center text-sm text-info"
       data-testid="sw-update-banner"
     >
-      <span>A newer version of HouseholdOS is available. </span>
+      <span>
+        A newer version of HouseholdOS is available
+        {buildLabel ? ` (current build ${buildLabel})` : ""}.{" "}
+      </span>
       <button
         type="button"
         className="font-semibold underline"
         onClick={() => {
           void navigator.serviceWorker.ready.then((reg) => {
             reg.waiting?.postMessage({ type: "SKIP_WAITING" });
-            // If nothing is waiting, still reload to clear deploy skew.
             if (!reg.waiting) window.location.reload();
           });
         }}

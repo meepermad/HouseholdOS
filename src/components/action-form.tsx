@@ -1,8 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useEffect } from "react";
+import { useActionState, useEffect, useState } from "react";
 import type { ActionResult } from "@/app/actions/auth";
+import {
+  isDeploymentSkewError,
+  reloadOnceForDeploymentSkew,
+  hasExhaustedSkewReload,
+} from "@/lib/deployment-skew";
 
 type Action = (
   prev: ActionResult | null,
@@ -15,34 +20,70 @@ function redirectTarget(state: ActionResult | null): string | null {
   return typeof target === "string" && target.startsWith("/") ? target : null;
 }
 
+/**
+ * Generic Server Action form helper.
+ * Critical password login must use /api/auth/sign-in instead — not this component.
+ */
 export function ActionForm({
   action,
   children,
   className,
   pendingLabel = "Working…",
+  actionCategory = "ordinary",
 }: {
   action: Action;
   children: React.ReactNode;
   className?: string;
   successRedirect?: string;
   pendingLabel?: string;
+  /** Used for skew messaging; financial actions are never auto-retried. */
+  actionCategory?: "critical" | "financial" | "ordinary" | "convenience";
 }) {
   const [state, formAction, pending] = useActionState(action, null);
+  const [skewMessage, setSkewMessage] = useState<string | null>(null);
   const hardRedirect = redirectTarget(state);
 
   useEffect(() => {
     if (!hardRedirect) return;
-    // Full document navigation after auth — avoids App Router soft-nav hangs
-    // that leave “Signing in…” / loading.tsx stuck after a successful 200.
     window.location.assign(hardRedirect);
   }, [hardRedirect]);
+
+  useEffect(() => {
+    if (!state || state.ok) return;
+    if (!isDeploymentSkewError(state.error)) return;
+    if (actionCategory === "financial") {
+      setSkewMessage(
+        "Your app was updated while this page was open. Reload, then review Money before submitting again — this action was not retried.",
+      );
+      return;
+    }
+    if (hasExhaustedSkewReload()) {
+      setSkewMessage(
+        "Your app was updated while this page was open. Reload the latest version.",
+      );
+      return;
+    }
+    reloadOnceForDeploymentSkew();
+  }, [state, actionCategory]);
 
   return (
     <form action={formAction} className={className} noValidate>
       <fieldset disabled={pending || Boolean(hardRedirect)} className="contents">
         {children}
       </fieldset>
-      {state && !state.ok ? (
+      {skewMessage ? (
+        <div className="space-y-2" role="alert" data-testid="action-skew-message">
+          <p className="text-sm text-destructive">{skewMessage}</p>
+          <button
+            type="button"
+            className="text-sm font-semibold text-primary underline"
+            onClick={() => window.location.reload()}
+          >
+            Reload latest version
+          </button>
+        </div>
+      ) : null}
+      {state && !state.ok && !skewMessage ? (
         <div className="space-y-1" role="alert">
           <p className="text-sm text-destructive">{state.error}</p>
           {state.actionHref ? (

@@ -14,7 +14,19 @@ const withPWA = withPWAInit({
           request.mode === "navigate" &&
           (url.pathname.startsWith("/app") ||
             url.pathname.startsWith("/onboarding") ||
-            url.pathname.startsWith("/join")),
+            url.pathname.startsWith("/join") ||
+            url.pathname === "/login" ||
+            url.pathname.startsWith("/login") ||
+            url.pathname === "/signup" ||
+            url.pathname.startsWith("/signup") ||
+            url.pathname === "/recovery" ||
+            url.pathname.startsWith("/recovery")),
+        handler: "NetworkOnly",
+      },
+      {
+        // Never cache the stable auth Route Handler.
+        urlPattern: ({ url }: { url: URL }) =>
+          url.pathname.startsWith("/api/auth/"),
         handler: "NetworkOnly",
       },
       {

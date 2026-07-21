@@ -15,9 +15,15 @@ const PUBLIC_PREFIXES = [
   "/auth/clear-household",
   "/api/health",
   "/api/ready",
+  "/api/auth/sign-in",
   "/join/",
   "/recovery",
 ];
+
+/** Production aliases that should redirect to the canonical APP_URL host. */
+const PRODUCTION_ALIAS_HOSTS = new Set([
+  "household-os-meepermad.vercel.app",
+]);
 
 function withSessionCookies(
   from: NextResponse,
@@ -35,7 +41,29 @@ function hasSupabaseAuthCookie(request: NextRequest): boolean {
     .some((c) => c.name.includes("auth-token") || c.name.startsWith("sb-"));
 }
 
+function canonicalRedirectIfNeeded(request: NextRequest): NextResponse | null {
+  try {
+    const appEnv = process.env.APP_ENV;
+    const appUrl = process.env.APP_URL;
+    if (appEnv !== "production" || !appUrl) return null;
+    const canonical = new URL(appUrl);
+    const host = request.nextUrl.hostname;
+    if (host === canonical.hostname) return null;
+    if (!PRODUCTION_ALIAS_HOSTS.has(host)) return null;
+    const target = new URL(
+      request.nextUrl.pathname + request.nextUrl.search,
+      canonical.origin,
+    );
+    return NextResponse.redirect(target, 308);
+  } catch {
+    return null;
+  }
+}
+
 export async function proxy(request: NextRequest) {
+  const canonical = canonicalRedirectIfNeeded(request);
+  if (canonical) return canonical;
+
   const { response } = await updateSession(request);
   if (response.status >= 400) {
     return response;
@@ -47,7 +75,6 @@ export async function proxy(request: NextRequest) {
     return response;
   }
 
-  // Dev-only error trigger stays reachable without auth in non-production.
   if (
     pathname.startsWith("/dev/") &&
     process.env.NODE_ENV !== "production" &&
@@ -62,8 +89,6 @@ export async function proxy(request: NextRequest) {
     pathname.startsWith("/onboarding") ||
     pathname === "/";
 
-  // Gate on cookie presence, not getUser(), so a refresh-token race cannot
-  // bounce login ↔ /app while the client is stuck on “Signing in…”.
   const hasAuthCookie = hasSupabaseAuthCookie(request);
 
   if (isProtected && !hasAuthCookie && pathname !== "/") {
