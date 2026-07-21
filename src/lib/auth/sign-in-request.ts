@@ -33,13 +33,13 @@ export function signInErrorLoginPath(code: SignInErrorCode): string {
 export function mapSignInErrorMessage(code: SignInErrorCode): string {
   switch (code) {
     case "invalid_credentials":
-      return "Unable to sign in with those credentials. Check your email and password.";
+      return "Unable to sign in with those credentials. If you just reset your password, use the new password (not the old one).";
     case "validation":
-      return "Valid email and password are required.";
+      return "Enter a valid email and a password of at least 8 characters.";
     case "rate_limit":
       return "Too many sign-in attempts. Wait a minute and try again.";
     case "origin":
-      return "Sign-in was blocked for security. Open https://household-os-five.vercel.app/login and try again.";
+      return "Sign-in was blocked for security. Open https://household-os-five.vercel.app/login in a fresh tab and try again.";
     case "profile":
       return "Signed in, but your profile could not be initialized. Open recovery or try again.";
     case "unsupported":

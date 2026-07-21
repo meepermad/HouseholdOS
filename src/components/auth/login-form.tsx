@@ -15,6 +15,22 @@ type SignInResponse =
 
 const TIMEOUT_MS = 25_000;
 
+function messageForHttpStatus(status: number): string {
+  if (status === 401) {
+    return "Unable to sign in with those credentials. If you just reset your password, use the new password (not the old one).";
+  }
+  if (status === 403) {
+    return "Sign-in was blocked for security. Open https://household-os-five.vercel.app/login in a fresh tab and try again.";
+  }
+  if (status === 400 || status === 413 || status === 415) {
+    return "Enter a valid email and a password of at least 8 characters.";
+  }
+  if (status === 429) {
+    return "Too many sign-in attempts. Wait a minute and try again.";
+  }
+  return "Sign-in failed. Try again.";
+}
+
 export function LoginForm({
   next,
 }: {
@@ -41,9 +57,20 @@ export function LoginForm({
 
     const form = event.currentTarget;
     const formData = new FormData(form);
-    const email = String(formData.get("email") ?? "");
+    const email = String(formData.get("email") ?? "").trim();
     const password = String(formData.get("password") ?? "");
     const nextValue = String(formData.get("next") ?? next);
+
+    if (!email || !email.includes("@")) {
+      setError("Enter a valid email address.");
+      submitting.current = false;
+      return;
+    }
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters.");
+      submitting.current = false;
+      return;
+    }
 
     startTransition(() => {
       void (async () => {
@@ -70,11 +97,13 @@ export function LoginForm({
           } catch {
             body = {
               ok: false,
-              error: "Sign-in failed. Try again.",
+              error: messageForHttpStatus(res.status),
             };
           }
           if (!body.ok) {
-            setError(body.error || "Sign-in failed. Try again.");
+            setError(
+              body.error || messageForHttpStatus(res.status) || "Sign-in failed. Try again.",
+            );
             if (body.actionHref) setActionHref(body.actionHref);
             if (body.actionLabel) setActionLabel(body.actionLabel);
             return;
@@ -108,44 +137,46 @@ export function LoginForm({
       onSubmit={handleSubmit}
       data-testid="login-form"
     >
-      <fieldset disabled={busy} className="contents">
-        <input type="hidden" name="next" value={next} />
-        <label className="block text-sm text-text-primary">
-          Email
-          <input
-            name="email"
-            type="email"
-            required
-            autoComplete="email"
-            inputMode="email"
-            className="mt-1 min-h-11 w-full rounded-md border border-border bg-input-bg px-3 py-2"
-          />
-        </label>
-        <label className="block text-sm text-text-primary">
-          Password
-          <input
-            name="password"
-            type="password"
-            required
-            autoComplete="current-password"
-            className="mt-1 min-h-11 w-full rounded-md border border-border bg-input-bg px-3 py-2"
-          />
-        </label>
-        <p className="text-sm">
-          <Link
-            href="/forgot-password"
-            className="text-text-secondary underline-offset-2 hover:underline"
-          >
-            Forgot password?
-          </Link>
-        </p>
-        <button
-          type="submit"
-          className="w-full min-h-11 rounded-md bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground"
+      <input type="hidden" name="next" value={next} />
+      <label className="block text-sm text-text-primary">
+        Email
+        <input
+          name="email"
+          type="email"
+          required
+          autoComplete="email"
+          inputMode="email"
+          disabled={busy}
+          className="mt-1 min-h-11 w-full rounded-md border border-border bg-input-bg px-3 py-2 disabled:opacity-60"
+        />
+      </label>
+      <label className="block text-sm text-text-primary">
+        Password
+        <input
+          name="password"
+          type="password"
+          required
+          minLength={8}
+          autoComplete="current-password"
+          disabled={busy}
+          className="mt-1 min-h-11 w-full rounded-md border border-border bg-input-bg px-3 py-2 disabled:opacity-60"
+        />
+      </label>
+      <p className="text-sm">
+        <Link
+          href="/forgot-password"
+          className="text-text-secondary underline-offset-2 hover:underline"
         >
-          Sign in
-        </button>
-      </fieldset>
+          Forgot password?
+        </Link>
+      </p>
+      <button
+        type="submit"
+        disabled={busy}
+        className="w-full min-h-11 rounded-md bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground disabled:opacity-60"
+      >
+        Sign in
+      </button>
       {error ? (
         <div className="space-y-2" role="alert">
           <p className="text-sm text-destructive">{error}</p>
