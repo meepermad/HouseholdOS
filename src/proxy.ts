@@ -102,11 +102,15 @@ function sanitizedSearchForCanonical(searchParams: URLSearchParams): string {
   if (!urlHasSensitiveQueryKeys(searchParams)) {
     return searchParams.toString() ? `?${searchParams.toString()}` : "";
   }
-  // Never forward sensitive keys across hosts.
+  // Never forward sensitive keys across hosts; keep next + invite token.
   const next = new URLSearchParams();
   const nextRaw = searchParams.get("next");
   if (nextRaw) {
     next.set("next", safeRedirectPath(nextRaw, "/app"));
+  }
+  const invite = searchParams.get("invite")?.trim() ?? "";
+  if (/^[A-Za-z0-9_-]{32,128}$/.test(invite)) {
+    next.set("invite", invite);
   }
   next.set("reason", "cleared_sensitive_query");
   return `?${next.toString()}`;

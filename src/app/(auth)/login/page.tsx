@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { LoginForm } from "@/components/auth/login-form";
 import { createClient } from "@/lib/supabase/server";
+import { resolveInviteToken } from "@/lib/invitations/resolve-token";
 import { safeRedirectPath } from "@/lib/navigation";
 import {
   classifyRecoveryReason,
@@ -32,7 +33,12 @@ function loginErrorMessage(code: string | undefined): string | null {
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ next?: string; error?: string; reason?: string }>;
+  searchParams: Promise<{
+    next?: string;
+    error?: string;
+    reason?: string;
+    invite?: string;
+  }>;
 }) {
   const params = await searchParams;
   const supabase = await createClient();
@@ -45,6 +51,13 @@ export default async function LoginPage({
   }
 
   const next = safeRedirectPath(params.next, "/app");
+  const inviteToken = resolveInviteToken({
+    invite: params.invite,
+    next,
+  });
+  const signupHref = inviteToken
+    ? `/signup?invite=${encodeURIComponent(inviteToken)}&next=${encodeURIComponent(next)}`
+    : `/signup?next=${encodeURIComponent(next)}`;
   const reasonState = classifyRecoveryReason(params.reason);
   const reasonCopy =
     params.reason && reasonState !== "unexpected"
@@ -62,10 +75,10 @@ export default async function LoginPage({
       <p className="mt-2 text-sm text-text-secondary">
         No account?{" "}
         <Link
-          href={`/signup?next=${encodeURIComponent(next)}`}
+          href={signupHref}
           className="font-medium text-primary underline-offset-2 hover:underline"
         >
-          Request access
+          Create account
         </Link>
       </p>
 

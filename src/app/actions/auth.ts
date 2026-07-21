@@ -3,7 +3,9 @@
 import { redirect } from "next/navigation";
 import { evaluateRegistration } from "@/lib/auth/registration-policy";
 import { getServerEnv } from "@/lib/env/server";
+import { normalizeEmail } from "@/lib/env/server-schema";
 import { AppError, mapAuthError, toPublicErrorMessage } from "@/lib/errors";
+import { resolveInviteToken } from "@/lib/invitations/resolve-token";
 import { safeRedirectPath } from "@/lib/navigation";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -28,18 +30,37 @@ export type ActionResult =
       actionLabel?: string;
     };
 
-async function hasPendingInviteForEmail(email: string, token?: string | null) {
-  if (!token) return false;
+/**
+ * App registration must align with hook_before_user_created:
+ * a pending non-expired invitation for the email (or a valid invite token) allows signup.
+ */
+async function hasValidInvitationForRegistration(
+  email: string,
+  inviteToken?: string | null,
+): Promise<boolean> {
   const supabase = await createClient();
-  const { data } = await supabase.rpc("get_invitation_preview", {
-    p_token_hash: hashInviteToken(token),
-  });
-  const preview = Array.isArray(data) ? data[0] : data;
-  if (!preview || preview.status !== "pending") return false;
-  // Preview does not expose full email; invite path also checks on accept.
-  // For registration policy we trust the invite token presence + later accept email match.
-  void email;
-  return true;
+  const normalized = normalizeEmail(email);
+
+  if (inviteToken) {
+    const { data, error } = await supabase.rpc("get_invitation_preview", {
+      p_token_hash: hashInviteToken(inviteToken),
+    });
+    if (!error) {
+      const preview = Array.isArray(data) ? data[0] : data;
+      if (preview?.status === "pending") {
+        return true;
+      }
+    }
+  }
+
+  const { data: pending, error: pendingError } = await supabase.rpc(
+    "has_pending_household_invitation",
+    { p_email: normalized },
+  );
+  if (pendingError) {
+    return false;
+  }
+  return pending === true;
 }
 
 export async function signUpAction(
@@ -56,11 +77,17 @@ export async function signUpAction(
     }
 
     const displayName = String(formData.get("displayName") ?? "").trim();
-    const inviteToken = String(formData.get("inviteToken") ?? "").trim() || null;
     const next = safeRedirectPath(String(formData.get("next") ?? ""), "/onboarding");
+    const inviteToken = resolveInviteToken({
+      invite: String(formData.get("inviteToken") ?? "").trim() || null,
+      next,
+    });
 
     const env = getServerEnv();
-    const inviteOk = await hasPendingInviteForEmail(parsed.data.email, inviteToken);
+    const inviteOk = await hasValidInvitationForRegistration(
+      parsed.data.email,
+      inviteToken,
+    );
     const decision = evaluateRegistration({
       mode: env.REGISTRATION_MODE,
       email: parsed.data.email,
@@ -70,7 +97,12 @@ export async function signUpAction(
     });
 
     if (!decision.allowed) {
-      return { ok: false, error: decision.reason };
+      return {
+        ok: false,
+        error: decision.reason,
+        actionHref: "/join/paste",
+        actionLabel: "Enter invitation link",
+      };
     }
 
     const supabase = await createClient();

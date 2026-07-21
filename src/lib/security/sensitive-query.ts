@@ -38,8 +38,9 @@ export function isAuthCleanupPath(pathname: string): boolean {
 }
 
 /**
- * Build a clean auth URL: drop all query keys, keep only validated `next`,
- * and set reason=cleared_sensitive_query. Never copies sensitive values.
+ * Build a clean auth URL: drop denylisted query keys, keep validated `next`
+ * and a safe invite token, and set reason=cleared_sensitive_query.
+ * Never copies sensitive values.
  */
 export function buildCleanAuthUrl(
   origin: string,
@@ -50,6 +51,10 @@ export function buildCleanAuthUrl(
   const nextRaw = searchParams.get("next");
   if (nextRaw) {
     clean.searchParams.set("next", safeRedirectPath(nextRaw, "/app"));
+  }
+  const invite = searchParams.get("invite")?.trim() ?? "";
+  if (/^[A-Za-z0-9_-]{32,128}$/.test(invite)) {
+    clean.searchParams.set("invite", invite);
   }
   clean.searchParams.set("reason", "cleared_sensitive_query");
   return clean;

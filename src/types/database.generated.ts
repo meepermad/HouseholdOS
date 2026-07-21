@@ -16393,6 +16393,10 @@ export type Database = {
           status: string
         }[]
       }
+      has_pending_household_invitation: {
+        Args: { p_email: string }
+        Returns: boolean
+      }
       get_notification_delivery_mode: {
         Args: { p_category: string; p_channel: string; p_user_id: string }
         Returns: string
