@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
-const STUCK_MS = 12_000;
+const STUCK_MS = 8_000;
 
 /**
  * If the household shell stays on the loading skeleton too long after a hard
