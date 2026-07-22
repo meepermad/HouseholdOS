@@ -6,7 +6,10 @@ import { buildAppAbsoluteUrl } from "@/lib/env/canonical-origin";
 import { getServerEnv } from "@/lib/env/server";
 import { normalizeEmail } from "@/lib/env/server-schema";
 import { AppError, mapAuthError, toPublicErrorMessage } from "@/lib/errors";
-import { resolveInviteToken } from "@/lib/invitations/resolve-token";
+import {
+  isCreateHouseholdRegistrationPath,
+  resolveInviteToken,
+} from "@/lib/invitations/resolve-token";
 import { safeRedirectPath } from "@/lib/navigation";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -33,7 +36,8 @@ export type ActionResult =
 
 /**
  * App registration must align with hook_before_user_created:
- * a pending non-expired invitation for the email (or a valid invite token) allows signup.
+ * a pending join_household or create_household invitation for the email
+ * (or a valid invite token preview) allows signup.
  */
 async function hasValidInvitationForRegistration(
   email: string,
@@ -43,8 +47,9 @@ async function hasValidInvitationForRegistration(
   const normalized = normalizeEmail(email);
 
   if (inviteToken) {
+    const tokenHash = hashInviteToken(inviteToken);
     const { data, error } = await supabase.rpc("get_invitation_preview", {
-      p_token_hash: hashInviteToken(inviteToken),
+      p_token_hash: tokenHash,
     });
     if (!error) {
       const preview = Array.isArray(data) ? data[0] : data;
@@ -52,16 +57,30 @@ async function hasValidInvitationForRegistration(
         return true;
       }
     }
+
+    const { data: regPreview, error: regError } = await supabase.rpc(
+      "get_registration_invitation_preview",
+      { p_token_hash: tokenHash },
+    );
+    if (!regError) {
+      const preview = Array.isArray(regPreview) ? regPreview[0] : regPreview;
+      if (preview?.status === "pending" && preview.purpose === "create_household") {
+        return true;
+      }
+    }
   }
 
-  const { data: pending, error: pendingError } = await supabase.rpc(
+  const { data: pendingJoin } = await supabase.rpc(
     "has_pending_household_invitation",
     { p_email: normalized },
   );
-  if (pendingError) {
-    return false;
-  }
-  return pending === true;
+  if (pendingJoin === true) return true;
+
+  const { data: pendingCreate } = await supabase.rpc(
+    "has_pending_registration_invitation",
+    { p_email: normalized },
+  );
+  return pendingCreate === true;
 }
 
 export async function signUpAction(
@@ -126,6 +145,9 @@ export async function signUpAction(
     if (data.session) {
       await supabase.rpc("ensure_profile");
       if (inviteToken) {
+        if (isCreateHouseholdRegistrationPath(next)) {
+          redirect(`/register/create-household/${inviteToken}`);
+        }
         redirect(`/join/${inviteToken}`);
       }
       redirect(next);

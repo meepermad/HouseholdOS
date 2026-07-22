@@ -23,6 +23,26 @@ function originHost(origin: string): string | null {
   }
 }
 
+function isLoopbackHost(hostname: string): boolean {
+  const host = hostname.toLowerCase();
+  return host === "localhost" || host === "127.0.0.1" || host === "[::1]" || host === "::1";
+}
+
+/** Treat localhost / 127.0.0.1 / ::1 as the same origin for local app + Playwright. */
+function originsEquivalent(a: string, b: string): boolean {
+  if (a === b) return true;
+  try {
+    const left = new URL(a);
+    const right = new URL(b);
+    if (left.protocol !== right.protocol) return false;
+    if (left.port !== right.port) return false;
+    if (left.hostname === right.hostname) return true;
+    return isLoopbackHost(left.hostname) && isLoopbackHost(right.hostname);
+  } catch {
+    return false;
+  }
+}
+
 function isKnownAllowedOrigin(
   candidate: string,
   appUrl: string,
@@ -37,7 +57,12 @@ function isKnownAllowedOrigin(
     return false;
   }
 
-  if (candidate === allowed || candidate === requestOrigin) return true;
+  if (
+    originsEquivalent(candidate, allowed) ||
+    originsEquivalent(candidate, requestOrigin)
+  ) {
+    return true;
+  }
 
   const host = originHost(candidate);
   if (!host) return false;

@@ -27,6 +27,18 @@ describe("resolveInviteToken", () => {
     ).toBe(token);
   });
 
+  it("extracts token from /register/create-household/{token} next path", () => {
+    expect(
+      extractInviteTokenFromNext(`/register/create-household/${token}`),
+    ).toBe(token);
+    expect(
+      resolveInviteToken({
+        invite: null,
+        next: `/register/create-household/${token}`,
+      }),
+    ).toBe(token);
+  });
+
   it("returns null when neither invite nor join next is present", () => {
     expect(resolveInviteToken({ invite: null, next: "/onboarding" })).toBeNull();
   });

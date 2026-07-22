@@ -3,19 +3,19 @@
 import { useActionState, useState, useTransition } from "react";
 import type { ActionResult } from "@/app/actions/auth";
 import {
-  inviteMemberAction,
-  regenerateInviteAction,
-  revokeInviteAction,
-} from "@/app/actions/household";
+  inviteCreateHouseholdRegistrationAction,
+  regenerateCreateHouseholdRegistrationAction,
+  revokeCreateHouseholdRegistrationAction,
+} from "@/app/actions/registration-invitations";
 
 function deliveryLabel(status: string | undefined): string {
   switch (status) {
     case "sent":
       return "Email sent";
     case "existing_account":
-      return "Existing account — share join link";
+      return "Existing account — share registration link";
     case "failed":
-      return "Email not delivered — share join link";
+      return "Email not delivered — share registration link";
     case "not_attempted":
       return "Email not attempted";
     default:
@@ -33,9 +33,9 @@ function isLocalhostInviteUrl(url: string | undefined): boolean {
   }
 }
 
-export function InviteForm({ householdId }: { householdId: string }) {
+export function CreateHouseholdInviteForm() {
   const [state, action, pending] = useActionState(
-    inviteMemberAction,
+    inviteCreateHouseholdRegistrationAction,
     null as ActionResult | null,
   );
   const [mgmtPending, startMgmt] = useTransition();
@@ -48,32 +48,22 @@ export function InviteForm({ householdId }: { householdId: string }) {
     active?.ok &&
     (active.data?.deliveryStatus === "failed" ||
       active.data?.deliveryStatus === "existing_account");
-  const originMisconfigured =
-    Boolean(
-      active &&
-        !active.ok &&
-        /APP_URL|not configured for production/i.test(active.error),
-    ) || (active?.ok === true && isLocalhostInviteUrl(inviteUrl));
 
   function runRevoke() {
     if (!invitationId) return;
     const fd = new FormData();
-    fd.set("householdId", householdId);
     fd.set("invitationId", invitationId);
     startMgmt(async () => {
-      const result = await revokeInviteAction(null, fd);
-      setMgmtState(result);
+      setMgmtState(await revokeCreateHouseholdRegistrationAction(null, fd));
     });
   }
 
   function runRegenerate() {
     if (!invitationId) return;
     const fd = new FormData();
-    fd.set("householdId", householdId);
     fd.set("invitationId", invitationId);
     startMgmt(async () => {
-      const result = await regenerateInviteAction(null, fd);
-      setMgmtState(result);
+      setMgmtState(await regenerateCreateHouseholdRegistrationAction(null, fd));
     });
   }
 
@@ -82,12 +72,15 @@ export function InviteForm({ householdId }: { householdId: string }) {
       action={action}
       onSubmit={() => setMgmtState(null)}
       className="space-y-3 rounded-md border border-border bg-surface p-4"
+      data-testid="create-household-invite-form"
     >
-      <h3 className="font-semibold text-text-primary">Invite to this household</h3>
+      <h3 className="font-semibold text-text-primary">
+        Invite to create a separate household
+      </h3>
       <p className="text-sm text-text-secondary">
-        Invites this person to join your current household after they accept.
+        This invitation lets the person create an independent household. It does not add
+        them to your current household.
       </p>
-      <input type="hidden" name="householdId" value={householdId} />
       <label className="block text-sm text-text-primary">
         Email
         <input
@@ -97,54 +90,21 @@ export function InviteForm({ householdId }: { householdId: string }) {
           className="mt-1 min-h-11 w-full rounded-md border border-border bg-input-bg px-3 py-2"
         />
       </label>
-      <fieldset className="text-sm">
-        <legend className="mb-1">Intended responsibilities</legend>
-        <label className="mr-3 inline-flex items-center gap-1">
-          <input type="checkbox" name="roles" value="member" defaultChecked />
-          Member
-        </label>
-        <label className="mr-3 inline-flex items-center gap-1">
-          <input type="checkbox" name="roles" value="household_coordinator" />
-          Household coordinator
-        </label>
-        <label className="inline-flex items-center gap-1">
-          <input type="checkbox" name="roles" value="financial_coordinator" />
-          Financial coordinator
-        </label>
-      </fieldset>
-      <label className="block text-sm">
-        Message (optional)
-        <textarea
-          name="message"
-          rows={2}
-          className="mt-1 w-full rounded-md border border-line px-3 py-2"
-        />
-      </label>
       <button
         type="submit"
         disabled={pending || mgmtPending}
         aria-busy={pending || mgmtPending || undefined}
         className="min-h-11 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-60"
       >
-        {pending ? "Creating invitation…" : "Create invitation"}
+        {pending ? "Creating invitation…" : "Create registration invitation"}
       </button>
-      {pending || mgmtPending ? (
-        <p className="text-sm text-text-muted" aria-live="polite" role="status">
-          {pending ? "Creating invitation…" : "Updating invitation…"}
-        </p>
-      ) : null}
       {active && !active.ok ? (
         <p className="text-sm text-destructive" role="alert">
           {active.error}
         </p>
       ) : null}
-      {originMisconfigured && active?.ok ? (
-        <p className="text-sm text-destructive" role="alert">
-          Invitation links are not configured for production. Set APP_URL and redeploy.
-        </p>
-      ) : null}
       {active?.ok && inviteUrl && !isLocalhostInviteUrl(inviteUrl) ? (
-        <div className="space-y-3" role="status" data-testid="invite-success">
+        <div className="space-y-3" role="status" data-testid="create-household-invite-success">
           <p className="text-sm text-success">{active.message}</p>
           {active.warning ? (
             <p className="text-sm text-amber-800" role="status">
@@ -157,12 +117,8 @@ export function InviteForm({ householdId }: { householdId: string }) {
               <dd className="inline">{active.data?.invitedEmail}</dd>
             </div>
             <div>
-              <dt className="inline font-medium text-text-primary">Household: </dt>
-              <dd className="inline">{active.data?.householdName}</dd>
-            </div>
-            <div>
-              <dt className="inline font-medium text-text-primary">Roles: </dt>
-              <dd className="inline">{active.data?.intendedRoles}</dd>
+              <dt className="inline font-medium text-text-primary">Purpose: </dt>
+              <dd className="inline">Create independent household</dd>
             </div>
             <div>
               <dt className="inline font-medium text-text-primary">Expires: </dt>
@@ -180,15 +136,15 @@ export function InviteForm({ householdId }: { householdId: string }) {
           <label className="block text-sm">
             {deliveryFailed ? (
               <span className="font-semibold text-text-primary">
-                Copy invitation link (primary recovery)
+                Copy registration link (primary recovery)
               </span>
             ) : (
-              "Copy invitation link"
+              "Copy registration link"
             )}
             <input
               readOnly
               value={inviteUrl}
-              data-testid="invite-url"
+              data-testid="create-household-invite-url"
               className={`mt-1 w-full rounded-md border px-3 py-2 text-xs ${
                 deliveryFailed
                   ? "border-amber-600 bg-amber-50"
@@ -215,15 +171,11 @@ export function InviteForm({ householdId }: { householdId: string }) {
               Regenerate invitation
             </button>
           </div>
-          <p className="text-xs text-text-muted">
-            The household stays usable without email delivery — share this link in your group chat.
-            Tokens appear only at create or regenerate time; revoke if a link was exposed.
-          </p>
         </div>
       ) : null}
       {active?.ok && active.data?.status === "revoked" ? (
         <p className="text-sm text-text-secondary" role="status">
-          {active.message ?? "Invitation revoked. It can no longer be accepted."}
+          {active.message ?? "Invitation revoked."}
         </p>
       ) : null}
     </form>

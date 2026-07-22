@@ -56,7 +56,8 @@ export function evaluateRegistration(params: {
   }
   return {
     allowed: false,
-    reason: "A valid household invitation is required to register.",
+    reason:
+      "A valid household or independent-household registration invitation is required to register.",
     code: "authorization",
   };
 }

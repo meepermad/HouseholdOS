@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ActionForm } from "@/components/action-form";
 import { CreateHouseholdForm } from "@/components/create-household-form";
+import { CreateHouseholdOnboardingAnchor } from "@/components/create-household-onboarding-anchor";
 import {
   saveOnboardingDraftAction,
   switchHouseholdAction,
@@ -16,12 +17,19 @@ import { getServerEnv } from "@/lib/env/server";
 import { createClient } from "@/lib/supabase/server";
 import { RecoveryLogoutForm } from "@/components/recovery-actions";
 
-export default async function OnboardingPage() {
+export default async function OnboardingPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ intent?: string }>;
+}) {
   const { user } = await requireUser();
   if (!user) redirect("/login?next=/onboarding");
 
+  const params = await searchParams;
   const authorized = await listAuthorizedHouseholdIds(user.id);
-  if (authorized.length === 1) {
+  // When arriving from a create-household registration invite, stay on onboarding
+  // even if the user already has another household (dual-household is valid).
+  if (authorized.length === 1 && params.intent !== "create-household") {
     const preferred = await resolvePreferredHouseholdId(user.id);
     if (preferred) redirect(`/app/${preferred}`);
   }
@@ -50,6 +58,7 @@ export default async function OnboardingPage() {
 
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-lg flex-col">
+      <CreateHouseholdOnboardingAnchor intent={params.intent} />
       <ShellHeader title="Onboarding" />
       <main className="flex-1 space-y-8 px-4 py-6">
         <section>
@@ -92,7 +101,7 @@ export default async function OnboardingPage() {
           </section>
         ) : null}
 
-        <section className="space-y-4">
+        <section id="create-household" className="space-y-4 scroll-mt-24">
           <h2 className="text-lg font-semibold">Create household</h2>
           <CreateHouseholdForm
             defaultName={draft.name ?? ""}

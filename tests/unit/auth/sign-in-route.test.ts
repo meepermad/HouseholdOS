@@ -27,6 +27,16 @@ describe("isAllowedSignInOrigin", () => {
     ).toBe(true);
   });
 
+  it("equates localhost and 127.0.0.1 for local APP_URL", () => {
+    expect(
+      isAllowedSignInOrigin(
+        "http://127.0.0.1:3000",
+        "http://localhost:3000",
+        "http://127.0.0.1:3000/api/auth/sign-in",
+      ),
+    ).toBe(true);
+  });
+
   it("accepts production alias origin", () => {
     expect(
       isAllowedSignInOrigin(

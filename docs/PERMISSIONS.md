@@ -13,7 +13,7 @@ Enforced in:
 |---|---|---|---|
 | View household | yes | yes | yes |
 | Update household | no | yes | no |
-| Invite / revoke | no | yes | no |
+| Invite / revoke (join this household) | no | yes | no |
 | Change member roles | no | yes | no |
 | Remove member | no | yes | no |
 | Leave household | yes* | yes* | yes* |
@@ -48,6 +48,15 @@ Enforced in:
 | View notification worker health (Settings → Operations) | no | yes | no |
 
 \*Last remaining `household_coordinator` must transfer responsibility before leaving.
+
+### Platform registration issuers
+
+Independent `create_household` registration invitations are **not** granted by household membership. Authorization is either:
+
+1. Email listed in `platform_registration_issuers`, or
+2. Exact match to `auth_registration_policy.bootstrap_email`
+
+Household coordinators cannot issue these grants unless they are also on that allowlist (or are the bootstrap email). Join-household invitations remain coordinator-scoped and unchanged.
 
 \*\*Draft edit/confirm/void/amend still require the caller to be the expense creator, payer, or (for void/amend RPCs) an active member with access — financial coordinators do **not** silently rewrite confirmed expenses outside the void/amend RPCs. Draft visibility: creator/payer always; others from `ready_for_review` onward.
 

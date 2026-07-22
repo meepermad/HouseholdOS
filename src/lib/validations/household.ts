@@ -130,6 +130,14 @@ export const inviteMemberSchema = z.object({
   message: z.string().trim().max(500).optional().or(z.literal("")),
 });
 
+export const inviteCreateHouseholdRegistrationSchema = z.object({
+  email: z.string().email().transform((v) => v.trim().toLowerCase()),
+});
+
+export const registrationInvitationIdSchema = z.object({
+  invitationId: z.string().uuid(),
+});
+
 export const acceptInviteSchema = z.object({
   token: z.string().min(32).max(128),
 });

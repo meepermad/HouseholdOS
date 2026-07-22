@@ -28,6 +28,7 @@ const PUBLIC_PREFIXES = [
   "/api/ready",
   "/api/auth/sign-in",
   "/join/",
+  "/register/create-household/",
   "/recovery",
 ];
 

@@ -3,8 +3,10 @@ import {
   changeRolesAction,
   removeMemberAction,
 } from "@/app/actions/household";
+import { CreateHouseholdInviteForm } from "@/components/create-household-invite-form";
 import { InviteForm } from "@/components/invite-form";
 import { PendingInviteActions } from "@/components/pending-invite-actions";
+import { PendingRegistrationInviteActions } from "@/components/pending-registration-invite-actions";
 import { assertActiveMembership } from "@/lib/household-context";
 import { can } from "@/lib/permissions";
 import { createClient } from "@/lib/supabase/server";
@@ -43,7 +45,12 @@ export default async function MembersSettingsPage({
     .eq("household_id", householdId)
     .in("status", ["active", "leaving"]);
 
-  const { data: invitations } = can(ctx.roles, "member.invite")
+  const canInvite = can(ctx.roles, "member.invite");
+  const { data: canIssueCreateHousehold } = await supabase.rpc(
+    "can_issue_registration_invitations",
+  );
+
+  const { data: invitations } = canInvite
     ? await supabase
         .from("household_invitations")
         .select(
@@ -53,6 +60,19 @@ export default async function MembersSettingsPage({
         .eq("status", "pending")
         .order("created_at", { ascending: false })
     : { data: [] as never[] };
+
+  const { data: registrationInvitations } =
+    canIssueCreateHousehold === true
+      ? await supabase
+          .from("registration_invitations")
+          .select(
+            "id, invited_email, status, expires_at, purpose, created_at, delivery_status, delivery_attempted_at, delivery_error_category",
+          )
+          .eq("purpose", "create_household")
+          .eq("status", "pending")
+          .eq("created_by", ctx.userId)
+          .order("created_at", { ascending: false })
+      : { data: [] as never[] };
 
   return (
     <main className="space-y-8">
@@ -123,12 +143,12 @@ export default async function MembersSettingsPage({
         </ul>
       </section>
 
-      {can(ctx.roles, "member.invite") ? (
+      {canInvite ? (
         <>
           <InviteForm householdId={householdId} />
           <section className="space-y-3">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-              Pending invitations
+              Pending invitations to this household
             </h2>
             {(invitations ?? []).length === 0 ? (
               <p className="text-sm text-text-muted">
@@ -169,6 +189,57 @@ export default async function MembersSettingsPage({
                       </div>
                       <PendingInviteActions
                         householdId={householdId}
+                        invitationId={invite.id}
+                        canRetry={canRetry}
+                      />
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </section>
+        </>
+      ) : null}
+
+      {canIssueCreateHousehold === true ? (
+        <>
+          <CreateHouseholdInviteForm />
+          <section className="space-y-3">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+              Pending independent-household invitations
+            </h2>
+            {(registrationInvitations ?? []).length === 0 ? (
+              <p className="text-sm text-text-muted">
+                No pending create-household invitations. These do not add people to this
+                household.
+              </p>
+            ) : (
+              <ul className="space-y-3">
+                {(registrationInvitations ?? []).map((invite) => {
+                  const canRetry =
+                    invite.delivery_status === "failed" ||
+                    invite.delivery_status === "not_attempted";
+                  return (
+                    <li
+                      key={invite.id}
+                      className="flex flex-col gap-3 rounded-md border border-border bg-surface p-4 text-sm sm:flex-row sm:items-start sm:justify-between"
+                    >
+                      <div className="space-y-1">
+                        <p className="font-medium">{invite.invited_email}</p>
+                        <p className="text-xs text-slate-500">
+                          Purpose: create independent household
+                        </p>
+                        <p className="text-xs text-slate-500">
+                          Expires {new Date(invite.expires_at).toLocaleString()}
+                        </p>
+                        <p className="text-xs text-slate-500">
+                          Delivery: {deliveryLabel(invite.delivery_status)}
+                          {invite.delivery_error_category
+                            ? ` (${invite.delivery_error_category})`
+                            : ""}
+                        </p>
+                      </div>
+                      <PendingRegistrationInviteActions
                         invitationId={invite.id}
                         canRetry={canRetry}
                       />

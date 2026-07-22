@@ -19,6 +19,10 @@
 - `invitation.accepted`
 - `invitation.declined`
 - `invitation.revoked`
+- `registration_invitation.created`
+- `registration_invitation.revoked`
+- `registration_invitation.consumed`
+- `registration_invitation.delivery_attempted`
 - `membership.status_changed`
 - `membership.roles_changed`
 - `profile.recovered`

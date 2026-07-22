@@ -170,6 +170,14 @@ export function buildInvitationJoinUrl(
   return new URL(`/join/${token}`, origin).toString();
 }
 
+/** Build an absolute create-household registration URL from the canonical origin. */
+export function buildCreateHouseholdRegistrationUrl(
+  token: string,
+  origin: string = getCanonicalAppOrigin(),
+): string {
+  return new URL(`/register/create-household/${token}`, origin).toString();
+}
+
 export function buildAppAbsoluteUrl(
   path: string,
   origin: string = getCanonicalAppOrigin(),
