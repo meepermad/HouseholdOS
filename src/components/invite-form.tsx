@@ -1,8 +1,12 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState, useTransition } from "react";
 import type { ActionResult } from "@/app/actions/auth";
-import { inviteMemberAction } from "@/app/actions/household";
+import {
+  inviteMemberAction,
+  regenerateInviteAction,
+  revokeInviteAction,
+} from "@/app/actions/household";
 
 function deliveryLabel(status: string | undefined): string {
   switch (status) {
@@ -19,16 +23,66 @@ function deliveryLabel(status: string | undefined): string {
   }
 }
 
+function isLocalhostInviteUrl(url: string | undefined): boolean {
+  if (!url) return false;
+  try {
+    const host = new URL(url).hostname.toLowerCase();
+    return host === "localhost" || host === "127.0.0.1" || host === "::1";
+  } catch {
+    return /localhost|127\.0\.0\.1/i.test(url);
+  }
+}
+
 export function InviteForm({ householdId }: { householdId: string }) {
-  const [state, action, pending] = useActionState(inviteMemberAction, null as ActionResult | null);
-  const inviteUrl = state?.ok ? state.data?.inviteUrl : undefined;
+  const [state, action, pending] = useActionState(
+    inviteMemberAction,
+    null as ActionResult | null,
+  );
+  const [mgmtPending, startMgmt] = useTransition();
+  const [mgmtState, setMgmtState] = useState<ActionResult | null>(null);
+
+  const active = mgmtState ?? state;
+  const inviteUrl = active?.ok ? active.data?.inviteUrl : undefined;
+  const invitationId = active?.ok ? active.data?.invitationId : undefined;
   const deliveryFailed =
-    state?.ok &&
-    (state.data?.deliveryStatus === "failed" ||
-      state.data?.deliveryStatus === "existing_account");
+    active?.ok &&
+    (active.data?.deliveryStatus === "failed" ||
+      active.data?.deliveryStatus === "existing_account");
+  const originMisconfigured =
+    Boolean(
+      active &&
+        !active.ok &&
+        /APP_URL|not configured for production/i.test(active.error),
+    ) || (active?.ok === true && isLocalhostInviteUrl(inviteUrl));
+
+  function runRevoke() {
+    if (!invitationId) return;
+    const fd = new FormData();
+    fd.set("householdId", householdId);
+    fd.set("invitationId", invitationId);
+    startMgmt(async () => {
+      const result = await revokeInviteAction(null, fd);
+      setMgmtState(result);
+    });
+  }
+
+  function runRegenerate() {
+    if (!invitationId) return;
+    const fd = new FormData();
+    fd.set("householdId", householdId);
+    fd.set("invitationId", invitationId);
+    startMgmt(async () => {
+      const result = await regenerateInviteAction(null, fd);
+      setMgmtState(result);
+    });
+  }
 
   return (
-    <form action={action} className="space-y-3 rounded-md border border-border bg-surface p-4">
+    <form
+      action={action}
+      onSubmit={() => setMgmtState(null)}
+      className="space-y-3 rounded-md border border-border bg-surface p-4"
+    >
       <h3 className="font-semibold text-text-primary">Invite roommate</h3>
       <input type="hidden" name="householdId" value={householdId} />
       <label className="block text-sm text-text-primary">
@@ -65,54 +119,59 @@ export function InviteForm({ householdId }: { householdId: string }) {
       </label>
       <button
         type="submit"
-        disabled={pending}
-        aria-busy={pending || undefined}
+        disabled={pending || mgmtPending}
+        aria-busy={pending || mgmtPending || undefined}
         className="min-h-11 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-60"
       >
         {pending ? "Creating invitation…" : "Create invitation"}
       </button>
-      {pending ? (
+      {pending || mgmtPending ? (
         <p className="text-sm text-text-muted" aria-live="polite" role="status">
-          Creating invitation…
+          {pending ? "Creating invitation…" : "Updating invitation…"}
         </p>
       ) : null}
-      {state && !state.ok ? (
+      {active && !active.ok ? (
         <p className="text-sm text-destructive" role="alert">
-          {state.error}
+          {active.error}
         </p>
       ) : null}
-      {state?.ok && inviteUrl ? (
+      {originMisconfigured && active?.ok ? (
+        <p className="text-sm text-destructive" role="alert">
+          Invitation links are not configured for production. Set APP_URL and redeploy.
+        </p>
+      ) : null}
+      {active?.ok && inviteUrl && !isLocalhostInviteUrl(inviteUrl) ? (
         <div className="space-y-3" role="status" data-testid="invite-success">
-          <p className="text-sm text-success">{state.message}</p>
-          {state.warning ? (
+          <p className="text-sm text-success">{active.message}</p>
+          {active.warning ? (
             <p className="text-sm text-amber-800" role="status">
-              {state.warning}
+              {active.warning}
             </p>
           ) : null}
           <dl className="grid gap-1 text-sm text-text-secondary">
             <div>
               <dt className="inline font-medium text-text-primary">Invited email: </dt>
-              <dd className="inline">{state.data?.invitedEmail}</dd>
+              <dd className="inline">{active.data?.invitedEmail}</dd>
             </div>
             <div>
               <dt className="inline font-medium text-text-primary">Household: </dt>
-              <dd className="inline">{state.data?.householdName}</dd>
+              <dd className="inline">{active.data?.householdName}</dd>
             </div>
             <div>
               <dt className="inline font-medium text-text-primary">Roles: </dt>
-              <dd className="inline">{state.data?.intendedRoles}</dd>
+              <dd className="inline">{active.data?.intendedRoles}</dd>
             </div>
             <div>
               <dt className="inline font-medium text-text-primary">Expires: </dt>
               <dd className="inline">
-                {state.data?.expiresAt
-                  ? new Date(state.data.expiresAt).toLocaleString()
+                {active.data?.expiresAt
+                  ? new Date(active.data.expiresAt).toLocaleString()
                   : "—"}
               </dd>
             </div>
             <div>
               <dt className="inline font-medium text-text-primary">Delivery: </dt>
-              <dd className="inline">{deliveryLabel(state.data?.deliveryStatus)}</dd>
+              <dd className="inline">{deliveryLabel(active.data?.deliveryStatus)}</dd>
             </div>
           </dl>
           <label className="block text-sm">
@@ -135,10 +194,34 @@ export function InviteForm({ householdId }: { householdId: string }) {
               onFocus={(e) => e.currentTarget.select()}
             />
           </label>
+          <div className="flex flex-wrap gap-3">
+            <button
+              type="button"
+              disabled={mgmtPending || !invitationId}
+              onClick={runRevoke}
+              className="text-sm text-destructive underline disabled:opacity-60"
+            >
+              Revoke
+            </button>
+            <button
+              type="button"
+              disabled={mgmtPending || !invitationId}
+              onClick={runRegenerate}
+              className="text-sm underline disabled:opacity-60"
+            >
+              Regenerate invitation
+            </button>
+          </div>
           <p className="text-xs text-text-muted">
             The household stays usable without email delivery — share this link in your group chat.
+            Tokens appear only at create or regenerate time; revoke if a link was exposed.
           </p>
         </div>
+      ) : null}
+      {active?.ok && active.data?.status === "revoked" ? (
+        <p className="text-sm text-text-secondary" role="status">
+          {active.message ?? "Invitation revoked. It can no longer be accepted."}
+        </p>
       ) : null}
     </form>
   );

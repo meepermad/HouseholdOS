@@ -21,6 +21,10 @@ import {
   createHouseholdInvitationOrchestrated,
   retryInvitationDeliveryOrchestrated,
 } from "@/lib/invitations/orchestration";
+import {
+  InvitationOriginConfigurationError,
+  PRODUCTION_ORIGIN_MISCONFIG,
+} from "@/lib/env/canonical-origin";
 import { hashInviteToken } from "@/lib/tokens";
 import { CURRENT_HOUSEHOLD_COOKIE } from "@/lib/navigation";
 import {
@@ -30,6 +34,7 @@ import {
   createHouseholdSchema,
   inviteMemberSchema,
   leaveHouseholdSchema,
+  regenerateInviteSchema,
   removeMemberSchema,
   retryInviteDeliverySchema,
   revokeInviteSchema,
@@ -361,6 +366,9 @@ export async function inviteMemberAction(
       },
     };
   } catch (error) {
+    if (error instanceof InvitationOriginConfigurationError) {
+      return { ok: false, error: PRODUCTION_ORIGIN_MISCONFIG };
+    }
     return { ok: false, error: toPublicErrorMessage(error) };
   }
 }
@@ -505,8 +513,90 @@ export async function revokeInviteAction(
     if (error) return { ok: false, error: "Unable to revoke invitation." };
 
     revalidatePath(`/app/${parsed.data.householdId}/settings/members`);
-    return { ok: true, message: "Invitation revoked." };
+    return {
+      ok: true,
+      message: "Invitation revoked. It can no longer be accepted.",
+      data: { invitationId: parsed.data.invitationId, status: "revoked" },
+    };
   } catch (error) {
+    return { ok: false, error: toPublicErrorMessage(error) };
+  }
+}
+
+/**
+ * Revoke-and-reissue: plaintext tokens are not recoverable from the hash store.
+ * Creates a replacement invitation (RPC replaces any pending row for the email)
+ * and returns a fresh join URL built from the canonical origin.
+ */
+export async function regenerateInviteAction(
+  _prev: ActionResult | null,
+  formData: FormData,
+): Promise<ActionResult> {
+  try {
+    const parsed = regenerateInviteSchema.safeParse({
+      householdId: formData.get("householdId"),
+      invitationId: formData.get("invitationId"),
+    });
+    if (!parsed.success) {
+      return { ok: false, error: "Invalid invitation." };
+    }
+
+    const ctx = await assertActiveMembership(parsed.data.householdId);
+    if (!can(ctx.roles, "member.invite")) {
+      return { ok: false, error: "Not allowed to invite members." };
+    }
+
+    const { supabase } = await requireUser();
+    const { data: existing, error: loadError } = await supabase!
+      .from("household_invitations")
+      .select("id, invited_email, status, intended_roles, message")
+      .eq("id", parsed.data.invitationId)
+      .eq("household_id", parsed.data.householdId)
+      .maybeSingle();
+
+    if (loadError || !existing) {
+      return { ok: false, error: "Invitation not found." };
+    }
+    if (existing.status !== "pending") {
+      return {
+        ok: false,
+        error: "Only pending invitations can be regenerated. Create a new invitation instead.",
+      };
+    }
+
+    const roles = normalizeRoles(
+      (existing.intended_roles as HouseholdResponsibility[] | null) ?? ["member"],
+    );
+
+    const result = await createHouseholdInvitationOrchestrated({
+      supabase: supabase!,
+      householdId: parsed.data.householdId,
+      email: existing.invited_email,
+      intendedRoles: roles,
+      message: existing.message ?? undefined,
+    });
+
+    revalidatePath(`/app/${parsed.data.householdId}/settings/members`);
+    return {
+      ok: true,
+      message: "Replacement invitation created. The previous link is no longer valid.",
+      warning: result.warning,
+      data: {
+        inviteUrl: result.inviteUrl,
+        invitationId: result.invitationId,
+        previousInvitationId: parsed.data.invitationId,
+        invitedEmail: result.invitedEmail,
+        householdName: result.householdName,
+        intendedRoles: result.intendedRoles.join(", "),
+        expiresAt: result.expiresAt,
+        deliveryStatus: result.deliveryStatus,
+        ...(result.diagnostic ? { diagnostic: result.diagnostic } : {}),
+      },
+    };
+  } catch (error) {
+    if (error instanceof InvitationOriginConfigurationError) {
+      return { ok: false, error: PRODUCTION_ORIGIN_MISCONFIG };
+    }
     return { ok: false, error: toPublicErrorMessage(error) };
   }
 }

@@ -2,6 +2,11 @@ import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getServerEnv } from "@/lib/env/server";
+import {
+  buildAppAbsoluteUrl,
+  buildInvitationJoinUrl,
+  getCanonicalAppOrigin,
+} from "@/lib/env/canonical-origin";
 import { normalizeEmail } from "@/lib/env/server-schema";
 import { coordinatorMessageForDelivery } from "@/lib/invitations/diagnostics";
 import {
@@ -40,11 +45,12 @@ export async function createHouseholdInvitationOrchestrated(
   input: CreateInvitationOrchestrationInput,
 ): Promise<HouseholdInvitationCreateResult> {
   const env = getServerEnv();
+  const canonicalOrigin = getCanonicalAppOrigin();
   const invitedEmail = normalizeEmail(input.email);
   const token = generateInviteToken();
   const tokenHash = hashInviteToken(token);
   const expiresAt = invitationExpiresAt(env.INVITATION_TTL_HOURS).toISOString();
-  const inviteUrl = `${env.APP_URL}/join/${token}`;
+  const inviteUrl = buildInvitationJoinUrl(token, canonicalOrigin);
 
   const { data: inviteId, error: createError } = await input.supabase.rpc(
     "create_household_invitation",
@@ -91,6 +97,7 @@ export async function createHouseholdInvitationOrchestrated(
   const householdName = household?.name ?? "Household";
 
   // Auth invite ONLY after the pending row is committed and confirmed.
+  // redirectTo uses the same canonical origin as the copyable join link.
   const delivery = await deliverInvitation({
     toEmail: invitedEmail,
     inviteUrl,
@@ -152,7 +159,6 @@ export async function retryInvitationDeliveryOrchestrated(
   warning?: string;
   inviteUrl?: string;
 }> {
-  const env = getServerEnv();
   const { data: row, error } = await input.supabase
     .from("household_invitations")
     .select(
@@ -184,7 +190,9 @@ export async function retryInvitationDeliveryOrchestrated(
     .eq("id", input.householdId)
     .maybeSingle();
   const householdName = household?.name ?? "Household";
-  const redirectTo = input.inviteUrl ?? `${env.APP_URL}/join/paste`;
+  // Without the plaintext token, redirect to paste flow on the canonical origin.
+  const redirectTo =
+    input.inviteUrl ?? buildAppAbsoluteUrl("/join/paste", getCanonicalAppOrigin());
 
   const delivery = await deliverInvitation({
     toEmail: row.invited_email,

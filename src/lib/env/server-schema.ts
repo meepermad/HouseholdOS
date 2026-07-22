@@ -1,5 +1,9 @@
 import { z } from "zod";
 import { publicEnvSchema, ConfigurationError } from "@/lib/env/public";
+import {
+  getCanonicalAppOrigin,
+  resolveAppRuntimeEnv,
+} from "@/lib/env/canonical-origin";
 
 export const REGISTRATION_MODES = ["bootstrap_only", "invite_only", "open"] as const;
 export type RegistrationMode = (typeof REGISTRATION_MODES)[number];
@@ -116,13 +120,18 @@ export type ServerEnv = z.infer<typeof serverEnvSchema>;
 export function parseServerEnv(
   source: Record<string, string | undefined> = process.env,
 ): ServerEnv {
+  const appEnv = resolveAppRuntimeEnv(source);
+  // Canonical origin resolves production requirements and normalizes trailing slashes.
+  // Development/test may fall back to localhost; production never does.
+  const appUrl = getCanonicalAppOrigin(source);
+
   const result = serverEnvSchema.safeParse({
     NEXT_PUBLIC_SUPABASE_URL: source.NEXT_PUBLIC_SUPABASE_URL,
     NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: source.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
     NEXT_PUBLIC_VAPID_PUBLIC_KEY: source.NEXT_PUBLIC_VAPID_PUBLIC_KEY || undefined,
     SUPABASE_SECRET_KEY: source.SUPABASE_SECRET_KEY || undefined,
-    APP_URL: source.APP_URL ?? "http://localhost:3000",
-    APP_ENV: source.APP_ENV ?? "development",
+    APP_URL: appUrl,
+    APP_ENV: appEnv,
     REGISTRATION_MODE: source.REGISTRATION_MODE ?? "bootstrap_only",
     BOOTSTRAP_EMAIL: source.BOOTSTRAP_EMAIL || undefined,
     INVITATION_TTL_HOURS: source.INVITATION_TTL_HOURS ?? "168",

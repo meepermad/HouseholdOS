@@ -169,6 +169,13 @@ export function mapHouseholdCreateError(message: string | undefined | null): App
 
 export function toPublicErrorMessage(error: unknown): string {
   if (error instanceof AppError) return error.publicMessage;
+  if (
+    error instanceof Error &&
+    (error.name === "InvitationOriginConfigurationError" ||
+      error.name === "ConfigurationError")
+  ) {
+    return error.message;
+  }
   return "Something went wrong. Please try again.";
 }
 

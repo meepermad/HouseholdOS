@@ -2,10 +2,9 @@ import { ActionForm } from "@/components/action-form";
 import {
   changeRolesAction,
   removeMemberAction,
-  retryInviteDeliveryAction,
-  revokeInviteAction,
 } from "@/app/actions/household";
 import { InviteForm } from "@/components/invite-form";
+import { PendingInviteActions } from "@/components/pending-invite-actions";
 import { assertActiveMembership } from "@/lib/household-context";
 import { can } from "@/lib/permissions";
 import { createClient } from "@/lib/supabase/server";
@@ -163,35 +162,16 @@ export default async function MembersSettingsPage({
                         </p>
                         {invite.delivery_status === "failed" ? (
                           <p className="text-xs text-amber-800">
-                            Copy the join link from when this invitation was created, or create a
-                            replacement invitation for the same email to get a new link.
+                            Plaintext join tokens are not stored. Regenerate this invitation to
+                            get a new canonical join link, or revoke it if it was exposed.
                           </p>
                         ) : null}
                       </div>
-                      <div className="flex flex-wrap gap-3">
-                        {canRetry ? (
-                          <ActionForm
-                            action={retryInviteDeliveryAction}
-                            pendingLabel="Retrying email…"
-                          >
-                            <input type="hidden" name="householdId" value={householdId} />
-                            <input type="hidden" name="invitationId" value={invite.id} />
-                            <button type="submit" className="text-sm underline">
-                              Retry email
-                            </button>
-                          </ActionForm>
-                        ) : null}
-                        <ActionForm
-                          action={revokeInviteAction}
-                          pendingLabel="Revoking invitation…"
-                        >
-                          <input type="hidden" name="householdId" value={householdId} />
-                          <input type="hidden" name="invitationId" value={invite.id} />
-                          <button type="submit" className="text-destructive underline">
-                            Revoke
-                          </button>
-                        </ActionForm>
-                      </div>
+                      <PendingInviteActions
+                        householdId={householdId}
+                        invitationId={invite.id}
+                        canRetry={canRetry}
+                      />
                     </li>
                   );
                 })}

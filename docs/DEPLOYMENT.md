@@ -12,7 +12,7 @@ Set in the Vercel project (Production + Preview as appropriate):
 **Server**
 
 - `SUPABASE_SECRET_KEY` (optional for normal traffic; required for privileged ops/tests and the notification worker)
-- `APP_URL` (production origin, e.g. `https://householdos.example.com`)
+- `APP_URL` (production origin — **required for Production**; must be `https://household-os-five.vercel.app`)
 - `APP_ENV=production`
 - `REGISTRATION_MODE=invite_only` (or `bootstrap_only` for first deploy)
 - `BOOTSTRAP_EMAIL` when using bootstrap
@@ -84,9 +84,29 @@ Other Server Actions still depend on matching builds. Recovery:
 
 ### Canonical production origin
 
-Use **`https://household-os-five.vercel.app`** as the canonical host (`APP_URL`).
+Set **Production** environment variable:
 
-Known production alias `household-os-meepermad.vercel.app` redirects (308) to the canonical host when `APP_ENV=production`. Preview / git branch aliases are not redirected.
+```bash
+APP_URL=https://household-os-five.vercel.app
+```
+
+Invitation join links and Supabase Auth `redirectTo` values are built from this origin via `getCanonicalAppOrigin()`. Production never falls back to `http://localhost:3000`. Missing or invalid `APP_URL` fails visibly (`Invitation links are not configured for production. Set APP_URL and redeploy.`).
+
+Do **not** add `localhost` to production Supabase redirect URLs. In Supabase Dashboard → Authentication → URL Configuration, set Site URL / Redirect URLs to include:
+
+- `https://household-os-five.vercel.app`
+- `https://household-os-five.vercel.app/auth/callback`
+- `https://household-os-five.vercel.app/join/**` (or specific `/join/*` paths as supported)
+
+Household join authorization remains based on the HouseholdOS invitation token (hash), not merely the Supabase email redirect.
+
+Safe readiness fields on `GET /api/ready`:
+
+- `invitation_origin_configured`
+- `invitation_origin_host`
+- `invitation_origin_https`
+
+Known production alias `household-os-meepermad.vercel.app` redirects (308) to the canonical host when `APP_ENV=production`. Preview / git branch aliases are not redirected. Preview may set `APP_URL` explicitly or rely on `VERCEL_URL`.
 
 ### Operator: Vercel Skew Protection
 

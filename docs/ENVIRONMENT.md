@@ -15,7 +15,7 @@ HouseholdOS validates environment variables with Zod. Missing or malformed value
 | Variable | Required | Notes |
 |---|---|---|
 | `SUPABASE_SECRET_KEY` | Optional* | Secret/service_role key. Required for privileged client (tests/recovery) and notification worker. |
-| `APP_URL` | Yes | Absolute app origin used for invite links and auth redirects. Default in schema: `http://localhost:3000`. |
+| `APP_URL` | Yes (production) | Absolute app **origin** for invite links and auth redirects. Production must set `APP_URL=https://household-os-five.vercel.app` (https, no path/query/credentials). Development/test may omit it and fall back to `http://localhost:3000`. Never silently falls back to localhost in production. |
 | `APP_ENV` | Yes | `development` \| `test` \| `production`. |
 | `REGISTRATION_MODE` | Yes | `bootstrap_only` \| `invite_only` \| `open`. `open` is **forbidden** in production. |
 | `BOOTSTRAP_EMAIL` | When bootstrap | Normalized lowercase email allowed to register the first account. |

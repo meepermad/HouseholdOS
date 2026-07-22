@@ -139,6 +139,11 @@ export const revokeInviteSchema = z.object({
   invitationId: z.string().uuid(),
 });
 
+export const regenerateInviteSchema = z.object({
+  householdId: z.string().uuid(),
+  invitationId: z.string().uuid(),
+});
+
 export const retryInviteDeliverySchema = z.object({
   householdId: z.string().uuid(),
   invitationId: z.string().uuid(),

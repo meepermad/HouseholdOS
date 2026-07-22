@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { evaluateRegistration } from "@/lib/auth/registration-policy";
+import { buildAppAbsoluteUrl } from "@/lib/env/canonical-origin";
 import { getServerEnv } from "@/lib/env/server";
 import { normalizeEmail } from "@/lib/env/server-schema";
 import { AppError, mapAuthError, toPublicErrorMessage } from "@/lib/errors";
@@ -111,7 +112,10 @@ export async function signUpAction(
       password: parsed.data.password,
       options: {
         data: { display_name: displayName || parsed.data.email.split("@")[0] },
-        emailRedirectTo: `${env.APP_URL}/auth/callback?next=${encodeURIComponent(next)}`,
+        emailRedirectTo: buildAppAbsoluteUrl(
+          `/auth/callback?next=${encodeURIComponent(next)}`,
+          env.APP_URL,
+        ),
       },
     });
 
@@ -178,7 +182,10 @@ export async function forgotPasswordAction(
     const supabase = await createClient();
     // Always return the same message to avoid account enumeration.
     await supabase.auth.resetPasswordForEmail(parsed.data.email, {
-      redirectTo: `${env.APP_URL}/auth/callback?next=${encodeURIComponent("/reset-password")}`,
+      redirectTo: buildAppAbsoluteUrl(
+        `/auth/callback?next=${encodeURIComponent("/reset-password")}`,
+        env.APP_URL,
+      ),
     });
 
     return {

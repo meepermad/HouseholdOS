@@ -14,6 +14,14 @@ vi.mock("@/lib/env/server", () => ({
   getServerEnv: () => getServerEnv(),
 }));
 
+vi.mock("@/lib/env/canonical-origin", () => ({
+  getCanonicalAppOrigin: () => "https://app.example.test",
+  buildInvitationJoinUrl: (token: string, origin = "https://app.example.test") =>
+    new URL(`/join/${token}`, origin).toString(),
+  buildAppAbsoluteUrl: (path: string, origin = "https://app.example.test") =>
+    new URL(path.startsWith("/") ? path : `/${path}`, origin).toString(),
+}));
+
 describe("invitation orchestration order", () => {
   beforeEach(() => {
     deliverInvitation.mockReset();

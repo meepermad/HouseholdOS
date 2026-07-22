@@ -61,11 +61,21 @@ describe("server env validation", () => {
     expect(() =>
       parseServerEnv({
         ...base,
+        APP_URL: "https://household-os-five.vercel.app",
         APP_ENV: "production",
         REGISTRATION_MODE: "open",
         BOOTSTRAP_EMAIL: undefined,
       }),
     ).toThrow(/open/i);
+  });
+
+  it("defaults APP_URL to localhost only in development", () => {
+    const env = parseServerEnv({
+      ...base,
+      APP_URL: undefined,
+      APP_ENV: "development",
+    });
+    expect(env.APP_URL).toBe("http://localhost:3000");
   });
 
   it("validates currency as three uppercase letters", () => {
