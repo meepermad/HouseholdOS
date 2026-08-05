@@ -23,6 +23,7 @@ export function CurrencyField({
   disabled,
   id: idProp,
   maxCents = 100_000_00,
+  allowNegative = false,
 }: {
   label: string;
   name: string;
@@ -33,6 +34,8 @@ export function CurrencyField({
   disabled?: boolean;
   id?: string;
   maxCents?: number;
+  /** Allow negative amounts (discounts, credits). */
+  allowNegative?: boolean;
 }) {
   const autoId = useId();
   const id = idProp ?? autoId;
@@ -50,11 +53,11 @@ export function CurrencyField({
     }
     try {
       const parsed = parseUsdToCents(trimmed);
-      if (parsed < 0) {
+      if (parsed < 0 && !allowNegative) {
         setLocalError("Amount cannot be negative.");
         return;
       }
-      if (parsed > maxCents) {
+      if (Math.abs(parsed) > maxCents) {
         setLocalError("Amount is too large.");
         return;
       }
@@ -110,6 +113,67 @@ export function CurrencyField({
           {shownError}
         </p>
       ) : null}
+    </div>
+  );
+}
+
+/**
+ * Controlled dollar input for amounts held in component state rather than
+ * submitted directly (per-member allocations, for example).
+ */
+export function CurrencyAmountInput({
+  valueCents,
+  onChangeCents,
+  ariaLabel,
+  placeholder = "0.00",
+  allowNegative = false,
+  className,
+}: {
+  valueCents: number | undefined;
+  onChangeCents: (cents: number | undefined) => void;
+  ariaLabel: string;
+  placeholder?: string;
+  allowNegative?: boolean;
+  className?: string;
+}) {
+  const [display, setDisplay] = useState(centsToInputValue(valueCents));
+
+  return (
+    <div className="relative">
+      <span
+        className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-sm text-text-muted"
+        aria-hidden
+      >
+        $
+      </span>
+      <input
+        inputMode="decimal"
+        autoComplete="off"
+        aria-label={ariaLabel}
+        placeholder={placeholder}
+        value={display}
+        className={
+          className ??
+          "w-full rounded-md border border-line bg-input-bg py-1 pl-7 pr-2 text-sm"
+        }
+        onChange={(event) => {
+          const raw = event.target.value;
+          setDisplay(raw);
+          const trimmed = raw.trim();
+          if (!trimmed) {
+            onChangeCents(undefined);
+            return;
+          }
+          try {
+            const parsed = parseUsdToCents(trimmed);
+            if (parsed < 0 && !allowNegative) return;
+            onChangeCents(parsed);
+          } catch {
+            // Keep the raw text while the member is still typing.
+          }
+        }}
+        onBlur={() => setDisplay(centsToInputValue(valueCents))}
+      />
     </div>
   );
 }

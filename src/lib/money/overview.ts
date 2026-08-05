@@ -33,6 +33,10 @@ import {
   defaultMonthKey,
   type MonthlyFinancialSummary,
 } from "@/lib/money/monthly-summary";
+import {
+  buildMoneyCreateActions,
+  type MoneyCreateGroups,
+} from "@/lib/money/create-actions";
 import { selectPrimaryActions, type PrimaryAction } from "@/lib/money/primary-actions";
 import { shiftMonth } from "@/lib/money/list-filters";
 import type { MemberBalanceSummary, PairwiseBalance } from "@/lib/payments/types";
@@ -60,6 +64,7 @@ export type MoneyOverview = {
   isSingleMember: boolean;
   balance: MemberBalanceSummary;
   primaryActions: PrimaryAction[];
+  create: MoneyCreateGroups;
   attention: AttentionItem[];
   pairwise: PairwiseHubRow[];
   settledHiddenCount: number;
@@ -378,16 +383,28 @@ export async function loadMoneyOverview(params: {
   const activeMemberCount = members.length;
   const isSingleMember = activeMemberCount <= 1;
 
+  const canCreateExpense = can(roles, "expense.create");
+  const canCreatePayment = can(roles, "payment.create");
+
   const primaryActions = selectPrimaryActions({
     householdId,
     activeMemberCount,
     receiptsEnabled: launch.receipts,
-    canCreateExpense: can(roles, "expense.create"),
-    canCreatePayment: can(roles, "payment.create"),
+    canCreateExpense,
+    canCreatePayment,
     paymentConfirmCount: (awaitingConfirm.data ?? []).length,
     firstConfirmPaymentId: awaitingConfirm.data?.[0]?.id ?? null,
     officialYouOweCents: settlement.summary.officialYouOweCents,
     receiptDraftCount,
+  });
+
+  const create = buildMoneyCreateActions({
+    householdId,
+    activeMemberCount,
+    receiptsEnabled: launch.receipts,
+    canCreateExpense,
+    canCreatePayment,
+    sharedPurchaseEnabled: !isSingleMember,
   });
 
   const unsettledIds = new Set(
@@ -495,6 +512,7 @@ export async function loadMoneyOverview(params: {
     isSingleMember,
     balance: settlement.summary,
     primaryActions,
+    create,
     attention: sortAttentionItems(attention).slice(0, 20),
     pairwise: isSingleMember ? [] : pairwise,
     settledHiddenCount,

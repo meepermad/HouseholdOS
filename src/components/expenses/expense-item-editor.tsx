@@ -3,17 +3,20 @@
 import { useMemo, useState } from "react";
 import { ActionForm } from "@/components/action-form";
 import { upsertExpenseItemAction } from "@/app/actions/expenses";
-import type { MemberOption } from "@/lib/expenses/display";
+import { CurrencyAmountInput, CurrencyField } from "@/components/ui/currency-field";
+import { itemAllocationLabel, type MemberOption } from "@/lib/expenses/display";
 
 const MODES = [
-  { value: "personal", label: "Personal" },
-  { value: "equal_all", label: "Equal (all)" },
-  { value: "equal_selected", label: "Equal (selected)" },
-  { value: "fixed_cents", label: "Fixed cents" },
-  { value: "percentage", label: "Percentage" },
-  { value: "weighted", label: "Weighted" },
-  { value: "excluded", label: "Excluded" },
+  "personal",
+  "equal_all",
+  "equal_selected",
+  "fixed_cents",
+  "percentage",
+  "weighted",
+  "excluded",
 ] as const;
+
+const DEFAULT_MODE = "equal_all";
 
 type ItemDraft = {
   id?: string;
@@ -41,7 +44,7 @@ export function ExpenseItemEditor({
   members: MemberOption[];
   initial?: Partial<ItemDraft> & { id?: string };
 }) {
-  const [mode, setMode] = useState(initial?.allocationMode ?? "equal_all");
+  const [mode, setMode] = useState(initial?.allocationMode ?? DEFAULT_MODE);
   const [selectedIds, setSelectedIds] = useState<string[]>(
     initial?.selectedIds ?? members.map((m) => m.id),
   );
@@ -56,6 +59,11 @@ export function ExpenseItemEditor({
   );
   const [weightMap, setWeightMap] = useState<Record<string, number>>(
     initial?.weightMap ?? {},
+  );
+  // Advanced split controls stay collapsed while the item uses the default
+  // equal split, which is what most line items need.
+  const [showSplit, setShowSplit] = useState(
+    (initial?.allocationMode ?? DEFAULT_MODE) !== DEFAULT_MODE,
   );
 
   const participantsJson = useMemo(() => {
@@ -87,6 +95,11 @@ export function ExpenseItemEditor({
     );
   }
 
+  const splitSummary =
+    mode === "personal"
+      ? `Just ${members.find((m) => m.id === personalId)?.label ?? "one person"}`
+      : itemAllocationLabel(mode);
+
   return (
     <ActionForm
       pendingLabel="Saving expense item…"
@@ -98,6 +111,9 @@ export function ExpenseItemEditor({
       {initial?.id ? <input type="hidden" name="itemId" value={initial.id} /> : null}
       <input type="hidden" name="displayOrder" value={initial?.displayOrder ?? 0} />
       <input type="hidden" name="participantsJson" value={participantsJson} />
+      {!showSplit ? (
+        <input type="hidden" name="allocationMode" value={mode} />
+      ) : null}
 
       <label className="block text-sm">
         Description
@@ -110,17 +126,12 @@ export function ExpenseItemEditor({
       </label>
 
       <div className="grid grid-cols-2 gap-2">
-        <label className="block text-sm">
-          Amount (cents)
-          <input
-            name="totalCents"
-            type="number"
-            min={0}
-            required
-            defaultValue={initial?.totalCents ?? 0}
-            className="mt-1 w-full rounded-md border border-line bg-input-bg px-3 py-2"
-          />
-        </label>
+        <CurrencyField
+          label="Amount"
+          name="totalCents"
+          defaultCents={initial?.totalCents ?? 0}
+          required
+        />
         <label className="block text-sm">
           Qty note
           <input
@@ -131,114 +142,138 @@ export function ExpenseItemEditor({
         </label>
       </div>
 
-      <label className="block text-sm">
-        Allocation
-        <select
-          name="allocationMode"
-          value={mode}
-          onChange={(e) => setMode(e.target.value)}
-          className="mt-1 w-full rounded-md border border-line bg-input-bg px-3 py-2"
-        >
-          {MODES.map((m) => (
-            <option key={m.value} value={m.value}>
-              {m.label}
-            </option>
-          ))}
-        </select>
-      </label>
-
-      {mode === "personal" ? (
-        <label className="block text-sm">
-          Owner
-          <select
-            name="personalMembershipId"
-            value={personalId}
-            onChange={(e) => setPersonalId(e.target.value)}
-            className="mt-1 w-full rounded-md border border-line bg-input-bg px-3 py-2"
+      <div className="flex items-center justify-between gap-2 rounded-md border border-border px-3 py-2">
+        <p className="text-sm text-text-secondary" data-testid="item-split-summary">
+          {splitSummary}
+        </p>
+        {showSplit ? null : (
+          <button
+            type="button"
+            onClick={() => setShowSplit(true)}
+            className="min-h-11 shrink-0 text-sm font-medium text-primary underline-offset-2 hover:underline"
+            data-testid="item-split-change"
           >
-            {members.map((m) => (
-              <option key={m.id} value={m.id}>
-                {m.label}
-              </option>
-            ))}
-          </select>
-        </label>
-      ) : null}
+            Change
+          </button>
+        )}
+      </div>
 
-      {mode === "excluded" ? (
-        <label className="inline-flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            name="excludeFromAdjustmentBasis"
-            defaultChecked={initial?.excludeFromBasis}
-          />
-          Exclude from tax/tip proportional basis
-        </label>
-      ) : null}
+      {showSplit ? (
+        <div className="space-y-3" data-testid="item-split-controls">
+          <label className="block text-sm">
+            Allocation
+            <select
+              name="allocationMode"
+              value={mode}
+              onChange={(e) => setMode(e.target.value)}
+              className="mt-1 w-full rounded-md border border-line bg-input-bg px-3 py-2"
+            >
+              {MODES.map((value) => (
+                <option key={value} value={value}>
+                  {itemAllocationLabel(value)}
+                </option>
+              ))}
+            </select>
+          </label>
 
-      {(mode === "equal_selected" ||
-        mode === "fixed_cents" ||
-        mode === "percentage" ||
-        mode === "weighted") && (
-        <fieldset className="space-y-2">
-          <legend className="text-sm font-medium">Members</legend>
-          {members.map((m) => (
-            <div key={m.id} className="space-y-2 rounded-md border border-border p-3">
-              <label className="inline-flex items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  checked={selectedIds.includes(m.id)}
-                  onChange={() => toggleMember(m.id)}
-                />
-                {m.label}
-              </label>
-              {selectedIds.includes(m.id) && mode === "fixed_cents" ? (
-                <input
-                  type="number"
-                  placeholder="Cents"
-                  className="w-full rounded-md border border-line px-2 py-1 text-sm"
-                  value={fixedMap[m.id] ?? ""}
-                  onChange={(e) =>
-                    setFixedMap((prev) => ({
-                      ...prev,
-                      [m.id]: Number(e.target.value),
-                    }))
-                  }
-                />
-              ) : null}
-              {selectedIds.includes(m.id) && mode === "percentage" ? (
-                <input
-                  type="number"
-                  placeholder="% (e.g. 25)"
-                  className="w-full rounded-md border border-line px-2 py-1 text-sm"
-                  value={percentMap[m.id] ?? ""}
-                  onChange={(e) =>
-                    setPercentMap((prev) => ({
-                      ...prev,
-                      [m.id]: Number(e.target.value),
-                    }))
-                  }
-                />
-              ) : null}
-              {selectedIds.includes(m.id) && mode === "weighted" ? (
-                <input
-                  type="number"
-                  placeholder="Shares"
-                  min={1}
-                  className="w-full rounded-md border border-line px-2 py-1 text-sm"
-                  value={weightMap[m.id] ?? ""}
-                  onChange={(e) =>
-                    setWeightMap((prev) => ({
-                      ...prev,
-                      [m.id]: Number(e.target.value),
-                    }))
-                  }
-                />
-              ) : null}
-            </div>
-          ))}
-        </fieldset>
-      )}
+          {mode === "personal" ? (
+            <label className="block text-sm">
+              Owner
+              <select
+                name="personalMembershipId"
+                value={personalId}
+                onChange={(e) => setPersonalId(e.target.value)}
+                className="mt-1 w-full rounded-md border border-line bg-input-bg px-3 py-2"
+              >
+                {members.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : null}
+
+          {mode === "excluded" ? (
+            <label className="inline-flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                name="excludeFromAdjustmentBasis"
+                defaultChecked={initial?.excludeFromBasis}
+              />
+              Exclude from tax/tip proportional basis
+            </label>
+          ) : null}
+
+          {(mode === "equal_selected" ||
+            mode === "fixed_cents" ||
+            mode === "percentage" ||
+            mode === "weighted") && (
+            <fieldset className="space-y-2">
+              <legend className="text-sm font-medium">Members</legend>
+              {members.map((m) => (
+                <div key={m.id} className="space-y-2 rounded-md border border-border p-3">
+                  <label className="inline-flex items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.includes(m.id)}
+                      onChange={() => toggleMember(m.id)}
+                    />
+                    {m.label}
+                  </label>
+                  {selectedIds.includes(m.id) && mode === "fixed_cents" ? (
+                    <CurrencyAmountInput
+                      ariaLabel={`Amount for ${m.label}`}
+                      valueCents={fixedMap[m.id]}
+                      onChangeCents={(cents) =>
+                        setFixedMap((prev) => {
+                          if (cents === undefined) {
+                            const next = { ...prev };
+                            delete next[m.id];
+                            return next;
+                          }
+                          return { ...prev, [m.id]: cents };
+                        })
+                      }
+                    />
+                  ) : null}
+                  {selectedIds.includes(m.id) && mode === "percentage" ? (
+                    <input
+                      type="number"
+                      aria-label={`Percentage for ${m.label}`}
+                      placeholder="% (e.g. 25)"
+                      className="w-full rounded-md border border-line px-2 py-1 text-sm"
+                      value={percentMap[m.id] ?? ""}
+                      onChange={(e) =>
+                        setPercentMap((prev) => ({
+                          ...prev,
+                          [m.id]: Number(e.target.value),
+                        }))
+                      }
+                    />
+                  ) : null}
+                  {selectedIds.includes(m.id) && mode === "weighted" ? (
+                    <input
+                      type="number"
+                      aria-label={`Shares for ${m.label}`}
+                      placeholder="Shares"
+                      min={1}
+                      className="w-full rounded-md border border-line px-2 py-1 text-sm"
+                      value={weightMap[m.id] ?? ""}
+                      onChange={(e) =>
+                        setWeightMap((prev) => ({
+                          ...prev,
+                          [m.id]: Number(e.target.value),
+                        }))
+                      }
+                    />
+                  ) : null}
+                </div>
+              ))}
+            </fieldset>
+          )}
+        </div>
+      ) : null}
 
       <button
         type="submit"

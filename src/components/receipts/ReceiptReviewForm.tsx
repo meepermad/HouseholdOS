@@ -9,6 +9,8 @@ import {
   CLASSIFICATION_OPTIONS,
   classificationLabel,
 } from "@/lib/receipts/classification";
+import { formatCentsAsUsd } from "@/lib/receipts/currency";
+import { planReceiptAdjustments } from "@/lib/receipts/expense-handoff";
 import type { LineItemClassification, ResourceDestination } from "@/lib/receipts/types";
 import { suggestResourceDestination } from "@/lib/receipts/resource-suggestions";
 import { reconcileLineItemsWithTotal } from "@/lib/receipts/totals";
@@ -33,6 +35,10 @@ type Props = {
   merchant: string;
   purchaseDate: string;
   declaredTotalCents: number;
+  /** Extracted tax, carried into the draft expense as an adjustment. */
+  taxCents?: number | null;
+  /** Extracted tip, carried into the draft expense as an adjustment. */
+  tipCents?: number | null;
   lineItems: ReviewLineItem[];
   duplicateOutcome?: string | null;
   status: string;
@@ -44,6 +50,8 @@ export function ReceiptReviewForm({
   merchant: initialMerchant,
   purchaseDate: initialDate,
   declaredTotalCents: initialTotal,
+  taxCents = null,
+  tipCents = null,
   lineItems: initialLines,
   duplicateOutcome,
   status,
@@ -60,11 +68,22 @@ export function ReceiptReviewForm({
       reconcileLineItemsWithTotal({
         lineItems: lines,
         subtotalCents: null,
-        taxCents: null,
-        tipCents: null,
+        taxCents,
+        tipCents,
         totalCents: declaredTotalCents,
       }),
-    [lines, declaredTotalCents],
+    [lines, declaredTotalCents, taxCents, tipCents],
+  );
+
+  const adjustmentPlans = useMemo(
+    () =>
+      planReceiptAdjustments({
+        declaredTotalCents,
+        itemSubtotalCents: reconciliation.lineSumCents,
+        taxCents,
+        tipCents,
+      }),
+    [declaredTotalCents, reconciliation.lineSumCents, taxCents, tipCents],
   );
 
   function updateLine(index: number, patch: Partial<ReviewLineItem>) {
@@ -179,6 +198,15 @@ export function ReceiptReviewForm({
           Line items reconcile with the declared total.
         </p>
       )}
+
+      {adjustmentPlans.length > 0 ? (
+        <p className="text-sm text-text-secondary" data-testid="receipt-tax-tip">
+          {adjustmentPlans
+            .map((p) => `${p.description} ${formatCentsAsUsd(p.amountCents)}`)
+            .join(" and ")}{" "}
+          will be added to the draft expense as adjustments you can change.
+        </p>
+      ) : null}
 
       <div className="flex flex-wrap gap-2" data-testid="receipt-bulk-actions">
         <button

@@ -12,6 +12,21 @@ export type PrimaryAction = {
   testId: string;
 };
 
+/** Actions the "Add to Money" create sheet already offers. */
+const CREATE_SHEET_KEYS: readonly PrimaryActionKey[] = [
+  "scan_receipt",
+  "add_expense",
+  "record_payment",
+];
+
+/**
+ * Hub CTAs left over once the create sheet owns the "add something" options —
+ * these point at work already waiting for the member.
+ */
+export function selectFollowUpActions(actions: PrimaryAction[]): PrimaryAction[] {
+  return actions.filter((action) => !CREATE_SHEET_KEYS.includes(action.key));
+}
+
 export type PrimaryActionInput = {
   householdId: string;
   activeMemberCount: number;

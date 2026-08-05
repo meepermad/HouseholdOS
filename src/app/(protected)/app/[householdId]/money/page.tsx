@@ -7,7 +7,9 @@ import { LaunchFeatureUnavailable } from "@/components/launch/LaunchFeatureUnava
 import { Skeleton } from "@/components/ui/skeleton";
 import { loadMoneyOverview } from "@/lib/money/overview";
 import { defaultMonthKey } from "@/lib/money/monthly-summary";
+import { selectFollowUpActions } from "@/lib/money/primary-actions";
 import { MoneyBalanceSummary } from "@/components/money/MoneyBalanceSummary";
+import { MoneyCreateSheet } from "@/components/money/MoneyCreateSheet";
 import { MoneyPrimaryActions } from "@/components/money/MoneyPrimaryActions";
 import { MoneyAttentionQueue } from "@/components/money/MoneyAttentionQueue";
 import { MoneyPairwiseBalances } from "@/components/money/MoneyPairwiseBalances";
@@ -42,7 +44,13 @@ async function MoneyDashboard({
     <div className="space-y-6 lg:grid lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-start lg:gap-8 lg:space-y-0">
       <div className="space-y-6">
         <MoneyBalanceSummary balance={overview.balance} />
-        <MoneyPrimaryActions actions={overview.primaryActions} />
+        <div className="flex flex-wrap items-center gap-2" data-testid="money-hub-actions">
+          <MoneyCreateSheet create={overview.create} />
+          <MoneyPrimaryActions
+            actions={selectFollowUpActions(overview.primaryActions)}
+            emphasis="secondary"
+          />
+        </div>
 
         {overview.isSingleMember ? (
           <section

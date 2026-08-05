@@ -3,7 +3,12 @@
 import { useMemo, useState } from "react";
 import { ActionForm } from "@/components/action-form";
 import { upsertExpenseAdjustmentAction } from "@/app/actions/expenses";
-import type { MemberOption } from "@/lib/expenses/display";
+import { CurrencyAmountInput, CurrencyField } from "@/components/ui/currency-field";
+import {
+  adjustmentAllocationLabel,
+  adjustmentTypeLabel,
+  type MemberOption,
+} from "@/lib/expenses/display";
 
 const TYPES = [
   "tax",
@@ -17,15 +22,19 @@ const TYPES = [
 ] as const;
 
 const MODES = [
-  { value: "proportional", label: "Proportional to items" },
-  { value: "equal_all", label: "Equal (all)" },
-  { value: "equal_selected", label: "Equal (selected)" },
-  { value: "fixed_cents", label: "Fixed cents" },
-  { value: "percentage", label: "Percentage" },
-  { value: "weighted", label: "Weighted" },
-  { value: "payer_absorbs", label: "Payer absorbs" },
-  { value: "assigned", label: "Assigned to one" },
+  "proportional",
+  "equal_all",
+  "equal_selected",
+  "fixed_cents",
+  "percentage",
+  "weighted",
+  "payer_absorbs",
+  "assigned",
 ] as const;
+
+const DEFAULT_MODE = "proportional";
+
+const MEMBER_INPUT_MODES = ["fixed_cents", "percentage", "weighted"] as const;
 
 export function ExpenseAdjustmentEditor({
   householdId,
@@ -44,15 +53,30 @@ export function ExpenseAdjustmentEditor({
     allocationMode?: string;
     assignedMembershipId?: string;
     selectedIds?: string[];
+    fixedMap?: Record<string, number>;
+    percentMap?: Record<string, number>;
+    weightMap?: Record<string, number>;
     displayOrder?: number;
   };
 }) {
-  const [mode, setMode] = useState(initial?.allocationMode ?? "proportional");
+  const [mode, setMode] = useState(initial?.allocationMode ?? DEFAULT_MODE);
   const [selectedIds, setSelectedIds] = useState<string[]>(
     initial?.selectedIds ?? members.map((m) => m.id),
   );
   const [assignedId, setAssignedId] = useState(
     initial?.assignedMembershipId ?? members[0]?.id ?? "",
+  );
+  const [fixedMap, setFixedMap] = useState<Record<string, number>>(
+    initial?.fixedMap ?? {},
+  );
+  const [percentMap, setPercentMap] = useState<Record<string, number>>(
+    initial?.percentMap ?? {},
+  );
+  const [weightMap, setWeightMap] = useState<Record<string, number>>(
+    initial?.weightMap ?? {},
+  );
+  const [showSplit, setShowSplit] = useState(
+    (initial?.allocationMode ?? DEFAULT_MODE) !== DEFAULT_MODE,
   );
 
   const participantsJson = useMemo(() => {
@@ -64,8 +88,33 @@ export function ExpenseAdjustmentEditor({
     ) {
       return "[]";
     }
-    return JSON.stringify(selectedIds.map((membershipId) => ({ membershipId })));
-  }, [mode, selectedIds]);
+    return JSON.stringify(
+      selectedIds.map((membershipId) => ({
+        membershipId,
+        fixedCents: fixedMap[membershipId],
+        percentBps:
+          percentMap[membershipId] !== undefined
+            ? Math.round(percentMap[membershipId]! * 100)
+            : undefined,
+        weight: weightMap[membershipId],
+      })),
+    );
+  }, [mode, selectedIds, fixedMap, percentMap, weightMap]);
+
+  function toggleMember(id: string) {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+    );
+  }
+
+  const splitSummary =
+    mode === "assigned"
+      ? `Charged to ${members.find((m) => m.id === assignedId)?.label ?? "one person"}`
+      : adjustmentAllocationLabel(mode);
+
+  const showMemberInputs =
+    mode === "equal_selected" ||
+    (MEMBER_INPUT_MODES as readonly string[]).includes(mode);
 
   return (
     <ActionForm
@@ -80,6 +129,9 @@ export function ExpenseAdjustmentEditor({
       ) : null}
       <input type="hidden" name="displayOrder" value={initial?.displayOrder ?? 0} />
       <input type="hidden" name="participantsJson" value={participantsJson} />
+      {!showSplit ? (
+        <input type="hidden" name="allocationMode" value={mode} />
+      ) : null}
 
       <label className="block text-sm">
         Type
@@ -90,7 +142,7 @@ export function ExpenseAdjustmentEditor({
         >
           {TYPES.map((t) => (
             <option key={t} value={t}>
-              {t.replaceAll("_", " ")}
+              {adjustmentTypeLabel(t)}
             </option>
           ))}
         </select>
@@ -106,75 +158,137 @@ export function ExpenseAdjustmentEditor({
         />
       </label>
 
-      <label className="block text-sm">
-        Amount (cents, negative for discounts)
-        <input
-          name="amountCents"
-          type="number"
-          required
-          defaultValue={initial?.amountCents ?? 0}
-          className="mt-1 w-full rounded-md border border-line bg-input-bg px-3 py-2"
-        />
-      </label>
+      <CurrencyField
+        label="Amount"
+        name="amountCents"
+        defaultCents={initial?.amountCents ?? 0}
+        allowNegative
+        required
+        hint="Use a negative amount for discounts and credits."
+      />
 
-      <label className="block text-sm">
-        Allocation
-        <select
-          name="allocationMode"
-          value={mode}
-          onChange={(e) => setMode(e.target.value)}
-          className="mt-1 w-full rounded-md border border-line bg-input-bg px-3 py-2"
+      <div className="flex items-center justify-between gap-2 rounded-md border border-border px-3 py-2">
+        <p
+          className="text-sm text-text-secondary"
+          data-testid="adjustment-split-summary"
         >
-          {MODES.map((m) => (
-            <option key={m.value} value={m.value}>
-              {m.label}
-            </option>
-          ))}
-        </select>
-      </label>
-
-      {mode === "assigned" ? (
-        <label className="block text-sm">
-          Member
-          <select
-            name="assignedMembershipId"
-            value={assignedId}
-            onChange={(e) => setAssignedId(e.target.value)}
-            className="mt-1 w-full rounded-md border border-line bg-input-bg px-3 py-2"
+          {splitSummary}
+        </p>
+        {showSplit ? null : (
+          <button
+            type="button"
+            onClick={() => setShowSplit(true)}
+            className="min-h-11 shrink-0 text-sm font-medium text-primary underline-offset-2 hover:underline"
+            data-testid="adjustment-split-change"
           >
-            {members.map((m) => (
-              <option key={m.id} value={m.id}>
-                {m.label}
-              </option>
-            ))}
-          </select>
-        </label>
-      ) : null}
+            Change
+          </button>
+        )}
+      </div>
 
-      {(mode === "equal_selected" ||
-        mode === "fixed_cents" ||
-        mode === "percentage" ||
-        mode === "weighted") && (
-        <fieldset className="space-y-1">
-          <legend className="text-sm font-medium">Members</legend>
-          {members.map((m) => (
-            <label key={m.id} className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={selectedIds.includes(m.id)}
-                onChange={() =>
-                  setSelectedIds((prev) =>
-                    prev.includes(m.id)
-                      ? prev.filter((x) => x !== m.id)
-                      : [...prev, m.id],
-                  )
-                }
-              />
-              {m.label}
+      {showSplit ? (
+        <div className="space-y-3" data-testid="adjustment-split-controls">
+          <label className="block text-sm">
+            Allocation
+            <select
+              name="allocationMode"
+              value={mode}
+              onChange={(e) => setMode(e.target.value)}
+              className="mt-1 w-full rounded-md border border-line bg-input-bg px-3 py-2"
+            >
+              {MODES.map((value) => (
+                <option key={value} value={value}>
+                  {adjustmentAllocationLabel(value)}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          {mode === "assigned" ? (
+            <label className="block text-sm">
+              Member
+              <select
+                name="assignedMembershipId"
+                value={assignedId}
+                onChange={(e) => setAssignedId(e.target.value)}
+                className="mt-1 w-full rounded-md border border-line bg-input-bg px-3 py-2"
+              >
+                {members.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.label}
+                  </option>
+                ))}
+              </select>
             </label>
-          ))}
-        </fieldset>
-      )}
+          ) : null}
+
+          {showMemberInputs ? (
+            <fieldset className="space-y-2">
+              <legend className="text-sm font-medium">Members</legend>
+              {members.map((m) => (
+                <div key={m.id} className="space-y-2 rounded-md border border-border p-3">
+                  <label className="inline-flex items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.includes(m.id)}
+                      onChange={() => toggleMember(m.id)}
+                    />
+                    {m.label}
+                  </label>
+                  {selectedIds.includes(m.id) && mode === "fixed_cents" ? (
+                    <CurrencyAmountInput
+                      ariaLabel={`Amount for ${m.label}`}
+                      allowNegative
+                      valueCents={fixedMap[m.id]}
+                      onChangeCents={(cents) =>
+                        setFixedMap((prev) => {
+                          if (cents === undefined) {
+                            const next = { ...prev };
+                            delete next[m.id];
+                            return next;
+                          }
+                          return { ...prev, [m.id]: cents };
+                        })
+                      }
+                    />
+                  ) : null}
+                  {selectedIds.includes(m.id) && mode === "percentage" ? (
+                    <input
+                      type="number"
+                      aria-label={`Percentage for ${m.label}`}
+                      placeholder="% (e.g. 25)"
+                      className="w-full rounded-md border border-line px-2 py-1 text-sm"
+                      value={percentMap[m.id] ?? ""}
+                      onChange={(e) =>
+                        setPercentMap((prev) => ({
+                          ...prev,
+                          [m.id]: Number(e.target.value),
+                        }))
+                      }
+                    />
+                  ) : null}
+                  {selectedIds.includes(m.id) && mode === "weighted" ? (
+                    <input
+                      type="number"
+                      aria-label={`Shares for ${m.label}`}
+                      placeholder="Shares"
+                      min={1}
+                      className="w-full rounded-md border border-line px-2 py-1 text-sm"
+                      value={weightMap[m.id] ?? ""}
+                      onChange={(e) =>
+                        setWeightMap((prev) => ({
+                          ...prev,
+                          [m.id]: Number(e.target.value),
+                        }))
+                      }
+                    />
+                  ) : null}
+                </div>
+              ))}
+            </fieldset>
+          ) : null}
+        </div>
+      ) : null}
 
       <button
         type="submit"

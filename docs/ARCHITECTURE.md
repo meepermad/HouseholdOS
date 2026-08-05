@@ -93,13 +93,16 @@ projected = official − submitted (pending) allocations
 The Money hub loads a versioned RLS-scoped projection (`src/lib/money/overview.ts`, `MONEY_OVERVIEW_VERSION`) that aggregates:
 
 - Official vs pending member balances
-- Context-aware primary actions (max two)
+- **Add to Money** create sheet (`MoneyCreateSheet` / `buildMoneyCreateActions`) for create-only actions; **Money tools** sheet for browse/nav destinations
+- Context-aware follow-up actions (confirm payment, review receipts) rendered beside Add
 - Financial attention queue (plain language, deep links)
 - Compact pairwise balances + optional routed-settlement teaser
 - Monthly financial summary (`MONTHLY_FINANCE_AGG_VERSION`) shared with Monthly Household Review
 - Mixed recent activity (no raw audit keys)
 
 Expense and payment list pages support thin URL filters for deep links from the overview. No privileged client is used for normal Money reads. Saved financial defaults and cross-record financial search are deferred.
+
+`confirm_receipt_as_expense` creates draft expense items with `personal_membership_id` / `expense_item_allocations` when classification requires them, and maps OCR tax/tip (or remaining gap) into `expense_adjustments`. Line editors use dollar `CurrencyField` with progressive split disclosure; reconciliation UI shows the cent difference and explicit fix options without silently mutating amounts.
 
 ### Monthly Household Review
 

@@ -4,6 +4,7 @@ import { ActionForm } from "@/components/action-form";
 import { ExpenseAdjustmentEditor } from "@/components/expenses/expense-adjustment-editor";
 import { ExpenseItemEditor } from "@/components/expenses/expense-item-editor";
 import { ReconciliationSummary } from "@/components/expenses/reconciliation-summary";
+import { CurrencyField } from "@/components/ui/currency-field";
 import {
   deleteExpenseAdjustmentAction,
   deleteExpenseDraftAction,
@@ -131,17 +132,13 @@ export default async function EditExpensePage({
             className="mt-1 w-full rounded-md border border-line px-3 py-2"
           />
         </label>
-        <label className="block text-sm">
-          Receipt total (cents)
-          <input
-            type="number"
-            name="declaredTotalCents"
-            required
-            min={0}
-            defaultValue={e.declared_total_cents}
-            className="mt-1 w-full rounded-md border border-line px-3 py-2"
-          />
-        </label>
+        <CurrencyField
+          label="Receipt total"
+          name="declaredTotalCents"
+          defaultCents={e.declared_total_cents}
+          required
+          hint="The amount actually charged, including tax and tip."
+        />
         <button type="submit" className="rounded-md bg-accent px-3 py-2 text-sm text-white">
           Save header
         </button>
@@ -220,6 +217,21 @@ export default async function EditExpensePage({
                 allocationMode: adj.allocation_mode,
                 assignedMembershipId: adj.assigned_membership_id ?? undefined,
                 selectedIds: adj.allocations.map((a) => a.membership_id),
+                fixedMap: Object.fromEntries(
+                  adj.allocations
+                    .filter((a) => a.fixed_cents != null)
+                    .map((a) => [a.membership_id, a.fixed_cents!]),
+                ),
+                percentMap: Object.fromEntries(
+                  adj.allocations
+                    .filter((a) => a.percent_bps != null)
+                    .map((a) => [a.membership_id, a.percent_bps! / 100]),
+                ),
+                weightMap: Object.fromEntries(
+                  adj.allocations
+                    .filter((a) => a.weight != null)
+                    .map((a) => [a.membership_id, a.weight!]),
+                ),
                 displayOrder: adj.display_order,
               }}
             />

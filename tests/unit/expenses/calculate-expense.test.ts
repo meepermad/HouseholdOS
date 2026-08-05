@@ -451,6 +451,142 @@ describe("calculateExpense adjustments", () => {
     expect(result.calculatedTotalCents).toBe(1150);
     expect(result.obligations.every((o) => o.amountCents > 0)).toBe(true);
   });
+
+  it("fixed-cent adjustment split", () => {
+    const result = calculateExpenseOrThrow(
+      base({
+        declaredTotalCents: 1400,
+        items: [
+          {
+            id: "i1",
+            description: "Equal",
+            totalCents: 1000,
+            allocationMode: "equal_all",
+          },
+        ],
+        adjustments: [
+          {
+            id: "fee",
+            description: "Service fee",
+            type: "service_fee",
+            amountCents: 400,
+            allocationMode: "fixed_cents",
+            participants: [
+              { membershipId: A, fixedCents: 100 },
+              { membershipId: B, fixedCents: 300 },
+            ],
+          },
+        ],
+      }),
+    );
+    const fee = result.lines.find((l) => l.sourceId === "fee");
+    expect(fee?.allocations).toEqual([
+      { membershipId: A, amountCents: 100 },
+      { membershipId: B, amountCents: 300 },
+    ]);
+    expect(result.memberShares.find((m) => m.membershipId === B)?.totalShareCents).toBe(
+      550,
+    );
+  });
+
+  it("percentage adjustment split", () => {
+    const result = calculateExpenseOrThrow(
+      base({
+        declaredTotalCents: 1200,
+        items: [
+          {
+            id: "i1",
+            description: "Equal",
+            totalCents: 1000,
+            allocationMode: "equal_all",
+          },
+        ],
+        adjustments: [
+          {
+            id: "tip",
+            description: "Tip",
+            type: "tip",
+            amountCents: 200,
+            allocationMode: "percentage",
+            participants: [
+              { membershipId: A, percentBps: 7500 },
+              { membershipId: B, percentBps: 2500 },
+            ],
+          },
+        ],
+      }),
+    );
+    const tip = result.lines.find((l) => l.sourceId === "tip");
+    expect(tip?.allocations).toEqual([
+      { membershipId: A, amountCents: 150 },
+      { membershipId: B, amountCents: 50 },
+    ]);
+  });
+
+  it("weighted adjustment split", () => {
+    const result = calculateExpenseOrThrow(
+      base({
+        declaredTotalCents: 1300,
+        items: [
+          {
+            id: "i1",
+            description: "Equal",
+            totalCents: 1000,
+            allocationMode: "equal_all",
+          },
+        ],
+        adjustments: [
+          {
+            id: "fee",
+            description: "Delivery",
+            type: "delivery_fee",
+            amountCents: 300,
+            allocationMode: "weighted",
+            participants: [
+              { membershipId: A, weight: 2 },
+              { membershipId: B, weight: 1 },
+            ],
+          },
+        ],
+      }),
+    );
+    const fee = result.lines.find((l) => l.sourceId === "fee");
+    expect(fee?.allocations).toEqual([
+      { membershipId: A, amountCents: 200 },
+      { membershipId: B, amountCents: 100 },
+    ]);
+  });
+
+  it("rejects fixed adjustment allocations that miss the adjustment amount", () => {
+    const result = calculateExpense(
+      base({
+        declaredTotalCents: 1400,
+        items: [
+          {
+            id: "i1",
+            description: "Equal",
+            totalCents: 1000,
+            allocationMode: "equal_all",
+          },
+        ],
+        adjustments: [
+          {
+            id: "fee",
+            description: "Service fee",
+            type: "service_fee",
+            amountCents: 400,
+            allocationMode: "fixed_cents",
+            participants: [
+              { membershipId: A, fixedCents: 100 },
+              { membershipId: B, fixedCents: 100 },
+            ],
+          },
+        ],
+      }),
+    );
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.code).toBe("invalid_fixed_total");
+  });
 });
 
 describe("calculateExpense mixed and invariants", () => {

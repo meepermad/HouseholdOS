@@ -52,6 +52,25 @@ export default async function ReceiptDetailPage({
     .limit(1)
     .maybeSingle();
 
+  // Extracted tax and tip are not line items; confirming the receipt turns
+  // them into expense adjustments, so reconciliation must count them.
+  const { data: extraction } = await supabase
+    .from("expense_receipt_extractions")
+    .select("proposed")
+    .eq("receipt_id", receiptId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const proposed = (extraction?.proposed ?? {}) as {
+    taxCents?: number | null;
+    tipCents?: number | null;
+  };
+  const taxCents =
+    typeof proposed.taxCents === "number" ? proposed.taxCents : null;
+  const tipCents =
+    typeof proposed.tipCents === "number" ? proposed.tipCents : null;
+
   const ocr = describeReceiptOcrStatus();
   const reviewLines: ReviewLineItem[] = (lines ?? []).map(
     (l: {
@@ -121,6 +140,8 @@ export default async function ReceiptDetailPage({
           new Date().toISOString().slice(0, 10)
         }
         declaredTotalCents={receipt.declared_total_cents ?? 0}
+        taxCents={taxCents}
+        tipCents={tipCents}
         lineItems={reviewLines}
         duplicateOutcome={dup?.outcome ?? null}
         status={receipt.status}

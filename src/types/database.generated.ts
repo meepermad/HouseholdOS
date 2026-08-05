@@ -10254,6 +10254,38 @@ export type Database = {
           },
         ]
       }
+      platform_registration_issuers: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          email: string
+          id: string
+          note: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          email: string
+          id?: string
+          note?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          email?: string
+          id?: string
+          note?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "platform_registration_issuers_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_path: string | null
@@ -11843,6 +11875,85 @@ export type Database = {
           },
           {
             foreignKeyName: "record_comments_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      registration_invitations: {
+        Row: {
+          auth_user_id: string | null
+          consumed_at: string | null
+          created_at: string
+          created_by: string
+          delivery_attempted_at: string | null
+          delivery_error_category: string | null
+          delivery_status: string
+          expires_at: string
+          household_id: string | null
+          id: string
+          intended_roles: string[]
+          invited_email: string
+          purpose: string
+          revoked_at: string | null
+          status: string
+          token_hash: string
+        }
+        Insert: {
+          auth_user_id?: string | null
+          consumed_at?: string | null
+          created_at?: string
+          created_by: string
+          delivery_attempted_at?: string | null
+          delivery_error_category?: string | null
+          delivery_status?: string
+          expires_at: string
+          household_id?: string | null
+          id?: string
+          intended_roles?: string[]
+          invited_email: string
+          purpose: string
+          revoked_at?: string | null
+          status?: string
+          token_hash: string
+        }
+        Update: {
+          auth_user_id?: string | null
+          consumed_at?: string | null
+          created_at?: string
+          created_by?: string
+          delivery_attempted_at?: string | null
+          delivery_error_category?: string | null
+          delivery_status?: string
+          expires_at?: string
+          household_id?: string | null
+          id?: string
+          intended_roles?: string[]
+          invited_email?: string
+          purpose?: string
+          revoked_at?: string | null
+          status?: string
+          token_hash?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "registration_invitations_auth_user_id_fkey"
+            columns: ["auth_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "registration_invitations_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "registration_invitations_household_id_fkey"
             columns: ["household_id"]
             isOneToOne: false
             referencedRelation: "households"
@@ -15069,6 +15180,7 @@ export type Database = {
         Args: { p_receipt_id: string }
         Returns: boolean
       }
+      can_issue_registration_invitations: { Args: never; Returns: boolean }
       can_manage_calendar: { Args: { p_calendar_id: string }; Returns: boolean }
       can_manage_calendar_event: {
         Args: { p_event_id: string }
@@ -15657,6 +15769,10 @@ export type Database = {
         Args: { p_proposal_id: string }
         Returns: undefined
       }
+      consume_registration_invitation: {
+        Args: { p_token_hash: string }
+        Returns: string
+      }
       create_calendar_availability_override: {
         Args: {
           p_ends_at: string
@@ -16088,6 +16204,17 @@ export type Database = {
         }
         Returns: string
       }
+      create_registration_invitation: {
+        Args: {
+          p_email: string
+          p_expires_at: string
+          p_household_id?: string
+          p_intended_roles?: string[]
+          p_purpose?: string
+          p_token_hash: string
+        }
+        Returns: string
+      }
       create_reimbursement_waiver: {
         Args: {
           p_amount_cents: number
@@ -16393,10 +16520,6 @@ export type Database = {
           status: string
         }[]
       }
-      has_pending_household_invitation: {
-        Args: { p_email: string }
-        Returns: boolean
-      }
       get_notification_delivery_mode: {
         Args: { p_category: string; p_channel: string; p_user_id: string }
         Returns: string
@@ -16409,6 +16532,15 @@ export type Database = {
         Args: { p_meal_request_id: string }
         Returns: Json
       }
+      get_registration_invitation_preview: {
+        Args: { p_token_hash: string }
+        Returns: {
+          expires_at: string
+          invited_email_domain: string
+          purpose: string
+          status: string
+        }[]
+      }
       governance_approval_status: {
         Args: { p_request_id: string }
         Returns: Json
@@ -16416,6 +16548,14 @@ export type Database = {
       grant_transition_private_field: {
         Args: { p_field_id: string; p_grantee_membership_id: string }
         Returns: string
+      }
+      has_pending_household_invitation: {
+        Args: { p_email: string }
+        Returns: boolean
+      }
+      has_pending_registration_invitation: {
+        Args: { p_email: string }
+        Returns: boolean
       }
       has_responsibility: {
         Args: { p_household_id: string; p_roles: string[] }
@@ -16871,6 +17011,14 @@ export type Database = {
         }
         Returns: string
       }
+      record_registration_invitation_delivery: {
+        Args: {
+          p_delivery_status: string
+          p_error_category?: string
+          p_invitation_id: string
+        }
+        Returns: undefined
+      }
       record_shopping_trip_event: {
         Args: {
           p_event_type: string
@@ -17183,6 +17331,10 @@ export type Database = {
       revoke_calendar_feed: { Args: { p_feed_id: string }; Returns: string }
       revoke_household_invitation: {
         Args: { p_household_id: string; p_invitation_id: string }
+        Returns: undefined
+      }
+      revoke_registration_invitation: {
+        Args: { p_invitation_id: string }
         Returns: undefined
       }
       run_recipe_recommendation: {

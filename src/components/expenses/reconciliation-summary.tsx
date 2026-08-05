@@ -1,4 +1,5 @@
 import { formatMoney } from "@/lib/expenses/display";
+import { describeReconciliation } from "@/lib/expenses/reconciliation-guidance";
 import type { CalculateExpenseResult, CalculateExpenseFailure } from "@/lib/expenses";
 import type { MemberOption } from "@/lib/expenses/display";
 
@@ -15,18 +16,41 @@ export function ReconciliationSummary({
     members.find((m) => m.id === id)?.label ?? id.slice(0, 8);
 
   if (!calc.ok) {
+    const guidance = describeReconciliation({
+      code: calc.code,
+      message: calc.message,
+      declaredTotalCents,
+      calculatedTotalCents: calc.calculatedTotalCents,
+    });
     return (
       <section
-        className="rounded-md border border-destructive bg-destructive-soft p-3 text-sm text-destructive"
+        className="space-y-2 rounded-md border border-destructive bg-destructive-soft p-3 text-sm text-destructive"
         role="alert"
         data-testid="reconciliation-error"
       >
-        <p className="font-medium">Not ready to confirm</p>
-        <p>{calc.message}</p>
-        <p className="mt-1 text-xs text-text-secondary">
+        <p className="font-medium">{guidance.title}</p>
+        <p>{guidance.explanation}</p>
+        {guidance.differenceCents !== null ? (
+          <p data-testid="reconciliation-difference">
+            {guidance.differenceCents > 0
+              ? `${formatMoney(guidance.differenceCents)} of the receipt total is not accounted for.`
+              : `The lines add up to ${formatMoney(-guidance.differenceCents)} more than the receipt total.`}
+          </p>
+        ) : null}
+        {guidance.options.length > 0 ? (
+          <ul
+            className="list-disc space-y-1 pl-5 text-text-secondary"
+            data-testid="reconciliation-options"
+          >
+            {guidance.options.map((option) => (
+              <li key={option}>{option}</li>
+            ))}
+          </ul>
+        ) : null}
+        <p className="text-xs text-text-secondary">
           Declared {formatMoney(declaredTotalCents)}
           {calc.calculatedTotalCents !== undefined
-            ? ` · Calculated ${formatMoney(calc.calculatedTotalCents)}`
+            ? ` · Lines add up to ${formatMoney(calc.calculatedTotalCents)}`
             : null}
         </p>
       </section>
