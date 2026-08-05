@@ -48,13 +48,33 @@ HouseholdOS is a private, mobile-first household management PWA. Identity, multi
 - Nav config lives in `src/lib/nav-items.ts`:
   - Bottom bar shows only enabled `surface: "primary"` items (capped at 4) so new domains do not crowd the thumb bar
   - Sidebar lists all enabled items (primary + `more`)
-  - Primary: Home · Calendar · Chores · Money. House, Maintenance, Governance, Inbox, Settings, and Profile live under `more`
-  - Lucide icons only; badges (chores due, money confirmations, urgent maintenance, inbox unread) hide when zero
+  - Primary: Home · Money · Calendar · House. Chores, Maintenance, Governance, Inbox, Settings, and Profile live under `more` (Chores also reachable from the House hub)
+  - Lucide icons only; badges (chores due on House, money confirmations, urgent maintenance, inbox unread) hide when zero
   - Unshipped domains stay `enabled: false`
+  - Hub vs destination: House owns chore/meal/recipe/maintenance paths, so `navActiveState` gives the narrowest match `aria-current="page"` and the hub above it `aria-current="location"`. The More button never highlights while a primary tab owns the path
+  - `HouseHubTabs` is the single directory for House sub-destinations (chores, shopping, pantry, supplies, inventory, recipes, meals, meal prep, maintenance)
+  - Items may carry a `maturity` label; the More sheet and sidebar render it as a chip
 - Home is the household action center (attention, today, money summary, exceptions, quick actions); setup/members live under Settings
 - Presentation maps in `src/lib/presentation/` humanize roles, audit events, and enums
 - Roommate coordination (UX-B/C): guest notices, away status, chore coverage, weekly review, polls, utilities, emergency card, and RLS-scoped global search under `/app/[householdId]/…`
 - Standalone PWA: safe-area chrome and optional in-app Back control; authenticated navigations are `NetworkOnly` in the service worker
+
+## Feature maturity honesty
+
+Two separate gates, both required before a surface may look finished:
+
+- `src/lib/launch/feature-readiness.ts` probes database objects at request time. Missing relations disable the feature instead of failing open.
+- `src/lib/launch/feature-maturity.ts` is a static registry of surfaces that ship incomplete. Each entry carries a status (`stable` · `beta` · `preview` · `unavailable`) and a plain-language note about the limit. `MaturityBadge` / `MaturityNote` render it next to the feature name.
+
+| Surface | Status | Limit |
+| --- | --- | --- |
+| Google Calendar sync | `preview` | Development scaffolding; connect is disabled in production and a mock connection is not a real sync |
+| Notification digest | `unavailable` | Scheduling math only, no delivery — digest controls stay hidden and alerts remain immediate |
+| Products | `beta` | Barcode lookup only; results are not written to inventory, pantry, or shopping |
+| Roommate ops | `beta` | Supply forecasts are approximate; meeting notes overlap with Meetings |
+| Search | `beta` | Meals, recipes, and shopping are not indexed |
+
+Rules: `unavailable` means hide or disable the control, not merely warn; promote to `stable` in the same change that finishes the feature.
 
 ## Loading and mutations
 
@@ -140,7 +160,7 @@ Domain transaction
 → durable notification_events (same DB transaction)
 → user_notifications fan-out + notification_deliveries queue
 → protected Next.js worker (Supabase Cron → POST /api/internal/notifications/dispatch)
-→ Web Push (VAPID) or optional email adapter
+→ Web Push (VAPID) when delivery is enabled; email adapter is stubbed and not offered in prefs
 → sent | retry | expired | dead_letter
 ```
 
@@ -151,9 +171,18 @@ Guarantees:
 - Payloads store routing keys only (`source_type`, `source_id`) — never private payment references, secrets, or invite tokens.
 - Ordinary clients cannot claim deliveries or modify delivery status. The privileged Supabase client may be imported only from `src/lib/supabase/privileged.ts` and `src/lib/notifications/worker.ts`.
 - Lock-screen push content respects `preview_mode` (`generic` default | `detailed`). Amounts and private notes stay off the lock screen.
-- Quiet hours defer push/email `available_at`; in-app rows appear immediately. Daily digest mode is preference-aware.
+- Quiet hours defer push `available_at`; in-app rows appear immediately.
+- Delivery preferences are honest: **in-app is always on**; **push** is On/Off per category group; **email and daily digest are unavailable** (no adapter / no digest claim path). Stored `daily_digest` rows resolve to `immediate`; email prefs are not writable.
+- Completing a domain action (payment confirm/reject, expense confirm, chore complete/verify/skip/cancel, dispute resolve) calls `resolve_action_notifications` so action-oriented inbox rows clear for that entity.
 - `scheduled_notification_requests` backs calendar and chore reminders. Domain RPCs create/cancel rows transactionally; the notification worker also extends calendar and chore occurrence materialization horizons and records a safe heartbeat for coordinator health.
-- Email adapter exists but stays disabled until `EMAIL_NOTIFICATIONS_ENABLED` and provider env are configured.
+- Email adapter boundary exists but stays disabled until a provider is configured; the UI does not offer email delivery controls.
+- `get_notification_delivery_mode` only ever returns `immediate` or `off`, so the fan-out can never mark a delivery `skipped`/`digest_pending` and lose it.
+
+Stored categories are whatever `_notification_meta_for_event_type` writes: `payments`, `disputes`, `membership`, `chores`, `calendar`, `house`, `meals`, `maintenance`, `agreements`, `system`. Preferences and inbox category filters accept exactly that set (`NOTIFICATION_DB_CATEGORIES`), so no control can point at a category that is never emitted.
+
+Settings groups these into seven user-facing rows (`NOTIFICATION_PREFERENCE_GROUPS`) — Money, Chores, Calendar and guests, Shopping and meals, Maintenance, Governance and meetings, Household ops — and one save writes a push row for every category the group covers. In-app for `payments` / `disputes` stays locked on for the Action Center.
+
+Inbox filters are **All / Needs action / Updates**, applied in the query (`action` = unread and `action_oriented`) so paging stays correct. Home's "Needs your attention" is action-required only and links to `?filter=action`.
 
 Event catalog (TypeScript): `src/lib/notifications/catalog.ts` — payments, calendar, and active `chore.*` / responsibility transfer events.
 
@@ -173,7 +202,7 @@ HouseholdOS is the authoritative calendar. One domain model powers the website a
 | Reminders | Reminder offsets on the master (or per-occurrence override); schedules fan out per materialized occurrence into `scheduled_notification_requests` |
 | Feeds | Per-user hashed bearer token; scopes `visible_to_me` / `household_public_only`; optional Phase 9 `purpose` (`personal_ics` \| `lifeos` \| `export`) + calendar scope; `GET /api/calendar/feed/[token]` returns `text/calendar` with `Cache-Control: private, no-store`. Raw tokens never logged. |
 | Worker health | Coordinators see aggregate delivery/horizon health under Settings → Operations (no secrets or payloads). |
-| Nav | Primary: Home · Calendar · Chores · Money. Settings and Inbox under sidebar/`more`. |
+| Nav | Primary: Home · Money · Calendar · House. Chores and other domains under sidebar/`more`. |
 
 External Apple/Google/LifeOS clients may **subscribe** to the personal feed. Changes in those apps do **not** write back to HouseholdOS. Refresh timing is controlled by the client.
 
@@ -323,7 +352,7 @@ Extends Phase 4 without replacing working calendar models:
 | Roommate ops | Shared purchases, meeting board, packages, directory, supply forecast, optional parking module, retention policy row |
 | Products | Browser one-shot barcode + manual digits; production defaults to manual fallback (fixture adapter never serves production users); auth + rate limit on lookup route |
 | Calendar interop | Google OAuth hidden/disabled in production until live provider I/O; Apple ICS **preview** only until create path lands |
-| Notifications | Push preferences immediate/off; daily digest delivery not wired — option hidden |
+| Notifications | In-app always on; push On/Off per group; email and daily digest are not offered and `upsert_notification_preference` rejects/normalizes them |
 | Export | Coordinator async JSON/CSV archive via `EXPORT_WORKER_SECRET` worker; excludes secrets, push endpoints, feed tokens; not a full database restore |
 | Document jobs | Receipt OCR claim/complete via `DOCUMENT_JOB_WORKER_SECRET` at `/api/internal/documents/process` |
 | Notifications worker | `/api/internal/notifications/dispatch` uses `NOTIFICATION_WORKER_SECRET` only |

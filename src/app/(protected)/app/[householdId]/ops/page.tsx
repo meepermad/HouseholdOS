@@ -3,6 +3,11 @@ import { createClient } from "@/lib/supabase/server";
 import { listActiveMemberOptions } from "@/lib/expenses/queries";
 import { AppBackButton } from "@/components/app-back-button";
 import { RoommateOpsForms } from "@/components/ops/RoommateOpsForms";
+import {
+  MaturityBadge,
+  MaturityNote,
+} from "@/components/ui/maturity-badge";
+import { featureMaturity } from "@/lib/launch/feature-maturity";
 import { forecastSupplyRestock } from "@/lib/ops/supply-forecast";
 
 export const dynamic = "force-dynamic";
@@ -68,12 +73,16 @@ export default async function RoommateOpsPage({
     <main className="space-y-8">
       <AppBackButton fallbackHref={`/app/${householdId}`} />
       <header>
-        <h1 className="font-[family-name:var(--font-display)] text-2xl font-semibold">
+        <h1 className="flex flex-wrap items-center gap-2 font-[family-name:var(--font-display)] text-2xl font-semibold">
           Roommate ops
+          <MaturityBadge status={featureMaturity("roommateOps").status} />
         </h1>
+        <MaturityNote
+          className="mt-2"
+          note={featureMaturity("roommateOps").note}
+        />
         <p className="mt-2 text-sm text-text-muted">
-          Shared purchases, meetings, packages, directory, and approximate supply
-          forecasts. Parking module{" "}
+          Parking module{" "}
           {household.data?.parking_module_enabled ? "enabled" : "hidden until enabled"}.
         </p>
         <p className="mt-3">

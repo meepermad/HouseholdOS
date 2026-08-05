@@ -79,17 +79,17 @@ export default async function HousePage({
           House
         </h1>
         <p className="mt-1 text-sm text-text-secondary">
-          Food (pantry, shopping, meals) and household property (inventory,
-          supplies).
+          Chores, shopping, pantry, supplies, recipes, and maintenance.
         </p>
       </header>
+      {/* Single directory for the hub — see HouseHubTabs for the destinations. */}
       <HouseHubTabs householdId={householdId} />
 
       {!hasExceptions && dashboard.recentRestocks.length === 0 ? (
         <EmptyState
           variant="page"
           title="Your House area is ready"
-          description="Start with a pantry staple, shopping list, or household item."
+          description="Nothing needs restocking or attention yet. Start with a pantry staple, a shopping list, or the chore schedule."
           testId="house-onboarding"
           action={
             <>
@@ -110,6 +110,12 @@ export default async function HousePage({
                 className="inline-flex min-h-11 items-center rounded-md border border-border px-4 text-sm font-medium"
               >
                 Add household item
+              </Link>
+              <Link
+                href={`/app/${householdId}/chores`}
+                className="inline-flex min-h-11 items-center rounded-md border border-border px-4 text-sm font-medium"
+              >
+                Open chores
               </Link>
             </>
           }

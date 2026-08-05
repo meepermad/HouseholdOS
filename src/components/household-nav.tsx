@@ -6,6 +6,7 @@ import { useId, useState } from "react";
 import { Ellipsis } from "lucide-react";
 import {
   moreNavBySection,
+  moreNavItems,
   primaryNavItems,
   sidebarNavItems,
   type HouseholdNavItem,
@@ -14,17 +15,46 @@ import {
 import { navIcon } from "@/lib/nav-icons";
 import { NotificationBadge } from "@/components/notifications/NotificationBadge";
 import { BottomSheet } from "@/components/ui/bottom-sheet";
+import { MaturityBadge } from "@/components/ui/maturity-badge";
 import { QuickAddButton, QuickAddSheet } from "@/components/shell/quick-add-sheet";
 
 export type NavBadgeCounts = Partial<Record<Exclude<NavBadgeKey, null>, number>>;
 
-function linkClass(active: boolean, compact: boolean) {
+/** `page` is the exact destination; `section` is the hub that contains it. */
+export type NavActiveState = "page" | "section" | null;
+
+/**
+ * House owns paths that More destinations (Chores, Maintenance) also match.
+ * Only the narrowest match is the current page, so a hub and the destination
+ * inside it never both claim `aria-current="page"`.
+ */
+export function navActiveState(
+  item: HouseholdNavItem,
+  pathname: string,
+  householdId: string,
+): NavActiveState {
+  if (!item.match(pathname, householdId)) return null;
+  if (item.surface !== "primary") return "page";
+  const insideDestination = moreNavItems().some(
+    (other) => other.key !== item.key && other.match(pathname, householdId),
+  );
+  return insideDestination ? "section" : "page";
+}
+
+/** True when a primary tab, not the More sheet, owns the current path. */
+function primaryOwnsPath(pathname: string, householdId: string): boolean {
+  return primaryNavItems().some((item) => item.match(pathname, householdId));
+}
+
+function linkClass(state: NavActiveState, compact: boolean) {
   const base = compact
     ? "relative flex min-h-11 flex-1 flex-col items-center justify-center gap-0.5 rounded-md px-1 py-1.5 text-[0.65rem] font-medium leading-tight"
     : "relative flex min-h-11 items-center gap-2 rounded-md px-3 py-2 text-sm font-medium";
-  return active
-    ? `${base} bg-surface-interactive text-primary`
-    : `${base} text-text-secondary hover:bg-surface-interactive hover:text-text-primary`;
+  if (state === "page") return `${base} bg-surface-interactive text-primary`;
+  if (state === "section") {
+    return `${base} text-primary hover:bg-surface-interactive`;
+  }
+  return `${base} text-text-secondary hover:bg-surface-interactive hover:text-text-primary`;
 }
 
 function badgeFor(
@@ -53,7 +83,8 @@ function NavLinks({
   return (
     <>
       {items.map((item) => {
-        const active = item.match(pathname, householdId);
+        const state = navActiveState(item, pathname, householdId);
+        const active = state !== null;
         const label = compact ? (item.shortLabel ?? item.label) : item.label;
         const count = badgeFor(item, badgeCounts);
         const Icon = navIcon(item.icon);
@@ -61,8 +92,10 @@ function NavLinks({
           <Link
             key={item.key}
             href={item.href(householdId)}
-            className={linkClass(active, compact)}
-            aria-current={active ? "page" : undefined}
+            className={linkClass(state, compact)}
+            aria-current={
+              state === "page" ? "page" : state === "section" ? "location" : undefined
+            }
             onClick={onNavigate}
           >
             {compact ? (
@@ -86,6 +119,9 @@ function NavLinks({
                   strokeWidth={active ? 2.25 : 1.75}
                 />
                 <span className="flex-1">{label}</span>
+                {item.maturity ? (
+                  <MaturityBadge status={item.maturity} />
+                ) : null}
                 {count > 0 ? <NotificationBadge count={count} /> : null}
               </>
             )}
@@ -127,9 +163,13 @@ export function HouseholdNav({
   if (variant === "bottom") {
     const items = primaryNavItems();
     const sections = moreNavBySection();
-    const moreActive = sections.some((group) =>
-      group.items.some((item) => item.match(pathname, householdId)),
-    );
+    // A primary hub wins the highlight for paths it owns (House → Chores), so
+    // the thumb bar never marks two tabs as current.
+    const moreActive =
+      !primaryOwnsPath(pathname, householdId) &&
+      sections.some((group) =>
+        group.items.some((item) => item.match(pathname, householdId)),
+      );
     const moreBadge =
       (counts.inbox ?? 0) +
       (counts.maintenance ?? 0);
@@ -151,7 +191,7 @@ export function HouseholdNav({
             />
             <button
               type="button"
-              className={linkClass(moreActive || moreOpen, true)}
+              className={linkClass(moreActive || moreOpen ? "page" : null, true)}
               aria-expanded={moreOpen}
               aria-controls={moreTitleId}
               data-testid="mobile-more-nav"

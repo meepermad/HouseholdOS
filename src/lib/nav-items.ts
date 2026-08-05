@@ -1,3 +1,4 @@
+import type { FeatureMaturity } from "@/lib/launch/feature-maturity";
 import { householdRoutes, isCalendarPath } from "@/lib/routes/household";
 
 /**
@@ -24,11 +25,17 @@ export type MoreNavSection = "household" | "communication" | "account";
 /**
  * Household primary navigation config.
  *
+ * Information architecture: Home · Money · Calendar · House, plus More.
+ * Each primary tab owns a life area, so a new domain joins an existing hub
+ * instead of claiming a thumb-bar slot. Chores, shopping, pantry, supplies,
+ * recipes, and meals are all House sub-destinations reached from the House hub.
+ *
  * Growth rules:
  * - Mobile bottom bar shows only `surface: "primary"` items that are enabled
  *   (hard cap: MAX_PRIMARY_NAV). Extra destinations use `surface: "more"`.
  * - Desktop sidebar shows every enabled item (primary + more).
  * - Domains that are not shipped yet stay `enabled: false` so they never appear.
+ * - Surfaces that cannot do what their name implies carry a `maturity` label.
  */
 
 export const MAX_PRIMARY_NAV = 4;
@@ -56,6 +63,8 @@ export type HouseholdNavItem = {
   moreSection?: MoreNavSection;
   /** Which badge count to show (zeros are hidden). */
   badge?: NavBadgeKey;
+  /** Honesty label for surfaces that are not finished. Omit when stable. */
+  maturity?: FeatureMaturity;
 };
 
 export const HOUSEHOLD_NAV_ITEMS: readonly HouseholdNavItem[] = [
@@ -70,27 +79,6 @@ export const HOUSEHOLD_NAV_ITEMS: readonly HouseholdNavItem[] = [
     surface: "primary",
   },
   {
-    key: "calendar",
-    label: "Calendar",
-    icon: "calendar",
-    href: (id) => householdRoutes.calendar.agenda(id),
-    match: (pathname, id) => isCalendarPath(pathname, id),
-    enabled: true,
-    surface: "primary",
-  },
-  {
-    key: "chores",
-    label: "Chores",
-    icon: "chores",
-    href: (id) => householdRoutes.chores.index(id),
-    match: (pathname, id) =>
-      pathname.startsWith(`/app/${id}/chores`) ||
-      pathname.startsWith(`/app/${id}/responsibilities`),
-    enabled: true,
-    surface: "primary",
-    badge: "chores",
-  },
-  {
     key: "money",
     label: "Money",
     icon: "money",
@@ -101,6 +89,45 @@ export const HOUSEHOLD_NAV_ITEMS: readonly HouseholdNavItem[] = [
     badge: "money",
   },
   {
+    key: "calendar",
+    label: "Calendar",
+    icon: "calendar",
+    href: (id) => householdRoutes.calendar.agenda(id),
+    match: (pathname, id) => isCalendarPath(pathname, id),
+    enabled: true,
+    surface: "primary",
+  },
+  {
+    key: "house",
+    label: "House",
+    icon: "house",
+    href: (id) => householdRoutes.house.index(id),
+    match: (pathname, id) =>
+      pathname.startsWith(`/app/${id}/house`) ||
+      pathname.startsWith(`/app/${id}/meals`) ||
+      pathname.startsWith(`/app/${id}/recipes`) ||
+      pathname.startsWith(`/app/${id}/meal-prep`) ||
+      pathname.startsWith(`/app/${id}/chores`) ||
+      pathname.startsWith(`/app/${id}/responsibilities`) ||
+      pathname.startsWith(`/app/${id}/maintenance`),
+    enabled: true,
+    surface: "primary",
+    badge: "chores",
+  },
+  {
+    key: "chores",
+    label: "Chores",
+    icon: "chores",
+    href: (id) => householdRoutes.chores.index(id),
+    match: (pathname, id) =>
+      pathname.startsWith(`/app/${id}/chores`) ||
+      pathname.startsWith(`/app/${id}/responsibilities`),
+    enabled: true,
+    surface: "more",
+    moreSection: "household",
+    badge: "chores",
+  },
+  {
     key: "ops",
     label: "Roommate ops",
     icon: "house",
@@ -109,6 +136,7 @@ export const HOUSEHOLD_NAV_ITEMS: readonly HouseholdNavItem[] = [
     enabled: true,
     surface: "more",
     moreSection: "household",
+    maturity: "beta",
   },
   {
     key: "meetings",
@@ -129,20 +157,7 @@ export const HOUSEHOLD_NAV_ITEMS: readonly HouseholdNavItem[] = [
     enabled: true,
     surface: "more",
     moreSection: "household",
-  },
-  {
-    key: "house",
-    label: "House",
-    icon: "house",
-    href: (id) => householdRoutes.house.index(id),
-    match: (pathname, id) =>
-      pathname.startsWith(`/app/${id}/house`) ||
-      pathname.startsWith(`/app/${id}/meals`) ||
-      pathname.startsWith(`/app/${id}/recipes`) ||
-      pathname.startsWith(`/app/${id}/meal-prep`),
-    enabled: true,
-    surface: "more",
-    moreSection: "household",
+    maturity: "beta",
   },
   {
     key: "maintenance",
@@ -176,6 +191,7 @@ export const HOUSEHOLD_NAV_ITEMS: readonly HouseholdNavItem[] = [
     enabled: true,
     surface: "more",
     moreSection: "communication",
+    maturity: "beta",
   },
   {
     key: "polls",

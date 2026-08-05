@@ -5,6 +5,11 @@ import {
   searchHousehold,
 } from "@/lib/search/household-search";
 import { EmptyState } from "@/components/ui/empty-state";
+import {
+  MaturityBadge,
+  MaturityNote,
+} from "@/components/ui/maturity-badge";
+import { featureMaturity } from "@/lib/launch/feature-maturity";
 import { humanizeEnum } from "@/lib/presentation";
 
 export const dynamic = "force-dynamic";
@@ -21,10 +26,17 @@ export default async function SearchPage({
   await assertActiveMembership(householdId);
   const grouped = q.trim().length >= 2 ? await searchHousehold(householdId, q) : {};
   const sections = groupSearchDomains(grouped);
+  const maturity = featureMaturity("householdSearch");
 
   return (
     <main className="space-y-4" data-testid="global-search">
-      <h1 className="font-[family-name:var(--font-display)] text-2xl">Search</h1>
+      <header className="space-y-1">
+        <h1 className="flex flex-wrap items-center gap-2 font-[family-name:var(--font-display)] text-2xl">
+          Search
+          <MaturityBadge status={maturity.status} />
+        </h1>
+        <MaturityNote note={maturity.note} />
+      </header>
       <form className="flex gap-2" action={`/app/${householdId}/search`} method="get">
         <label className="sr-only" htmlFor="search-q">
           Search household

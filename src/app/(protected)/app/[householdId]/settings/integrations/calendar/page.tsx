@@ -12,6 +12,11 @@ import {
 } from "@/app/actions/calendar";
 import { CalendarIcsImportPanel } from "@/components/calendar/CalendarIcsImportPanel";
 import { GoogleConnectButton } from "@/components/calendar/GoogleConnectButton";
+import {
+  MaturityBadge,
+  MaturityNote,
+} from "@/components/ui/maturity-badge";
+import { featureMaturity } from "@/lib/launch/feature-maturity";
 import { LIFEOS_CALENDAR_CONTRACT_VERSION } from "@/lib/calendar/lifeos-contract";
 
 export const dynamic = "force-dynamic";
@@ -68,12 +73,13 @@ export default async function CalendarIntegrationsSettingsPage({
       ) : (
         <>
           <section className="space-y-3">
-            <h2 className="text-lg font-semibold">Google Calendar</h2>
-            <p className="text-sm text-text-secondary">
-              Live Google OAuth and provider sync are not available in production
-              yet. Connection controls stay disabled until server-side state,
-              PKCE, and token exchange are verified.
-            </p>
+            <h2 className="flex flex-wrap items-center gap-2 text-lg font-semibold">
+              Google Calendar
+              <MaturityBadge
+                status={featureMaturity("googleCalendarSync").status}
+              />
+            </h2>
+            <MaturityNote note={featureMaturity("googleCalendarSync").note} />
             {process.env.APP_ENV === "production" ||
             process.env.NODE_ENV === "production" ? (
               <p

@@ -15,16 +15,16 @@ describe("nav items growth rules", () => {
     expect(primaryNavItems().length).toBeLessThanOrEqual(MAX_PRIMARY_NAV);
     expect(primaryNavItems().map((i) => i.key)).toEqual([
       "home",
-      "calendar",
-      "chores",
       "money",
+      "calendar",
+      "house",
     ]);
   });
 
   it("exposes coordination destinations under more", () => {
     const keys = moreNavItems().map((i) => i.key);
     expect(keys).toEqual(expect.arrayContaining([
-      "house",
+      "chores",
       "maintenance",
       "governance",
       "polls",
@@ -47,14 +47,16 @@ describe("nav items growth rules", () => {
 
   it("lists primary items before more in the sidebar", () => {
     const keys = sidebarNavItems().map((i) => i.key);
-    expect(keys.slice(0, 4)).toEqual(["home", "calendar", "chores", "money"]);
+    expect(keys.slice(0, 4)).toEqual(["home", "money", "calendar", "house"]);
     expect(enabledNavItems().length).toBe(HOUSEHOLD_NAV_ITEMS.filter((i) => i.enabled).length);
   });
 
-  it("treats meals and recipes as house destinations", () => {
+  it("treats meals, recipes, chores, and maintenance as house destinations", () => {
     const house = HOUSEHOLD_NAV_ITEMS.find((i) => i.key === "house");
     expect(house?.match("/app/h1/meals", "h1")).toBe(true);
     expect(house?.match("/app/h1/recipes/request", "h1")).toBe(true);
+    expect(house?.match("/app/h1/chores", "h1")).toBe(true);
+    expect(house?.match("/app/h1/maintenance", "h1")).toBe(true);
   });
 
   it("exposes quick-add deep links", () => {
@@ -70,6 +72,17 @@ describe("nav items growth rules", () => {
     expect(QUICK_ADD_ACTIONS.find((a) => a.key === "event")?.href("h1")).toBe(
       "/app/h1/calendar/new",
     );
+  });
+
+  it("labels unfinished more destinations and leaves primary tabs unlabeled", () => {
+    const byKey = (key: string) =>
+      HOUSEHOLD_NAV_ITEMS.find((i) => i.key === key);
+    expect(byKey("products")?.maturity).toBe("beta");
+    expect(byKey("ops")?.maturity).toBe("beta");
+    expect(byKey("search")?.maturity).toBe("beta");
+    expect(
+      primaryNavItems().every((item) => item.maturity === undefined),
+    ).toBe(true);
   });
 
   it("points Calendar primary nav at agenda landing", () => {

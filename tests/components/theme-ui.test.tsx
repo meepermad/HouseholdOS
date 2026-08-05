@@ -52,17 +52,24 @@ describe("ThemeSelector", () => {
 });
 
 describe("HouseholdNav", () => {
-  it("renders only implemented destinations", () => {
+  it("shows the four primary destinations in the bottom bar", () => {
     render(<HouseholdNav householdId="hh-1" variant="bottom" />);
     expect(screen.getByRole("link", { name: "Home" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Money" })).toBeInTheDocument();
     const calendar = screen.getByRole("link", { name: "Calendar" });
     expect(calendar).toBeInTheDocument();
     expect(calendar).toHaveAttribute("href", "/app/hh-1/calendar/agenda");
-    expect(screen.getByRole("link", { name: "Chores" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Money" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "House" })).toBeInTheDocument();
+    expect(screen.getByTestId("mobile-more-nav")).toBeInTheDocument();
+  });
+
+  it("keeps secondary destinations out of the thumb bar", () => {
+    render(<HouseholdNav householdId="hh-1" variant="bottom" />);
+    const bar = screen.getByTestId("mobile-bottom-nav");
+    expect(bar.querySelectorAll("a")).toHaveLength(4);
+    expect(screen.queryByRole("link", { name: "Chores" })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Settings" })).not.toBeInTheDocument();
     expect(screen.queryByText("Tasks")).not.toBeInTheDocument();
-    expect(screen.queryByText("House")).not.toBeInTheDocument();
   });
 
   it("marks money as current on money path", () => {
