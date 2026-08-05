@@ -19,12 +19,15 @@ describe("theme resolve", () => {
     expect(resolveColorScheme("system", false)).toBe("light");
   });
 
-  it("reconciles DB over local when authenticated", () => {
+  it("prefers explicit local over database preference", () => {
     expect(
       reconcileThemePreference({ local: "light", database: "dark" }),
-    ).toBe("dark");
+    ).toBe("light");
     expect(
       reconcileThemePreference({ local: "dark", database: null }),
+    ).toBe("dark");
+    expect(
+      reconcileThemePreference({ local: null, database: "dark" }),
     ).toBe("dark");
     expect(
       reconcileThemePreference({ local: null, database: null }),

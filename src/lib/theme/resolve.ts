@@ -15,17 +15,18 @@ export function resolveColorScheme(
 
 /**
  * Reconciliation when an authenticated DB preference arrives.
- * DB wins for signed-in users (cross-device sync) and should overwrite localStorage.
+ * Precedence: explicit localStorage preference wins on this device (immediate paint).
+ * DB preference applies only when localStorage has no explicit value (cross-device seed).
  */
 export function reconcileThemePreference(args: {
   local: ThemeMode | null;
   database: ThemeMode | null;
 }): ThemeMode {
-  if (args.database && isThemeMode(args.database)) {
-    return args.database;
-  }
   if (args.local && isThemeMode(args.local)) {
     return args.local;
+  }
+  if (args.database && isThemeMode(args.database)) {
+    return args.database;
   }
   return "system";
 }

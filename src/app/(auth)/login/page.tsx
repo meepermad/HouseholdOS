@@ -11,6 +11,10 @@ import {
 } from "@/lib/recovery";
 import { getPublicBuildInfo } from "@/lib/build-info";
 import {
+  isRecoveryAuthErrorCode,
+  mapRecoveryAuthErrorMessage,
+} from "@/lib/auth/password-recovery";
+import {
   mapSignInErrorMessage,
   type SignInErrorCode,
 } from "@/lib/auth/sign-in-request";
@@ -26,8 +30,14 @@ const SIGN_IN_ERROR_CODES = new Set<string>([
 ]);
 
 function loginErrorMessage(code: string | undefined): string | null {
-  if (!code || !SIGN_IN_ERROR_CODES.has(code)) return null;
-  return mapSignInErrorMessage(code as SignInErrorCode);
+  if (!code) return null;
+  if (SIGN_IN_ERROR_CODES.has(code)) {
+    return mapSignInErrorMessage(code as SignInErrorCode);
+  }
+  if (isRecoveryAuthErrorCode(code)) {
+    return mapRecoveryAuthErrorMessage(code);
+  }
+  return null;
 }
 
 export default async function LoginPage({
@@ -90,12 +100,37 @@ export default async function LoginPage({
         >
           <p className="text-sm font-medium text-text-primary">{reasonCopy.title}</p>
           <p className="mt-1 text-sm text-text-secondary">{reasonCopy.body}</p>
+          {params.reason === "cleared_sensitive_query" ? (
+            <p className="mt-2 text-sm">
+              <Link
+                href="/forgot-password"
+                className="font-medium text-primary underline-offset-2 hover:underline"
+                data-testid="login-forgot-from-security"
+              >
+                Reset your password
+              </Link>
+            </p>
+          ) : null}
         </div>
       ) : null}
 
       {formError ? (
         <p className="mt-4 text-sm text-destructive" role="alert">
           {formError}
+        </p>
+      ) : null}
+
+      {params.error === "link_expired" ||
+      params.error === "link_invalid" ||
+      params.error === "link_used" ||
+      params.error === "session_expired" ? (
+        <p className="mt-2 text-sm">
+          <Link
+            href="/forgot-password"
+            className="font-medium text-primary underline-offset-2 hover:underline"
+          >
+            Request a new reset link
+          </Link>
         </p>
       ) : null}
 
@@ -108,6 +143,13 @@ export default async function LoginPage({
           className="font-medium text-primary underline-offset-2 hover:underline"
         >
           Open recovery options
+        </Link>
+        {" · "}
+        <Link
+          href="/forgot-password"
+          className="font-medium text-primary underline-offset-2 hover:underline"
+        >
+          Forgot password
         </Link>
       </p>
       <p

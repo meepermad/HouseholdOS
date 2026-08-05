@@ -86,7 +86,7 @@ export function ExpenseAdjustmentEditor({
         <select
           name="adjustmentType"
           defaultValue={initial?.adjustmentType ?? "tax"}
-          className="mt-1 w-full rounded-md border border-line bg-white px-3 py-2"
+          className="mt-1 w-full rounded-md border border-line bg-input-bg px-3 py-2"
         >
           {TYPES.map((t) => (
             <option key={t} value={t}>
@@ -102,7 +102,7 @@ export function ExpenseAdjustmentEditor({
           name="description"
           required
           defaultValue={initial?.description ?? ""}
-          className="mt-1 w-full rounded-md border border-line bg-white px-3 py-2"
+          className="mt-1 w-full rounded-md border border-line bg-input-bg px-3 py-2"
         />
       </label>
 
@@ -113,7 +113,7 @@ export function ExpenseAdjustmentEditor({
           type="number"
           required
           defaultValue={initial?.amountCents ?? 0}
-          className="mt-1 w-full rounded-md border border-line bg-white px-3 py-2"
+          className="mt-1 w-full rounded-md border border-line bg-input-bg px-3 py-2"
         />
       </label>
 
@@ -123,7 +123,7 @@ export function ExpenseAdjustmentEditor({
           name="allocationMode"
           value={mode}
           onChange={(e) => setMode(e.target.value)}
-          className="mt-1 w-full rounded-md border border-line bg-white px-3 py-2"
+          className="mt-1 w-full rounded-md border border-line bg-input-bg px-3 py-2"
         >
           {MODES.map((m) => (
             <option key={m.value} value={m.value}>
@@ -140,7 +140,7 @@ export function ExpenseAdjustmentEditor({
             name="assignedMembershipId"
             value={assignedId}
             onChange={(e) => setAssignedId(e.target.value)}
-            className="mt-1 w-full rounded-md border border-line bg-white px-3 py-2"
+            className="mt-1 w-full rounded-md border border-line bg-input-bg px-3 py-2"
           >
             {members.map((m) => (
               <option key={m.id} value={m.id}>

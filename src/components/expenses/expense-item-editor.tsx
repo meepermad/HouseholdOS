@@ -105,7 +105,7 @@ export function ExpenseItemEditor({
           name="description"
           required
           defaultValue={initial?.description ?? ""}
-          className="mt-1 w-full rounded-md border border-line bg-white px-3 py-2"
+          className="mt-1 w-full rounded-md border border-line bg-input-bg px-3 py-2"
         />
       </label>
 
@@ -118,7 +118,7 @@ export function ExpenseItemEditor({
             min={0}
             required
             defaultValue={initial?.totalCents ?? 0}
-            className="mt-1 w-full rounded-md border border-line bg-white px-3 py-2"
+            className="mt-1 w-full rounded-md border border-line bg-input-bg px-3 py-2"
           />
         </label>
         <label className="block text-sm">
@@ -126,7 +126,7 @@ export function ExpenseItemEditor({
           <input
             name="quantityLabel"
             defaultValue={initial?.quantityLabel ?? ""}
-            className="mt-1 w-full rounded-md border border-line bg-white px-3 py-2"
+            className="mt-1 w-full rounded-md border border-line bg-input-bg px-3 py-2"
           />
         </label>
       </div>
@@ -137,7 +137,7 @@ export function ExpenseItemEditor({
           name="allocationMode"
           value={mode}
           onChange={(e) => setMode(e.target.value)}
-          className="mt-1 w-full rounded-md border border-line bg-white px-3 py-2"
+          className="mt-1 w-full rounded-md border border-line bg-input-bg px-3 py-2"
         >
           {MODES.map((m) => (
             <option key={m.value} value={m.value}>
@@ -154,7 +154,7 @@ export function ExpenseItemEditor({
             name="personalMembershipId"
             value={personalId}
             onChange={(e) => setPersonalId(e.target.value)}
-            className="mt-1 w-full rounded-md border border-line bg-white px-3 py-2"
+            className="mt-1 w-full rounded-md border border-line bg-input-bg px-3 py-2"
           >
             {members.map((m) => (
               <option key={m.id} value={m.id}>

@@ -50,3 +50,15 @@ export async function persistThemePreferenceAction(mode: ThemeMode) {
     logServerError("persist_theme_preference", error);
   }
 }
+
+/** Non-blocking DB theme read for client hydrate (fails closed to null). */
+export async function loadThemePreferenceAction(): Promise<ThemeMode | null> {
+  try {
+    const { getAuthenticatedThemePreference } = await import(
+      "@/lib/theme/server"
+    );
+    return await getAuthenticatedThemePreference();
+  } catch {
+    return null;
+  }
+}

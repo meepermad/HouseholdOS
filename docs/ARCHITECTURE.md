@@ -28,10 +28,17 @@ HouseholdOS is a private, mobile-first household management PWA. Identity, multi
 
 - Modes: `system` | `light` | `dark` stored in `localStorage` (`householdos-theme`) and optionally `user_preferences.theme`
 - Bootstrap script on `<html>` applies the local preference before paint (no FOUC)
-- Reconciliation: localStorage paints first; when an authenticated DB preference loads, **DB wins** and overwrites localStorage (cross-device sync)
+- Reconciliation: localStorage paints first; when an authenticated DB preference loads **after paint**, it seeds the device **only if localStorage has no explicit value**. An explicit device preference always wins.
 - User changes write localStorage immediately, then upsert the DB row when signed in
 - Sign-out does not clear the device theme key (not financial PII); session/household UI must still clear so another user’s content is not shown
-- Semantic CSS variables in `globals.css` drive light/dark via the `.dark` class — components request surfaces/actions, not raw slate hex
+- Semantic CSS variables in `globals.css` drive light/dark via the `.dark` class — components request surfaces/actions, not raw slate hex (`danger` aliases `destructive`; `surface-muted` / `destructive-soft` included)
+
+## Password recovery
+
+- Flow: `/forgot-password` → `POST /api/auth/forgot-password` → Supabase recovery email → `/auth/callback` (PKCE code exchange on canonical `APP_URL`) → `/reset-password` → `POST /api/auth/reset-password` → sign out → `/login` with new password
+- Recovery redirects always use `getCanonicalAppOrigin()` / `APP_URL` (never request Host in production)
+- Forms are native `method="post"` Route Handlers with origin checks, IP rate limits, and non-enumerating forgot responses
+- Auth pages send `Cache-Control: no-store`, `Referrer-Policy: no-referrer`, `X-Content-Type-Options: nosniff`
 
 ## Application shell
 

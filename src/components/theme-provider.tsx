@@ -14,7 +14,10 @@ import {
   readThemeFromStorage,
   writeThemeToStorage,
 } from "@/lib/theme/apply-dom";
-import { reconcileThemePreference } from "@/lib/theme/resolve";
+import {
+  parseStoredTheme,
+  reconcileThemePreference,
+} from "@/lib/theme/resolve";
 import type { ThemeMode } from "@/lib/theme/types";
 import { isThemeMode, THEME_STORAGE_KEY } from "@/lib/theme/types";
 
@@ -56,13 +59,28 @@ function notifyThemeListeners() {
   }
 }
 
+function readExplicitLocalTheme(): ThemeMode | null {
+  try {
+    return parseStoredTheme(localStorage.getItem(THEME_STORAGE_KEY));
+  } catch {
+    return null;
+  }
+}
+
 export function ThemeProvider({
   children,
   databaseTheme,
+  loadDatabaseTheme,
   persistAction,
 }: {
   children: ReactNode;
+  /** Synchronous DB theme when already known (optional). */
   databaseTheme?: ThemeMode | null;
+  /**
+   * Async DB theme loader — runs after paint so auth/theme never blocks the document.
+   * Applied only when localStorage has no explicit preference.
+   */
+  loadDatabaseTheme?: () => Promise<ThemeMode | null>;
   persistAction?: (mode: ThemeMode) => Promise<void>;
 }) {
   const theme = useSyncExternalStore(
@@ -76,15 +94,33 @@ export function ThemeProvider({
     applyThemeToDocument(theme);
   }, [theme]);
 
-  useEffect(() => {
-    if (!databaseTheme || !isThemeMode(databaseTheme)) return;
-    const local = readThemeFromStorage();
-    const next = reconcileThemePreference({ local, database: databaseTheme });
-    if (next === local) return;
+  const applyDatabaseTheme = useCallback((db: ThemeMode | null | undefined) => {
+    if (!db || !isThemeMode(db)) return;
+    const local = readExplicitLocalTheme();
+    if (local !== null) return; // local wins — do not overwrite
+    const next = reconcileThemePreference({ local, database: db });
+    const current = readThemeFromStorage();
+    if (next === current) return;
     writeThemeToStorage(next);
     applyThemeToDocument(next);
     notifyThemeListeners();
-  }, [databaseTheme]);
+  }, []);
+
+  useEffect(() => {
+    applyDatabaseTheme(databaseTheme);
+  }, [databaseTheme, applyDatabaseTheme]);
+
+  useEffect(() => {
+    if (!loadDatabaseTheme) return;
+    let cancelled = false;
+    void loadDatabaseTheme().then((db) => {
+      if (cancelled) return;
+      applyDatabaseTheme(db);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [loadDatabaseTheme, applyDatabaseTheme]);
 
   useEffect(() => {
     if (typeof window.matchMedia !== "function") return;

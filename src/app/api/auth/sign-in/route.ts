@@ -14,30 +14,11 @@ import {
 } from "@/lib/auth/sign-in-request";
 import { validateCurrentHouseholdSelection } from "@/lib/navigation";
 import { safeRedirectPath } from "@/lib/navigation";
+import { clientIpKey, rateLimit } from "@/lib/auth/rate-limit";
 import { authEmailPasswordSchema } from "@/lib/validations/household";
 import type { Database } from "@/types/database";
 
 export const runtime = "nodejs";
-
-const hits = new Map<string, { count: number; resetAt: number }>();
-
-function rateLimit(key: string, limit = 20, windowMs = 60_000): boolean {
-  const now = Date.now();
-  const row = hits.get(key);
-  if (!row || row.resetAt < now) {
-    hits.set(key, { count: 1, resetAt: now + windowMs });
-    return true;
-  }
-  if (row.count >= limit) return false;
-  row.count += 1;
-  return true;
-}
-
-function clientKey(request: NextRequest): string {
-  const forwarded = request.headers.get("x-forwarded-for");
-  const ip = forwarded?.split(",")[0]?.trim() || "unknown";
-  return `signin:${ip}`;
-}
 
 type SignInOk = { ok: true; redirectTo: string };
 type SignInErr = {
@@ -126,7 +107,7 @@ export async function POST(request: NextRequest) {
     return fail("origin", 403);
   }
 
-  if (!rateLimit(clientKey(request))) {
+  if (!rateLimit(clientIpKey("signin", request))) {
     return fail("rate_limit", 429);
   }
 

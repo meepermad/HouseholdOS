@@ -76,7 +76,7 @@ export function recoveryCopy(state: RecoveryState): {
     case "cleared_sensitive_query":
       return {
         title: "For your security, the exposed login URL was cleared.",
-        body: "Please reset your password before signing in again.",
+        body: "Reset your password before signing in again.",
       };
     default:
       return {

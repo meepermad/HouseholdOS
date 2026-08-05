@@ -4,13 +4,17 @@ import { OfflineLifecycle } from "@/components/offline-lifecycle";
 import { ServiceWorkerUpdateBanner } from "@/components/sw-update-banner";
 import { ChunkLoadRecovery } from "@/components/chunk-load-recovery";
 import { DeploymentSkewRecovery } from "@/components/deployment-skew-recovery";
-import { persistThemePreferenceAction } from "@/app/actions/preferences";
+import {
+  loadThemePreferenceAction,
+  persistThemePreferenceAction,
+} from "@/app/actions/preferences";
 import { getPublicBuildInfo } from "@/lib/build-info";
 
 /**
  * Keep this synchronous. Awaiting auth/theme here blocked the entire document
  * (including loading UI and recovery) whenever getUser() stalled.
  * Theme still applies from localStorage via ThemeBootstrapScript + ThemeProvider.
+ * DB preference hydrates after paint only when localStorage has no explicit value.
  */
 export function AppProviders({
   children,
@@ -22,6 +26,7 @@ export function AppProviders({
   return (
     <ThemeProvider
       databaseTheme={null}
+      loadDatabaseTheme={loadThemePreferenceAction}
       persistAction={persistThemePreferenceAction}
     >
       <ChunkLoadRecovery />

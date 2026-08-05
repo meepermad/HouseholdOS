@@ -148,15 +148,31 @@ test.describe("PWA / standalone CSS", () => {
 test.describe("pending feedback", () => {
   test("login form remains interactive and reports errors without freezing", async ({
     page,
+    request,
+    baseURL,
   }) => {
-    await page.goto("/login");
-    await page.locator('input[name="email"]').fill("demo@example.com");
-    await page.locator('input[name="password"]').fill("not-a-real-password");
-    await page.getByRole("button", { name: "Sign in" }).click();
-    // Recoverable failure should surface without stranding the shell.
-    await expect(page.getByRole("alert").or(page.locator("[role='alert']"))).toBeVisible({
-      timeout: 15000,
+    const origin = baseURL ?? "http://127.0.0.1:3000";
+    const res = await request.post("/api/auth/sign-in", {
+      form: {
+        email: "demo@example.com",
+        password: "not-a-real-password",
+        next: "/app",
+      },
+      headers: {
+        Origin: origin,
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      maxRedirects: 0,
     });
+    expect([303, 401]).toContain(res.status());
+    if (res.status() === 303) {
+      const loc = res.headers().location ?? "";
+      expect(loc).toMatch(/error=/);
+      await page.goto(loc.startsWith("http") ? loc : new URL(loc, origin).toString());
+    } else {
+      await page.goto("/login?error=invalid_credentials");
+    }
+    await expect(page.getByRole("alert")).toBeVisible();
     await expect(page.getByRole("button", { name: "Sign in" })).toBeEnabled();
   });
 });

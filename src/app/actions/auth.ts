@@ -5,14 +5,13 @@ import { evaluateRegistration } from "@/lib/auth/registration-policy";
 import { buildAppAbsoluteUrl } from "@/lib/env/canonical-origin";
 import { getServerEnv } from "@/lib/env/server";
 import { normalizeEmail } from "@/lib/env/server-schema";
-import { AppError, mapAuthError, toPublicErrorMessage } from "@/lib/errors";
+import { mapAuthError, toPublicErrorMessage } from "@/lib/errors";
 import { resolveInviteToken } from "@/lib/invitations/resolve-token";
 import { safeRedirectPath } from "@/lib/navigation";
 import { createClient } from "@/lib/supabase/server";
 import {
   authEmailPasswordSchema,
   forgotPasswordSchema,
-  resetPasswordSchema,
 } from "@/lib/validations/household";
 import { hashInviteToken } from "@/lib/tokens";
 
@@ -166,6 +165,10 @@ export async function signOutAction(): Promise<void> {
   redirect("/login?reason=signed_out");
 }
 
+/**
+ * @deprecated Prefer POST /api/auth/forgot-password (stable Route Handler + rate limit).
+ * Kept for transitional callers — UI forms use the Route Handler.
+ */
 export async function forgotPasswordAction(
   _prev: ActionResult | null,
   formData: FormData,
@@ -181,12 +184,16 @@ export async function forgotPasswordAction(
     const env = getServerEnv();
     const supabase = await createClient();
     // Always return the same message to avoid account enumeration.
-    await supabase.auth.resetPasswordForEmail(parsed.data.email, {
-      redirectTo: buildAppAbsoluteUrl(
-        `/auth/callback?next=${encodeURIComponent("/reset-password")}`,
-        env.APP_URL,
-      ),
-    });
+    try {
+      await supabase.auth.resetPasswordForEmail(parsed.data.email, {
+        redirectTo: buildAppAbsoluteUrl(
+          `/auth/callback?next=${encodeURIComponent("/reset-password")}`,
+          env.APP_URL,
+        ),
+      });
+    } catch {
+      // Swallow — generic response either way.
+    }
 
     return {
       ok: true,
@@ -198,43 +205,20 @@ export async function forgotPasswordAction(
   }
 }
 
+/**
+ * @deprecated Prefer POST /api/auth/reset-password (stable Route Handler + rate limit).
+ * Kept for transitional callers — UI forms use the Route Handler.
+ */
 export async function resetPasswordAction(
   _prev: ActionResult | null,
-  formData: FormData,
+  _formData: FormData,
 ): Promise<ActionResult> {
-  try {
-    const parsed = resetPasswordSchema.safeParse({
-      password: formData.get("password"),
-      confirmPassword: formData.get("confirmPassword"),
-    });
-    if (!parsed.success) {
-      return {
-        ok: false,
-        error: parsed.error.issues[0]?.message ?? "Invalid password.",
-      };
-    }
-
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) {
-      throw new AppError(
-        "authentication",
-        "Your reset session expired. Request a new password reset link.",
-      );
-    }
-
-    const { error } = await supabase.auth.updateUser({
-      password: parsed.data.password,
-    });
-    if (error) {
-      return { ok: false, error: mapAuthError(error).publicMessage };
-    }
-
-    redirect("/app");
-  } catch (error) {
-    if (error && typeof error === "object" && "digest" in error) throw error;
-    return { ok: false, error: toPublicErrorMessage(error) };
-  }
+  void _formData;
+  return {
+    ok: false,
+    error:
+      "Password reset moved to a stable API route. Refresh the page and try again.",
+    actionHref: "/forgot-password",
+    actionLabel: "Request a new reset link",
+  };
 }

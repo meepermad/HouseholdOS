@@ -84,6 +84,11 @@ export default async function RecoveryPage({
       }
       footer={
         <>
+          Forgot your password?{" "}
+          <a href="/forgot-password" className={recoveryControlClass.link}>
+            Reset password
+          </a>
+          {" · "}
           Need a different account?{" "}
           <a href="/login" className={recoveryControlClass.link}>
             Sign in

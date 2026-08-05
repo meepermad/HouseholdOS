@@ -26,7 +26,7 @@ export function SubmitButton({
       type="submit"
       disabled={pending || props.disabled}
       aria-busy={pending || undefined}
-      className={`inline-flex min-h-11 items-center justify-center rounded-md px-4 py-2 text-sm font-semibold disabled:opacity-60 ${variantClass} ${className}`}
+      className={`inline-flex min-h-11 items-center justify-center rounded-md px-4 py-2 text-sm font-semibold transition-opacity focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring disabled:opacity-60 ${variantClass} ${className}`}
       {...props}
     >
       {pending ? pendingLabel ?? "Working…" : children}

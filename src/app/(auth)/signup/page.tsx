@@ -34,7 +34,7 @@ export default async function SignupPage({
         HouseholdOS
       </p>
       <h1 className="mt-6 text-xl font-semibold">Create account</h1>
-      <p className="mt-2 text-sm text-slate-600">
+      <p className="mt-2 text-sm text-text-secondary">
         {inviteToken
           ? "Your invitation was recognized. Use the invited email address to create your account."
           : "HouseholdOS is invite-only. Open your invitation link, or paste it below after creating an account is blocked."}{" "}
