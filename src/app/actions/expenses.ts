@@ -549,6 +549,11 @@ export async function confirmExpenseAction(
       return { ok: false, error: "Unable to confirm expense." };
     }
 
+    const { resolveActionNotifications } = await import(
+      "@/lib/notifications/resolve-actions"
+    );
+    await resolveActionNotifications("expense", parsed.data.expenseId);
+
     revalidatePath(moneyPath(parsed.data.householdId));
     redirect(moneyPath(parsed.data.householdId, `/expenses/${parsed.data.expenseId}`));
   } catch (error) {

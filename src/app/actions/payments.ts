@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import type { ActionResult } from "@/app/actions/auth";
 import { logServerError } from "@/lib/errors";
 import { assertActiveMembership } from "@/lib/household-context";
+import { resolveActionNotifications } from "@/lib/notifications/resolve-actions";
 import { mapPaymentError } from "@/lib/payments/errors";
 import { can } from "@/lib/permissions";
 import {
@@ -123,6 +124,7 @@ export async function confirmPaymentAction(
       logServerError("payment.confirm", error);
       return { ok: false, error: mapPaymentError(error.message).publicMessage };
     }
+    await resolveActionNotifications("payment", base.data.paymentId);
     revalidatePath(moneyPath(base.data.householdId));
     redirect(moneyPath(base.data.householdId, `/payments/${base.data.paymentId}`));
   } catch (e) {
@@ -157,6 +159,7 @@ export async function rejectPaymentAction(
     if (error) {
       return { ok: false, error: mapPaymentError(error.message).publicMessage };
     }
+    await resolveActionNotifications("payment", parsed.data.paymentId);
     revalidatePath(moneyPath(parsed.data.householdId));
     redirect(moneyPath(parsed.data.householdId, `/payments/${parsed.data.paymentId}`));
   } catch (e) {
@@ -369,6 +372,10 @@ export async function resolveDisputeAction(
     if (error) {
       return { ok: false, error: mapPaymentError(error.message).publicMessage };
     }
+    await resolveActionNotifications(
+      "reimbursement_dispute",
+      parsed.data.disputeId,
+    );
     revalidatePath(moneyPath(parsed.data.householdId));
     redirect(moneyPath(parsed.data.householdId, `/disputes/${parsed.data.disputeId}`));
   } catch (e) {

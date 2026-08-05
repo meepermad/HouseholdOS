@@ -332,34 +332,28 @@ export async function loadHomeActionCenter(options: {
     }
   }
 
+  // "Needs your attention" is action-required only. Scheduled or advisory items
+  // belong in Upcoming / House summary so the list stays trustworthy.
   if (nextMeeting?.id) {
-    attention.push({
+    upcoming.push({
       id: `meeting-${nextMeeting.id}`,
-      title: "Monthly household meeting",
-      detail: nextMeeting.meeting_at
-        ? `Scheduled ${String(nextMeeting.meeting_at)}. Agenda items need review.`
-        : "Prepare the monthly review packet before the meeting.",
-      urgency: "normal",
+      label: "Monthly household meeting",
       href: householdRoutes.meetings.detail(householdId, String(nextMeeting.id)),
     });
   }
 
   if (shoppingIntel) {
     if (shoppingIntel.sugCount >= 3) {
-      attention.push({
+      houseExceptions.push({
         id: "shopping-recommendations",
-        title: "Shopping suggestions ready",
-        detail: `${shoppingIntel.sugCount} items may be needed for the next trip.`,
-        urgency: "normal",
+        label: `${shoppingIntel.sugCount} shopping suggestions ready`,
         href: householdRoutes.house.shoppingRecommendations(householdId),
       });
     }
     if (shoppingIntel.favorite) {
-      attention.push({
+      houseExceptions.push({
         id: `rediscovery-${shoppingIntel.favorite.id}`,
-        title: "Forgotten favorite",
-        detail: shoppingIntel.favorite.explanation.slice(0, 140),
-        urgency: "normal",
+        label: "Forgotten favorite recipe",
         href: householdRoutes.house.recipesRediscover(householdId),
       });
     }

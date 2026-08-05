@@ -20,11 +20,13 @@ test.describe("password recovery routes", () => {
 
     // Drive the Route Handler directly (same as native form POST) for a stable
     // assertion, then confirm the success UI via navigation.
+    // Omit Origin and assert same-origin via Sec-Fetch-Site so localhost vs
+    // 127.0.0.1 baseURL mismatches do not false-fail the CSRF check.
     const origin = baseURL ?? "http://127.0.0.1:3000";
     const post = await request.post("/api/auth/forgot-password", {
       form: { email: "unknown-user@example.com" },
       headers: {
-        Origin: origin,
+        "Sec-Fetch-Site": "same-origin",
         "Content-Type": "application/x-www-form-urlencoded",
       },
       maxRedirects: 0,

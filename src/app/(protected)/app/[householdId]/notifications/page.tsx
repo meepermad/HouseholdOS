@@ -2,6 +2,7 @@ import { NotificationInbox } from "@/components/notifications/NotificationInbox"
 import { assertActiveMembership } from "@/lib/household-context";
 import {
   listUserNotifications,
+  parseInboxFilter,
   PREFERENCE_CATEGORIES,
   type UserNotificationRow,
 } from "@/lib/notifications/queries";
@@ -25,7 +26,7 @@ export default async function NotificationsPage({
   const sp = await searchParams;
   const ctx = await assertActiveMembership(householdId);
 
-  const filter = sp.filter === "unread" ? "unread" : "all";
+  const filter = parseInboxFilter(sp.filter);
   const categoryRaw = (sp.category ?? "all").toLowerCase();
   const category =
     categoryRaw === "all" ||
@@ -39,7 +40,7 @@ export default async function NotificationsPage({
   try {
     const result = await listUserNotifications({
       userId: ctx.userId,
-      unreadOnly: filter === "unread",
+      filter,
       category: category === "all" ? undefined : category,
       limit: 20,
       offset,

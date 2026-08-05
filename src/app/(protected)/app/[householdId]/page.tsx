@@ -32,6 +32,10 @@ function HomeSections({
   showSettingsLinks: boolean;
 }) {
   const net = data.money.youAreOwedCents - data.money.youOweCents;
+  const moneyIsEmpty =
+    data.money.youOweCents === 0 &&
+    data.money.youAreOwedCents === 0 &&
+    data.money.awaitingConfirmation === 0;
 
   return (
     <>
@@ -40,12 +44,21 @@ function HomeSections({
       ) : null}
 
       <section className="space-y-2" aria-labelledby="needs-attention-heading">
-        <h2
-          id="needs-attention-heading"
-          className="text-sm font-semibold uppercase tracking-wide text-text-muted"
-        >
-          Needs your attention
-        </h2>
+        <div className="flex items-center justify-between gap-2">
+          <h2
+            id="needs-attention-heading"
+            className="text-sm font-semibold uppercase tracking-wide text-text-muted"
+          >
+            Needs your attention
+          </h2>
+          <Link
+            href={`/app/${householdId}/notifications?filter=action`}
+            className="inline-flex min-h-11 items-center text-sm text-primary underline-offset-2 hover:underline"
+            data-testid="home-see-all-notifications"
+          >
+            See all notifications
+          </Link>
+        </div>
         {data.attention.length === 0 ? (
           <EmptyState
             variant="section"
@@ -157,6 +170,18 @@ function HomeSections({
             {data.money.awaitingConfirmation} payment
             {data.money.awaitingConfirmation === 1 ? "" : "s"} awaiting
             confirmation
+          </p>
+        ) : null}
+        {moneyIsEmpty ? (
+          <p className="text-xs text-text-secondary" data-testid="home-money-empty">
+            No shared balances yet.{" "}
+            <Link
+              href={`/app/${householdId}/money/expenses/new`}
+              className="text-primary underline-offset-2 hover:underline"
+            >
+              Add an expense
+            </Link>{" "}
+            to start splitting costs.
           </p>
         ) : null}
       </section>

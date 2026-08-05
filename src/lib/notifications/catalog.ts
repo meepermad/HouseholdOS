@@ -11,12 +11,36 @@ export type NotificationCategory =
   | "membership"
   | "chores"
   | "calendar"
+  | "house"
+  | "meals"
   | "inventory"
   | "shopping"
   | "maintenance"
   | "approvals"
   | "agreements"
   | "system";
+
+/**
+ * Categories `_notification_meta_for_event_type` actually writes to
+ * `user_notifications.category`. Only these can carry stored preferences or
+ * filter the inbox; the wider `NotificationCategory` union is catalog-only
+ * vocabulary that SQL collapses into this set.
+ */
+export const NOTIFICATION_DB_CATEGORIES = [
+  "payments",
+  "disputes",
+  "membership",
+  "chores",
+  "calendar",
+  "house",
+  "meals",
+  "maintenance",
+  "agreements",
+  "system",
+] as const satisfies readonly NotificationCategory[];
+
+export type NotificationDbCategory =
+  (typeof NOTIFICATION_DB_CATEGORIES)[number];
 
 export type NotificationUrgency = "low" | "normal" | "high" | "urgent";
 export type NotificationChannel = "in_app" | "push" | "email";
@@ -34,26 +58,130 @@ export type RecipientRule =
   | "self"
   | "explicit";
 
-/** Categories exposed in preference / inbox filter UIs. */
-export const PREFERENCE_CATEGORIES = [
-  "payments",
-  "disputes",
-  "membership",
-  "chores",
-  "calendar",
-  "system",
-] as const satisfies readonly NotificationCategory[];
+/** Categories accepted by `upsert_notification_preference`. */
+export const PREFERENCE_CATEGORIES = NOTIFICATION_DB_CATEGORIES;
 
-/** Broader inbox filter set (UI-only; still uses DB category values). */
-export const INBOX_FILTER_CATEGORIES = [
-  "payments",
-  "disputes",
-  "membership",
-  "chores",
-  "calendar",
-  "maintenance",
-  "system",
-] as const satisfies readonly NotificationCategory[];
+/** Categories accepted as an inbox `category` filter. */
+export const INBOX_FILTER_CATEGORIES = NOTIFICATION_DB_CATEGORIES;
+
+/**
+ * What each channel can actually do today.
+ *
+ * - `in_app`: `_emit_notification_event` always inserts the `user_notifications`
+ *   row and marks the `in_app` delivery sent, so the inbox cannot be switched
+ *   off. Preferences for this channel are informational only.
+ * - `push`: really delivered by the worker when VAPID keys and
+ *   `NOTIFICATION_DELIVERY_ENABLED` are configured. Per-category On/Off works.
+ * - `email`: no provider adapter exists, so nothing can be delivered and no UI
+ *   should offer it.
+ */
+export const NOTIFICATION_CHANNEL_SUPPORT = {
+  in_app: "always_on",
+  push: "configurable",
+  email: "unavailable",
+} as const satisfies Record<NotificationChannel, string>;
+
+/** Channels a user may configure. Email is omitted: it cannot deliver. */
+export const CONFIGURABLE_NOTIFICATION_CHANNELS = ["push"] as const;
+
+/** Delivery modes the pipeline can honor. `daily_digest` is never sendable. */
+export const SUPPORTED_DELIVERY_MODES = ["immediate", "off"] as const;
+
+export type SupportedDeliveryMode = (typeof SUPPORTED_DELIVERY_MODES)[number];
+
+export type PreferenceGroupKey =
+  | "money"
+  | "chores"
+  | "calendar"
+  | "shopping_meals"
+  | "maintenance"
+  | "governance"
+  | "household_ops";
+
+export type PreferenceGroup = {
+  key: PreferenceGroupKey;
+  label: string;
+  description: string;
+  /** DB categories written when this group is saved. */
+  categories: readonly NotificationDbCategory[];
+};
+
+/**
+ * User-facing preference groups. Each maps onto the DB categories the emitter
+ * writes, so saving a group stores a real row for every category it covers.
+ */
+export const NOTIFICATION_PREFERENCE_GROUPS = [
+  {
+    key: "money",
+    label: "Money",
+    description: "Payments, expenses, settlements, and disputes.",
+    categories: ["payments", "disputes"],
+  },
+  {
+    key: "chores",
+    label: "Chores",
+    description: "Assignments, reminders, and handoffs.",
+    categories: ["chores"],
+  },
+  {
+    key: "calendar",
+    label: "Calendar and guests",
+    description: "Events, invitations, and availability requests.",
+    categories: ["calendar"],
+  },
+  {
+    key: "shopping_meals",
+    label: "Shopping and meals",
+    description: "Supplies, pantry, shopping lists, and meal plans.",
+    categories: ["house", "meals"],
+  },
+  {
+    key: "maintenance",
+    label: "Maintenance",
+    description: "Repairs, vendors, and appointments.",
+    categories: ["maintenance"],
+  },
+  {
+    key: "governance",
+    label: "Governance and meetings",
+    description: "Approvals, agreements, and household meetings.",
+    categories: ["agreements"],
+  },
+  {
+    key: "household_ops",
+    label: "Household ops",
+    description: "Membership changes and account-level alerts.",
+    categories: ["membership", "system"],
+  },
+] as const satisfies readonly PreferenceGroup[];
+
+/**
+ * Groups whose in-app alerts can never be turned off, because the Action
+ * Center and `upsert_notification_preference` both require them.
+ */
+export const IN_APP_LOCKED_CATEGORIES = ["payments", "disputes"] as const;
+
+export function getPreferenceGroup(
+  key: string,
+): PreferenceGroup | undefined {
+  return NOTIFICATION_PREFERENCE_GROUPS.find((g) => g.key === key);
+}
+
+export function isNotificationDbCategory(
+  value: string,
+): value is NotificationDbCategory {
+  return (NOTIFICATION_DB_CATEGORIES as readonly string[]).includes(value);
+}
+
+/** Compact inbox filters. `action` means unread and action-oriented. */
+export const INBOX_FILTERS = ["all", "action", "updates"] as const;
+
+export type InboxFilter = (typeof INBOX_FILTERS)[number];
+
+export function parseInboxFilter(value: string | undefined): InboxFilter {
+  if (value === "action" || value === "updates") return value;
+  return "all";
+}
 
 export type CatalogEntry = {
   eventType: string;
@@ -1406,13 +1534,17 @@ export function isActiveEventType(eventType: string): boolean {
 }
 
 export type CategoryPreferenceDefaults = {
-  deliveryMode: DeliveryMode;
+  deliveryMode: SupportedDeliveryMode;
   channels: NotificationChannel[];
   defaultUrgency: NotificationUrgency;
   quietHoursRespected: boolean;
 };
 
-/** Default preference seeds by category (user prefs overlay these). */
+/**
+ * Default preference seeds by category (user prefs overlay these).
+ * Modes are limited to `immediate` / `off` and channels never include email,
+ * so the displayed default always matches what delivery actually does.
+ */
 export const CATEGORY_PREFERENCE_DEFAULTS: Record<
   NotificationCategory,
   CategoryPreferenceDefaults
@@ -1443,12 +1575,12 @@ export const CATEGORY_PREFERENCE_DEFAULTS: Record<
   },
   membership: {
     deliveryMode: "immediate",
-    channels: ["in_app", "push", "email"],
+    channels: ["in_app", "push"],
     defaultUrgency: "normal",
     quietHoursRespected: false,
   },
   chores: {
-    deliveryMode: "daily_digest",
+    deliveryMode: "immediate",
     channels: ["in_app", "push"],
     defaultUrgency: "normal",
     quietHoursRespected: true,
@@ -1459,14 +1591,26 @@ export const CATEGORY_PREFERENCE_DEFAULTS: Record<
     defaultUrgency: "normal",
     quietHoursRespected: true,
   },
+  house: {
+    deliveryMode: "immediate",
+    channels: ["in_app", "push"],
+    defaultUrgency: "normal",
+    quietHoursRespected: true,
+  },
+  meals: {
+    deliveryMode: "immediate",
+    channels: ["in_app", "push"],
+    defaultUrgency: "low",
+    quietHoursRespected: true,
+  },
   inventory: {
-    deliveryMode: "daily_digest",
+    deliveryMode: "immediate",
     channels: ["in_app", "push"],
     defaultUrgency: "normal",
     quietHoursRespected: true,
   },
   shopping: {
-    deliveryMode: "daily_digest",
+    deliveryMode: "immediate",
     channels: ["in_app", "push"],
     defaultUrgency: "low",
     quietHoursRespected: true,

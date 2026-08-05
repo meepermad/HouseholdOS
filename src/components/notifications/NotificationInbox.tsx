@@ -8,14 +8,34 @@ import { BottomSheet } from "@/components/ui/bottom-sheet";
 import { EmptyState } from "@/components/ui/empty-state";
 import { NotificationCard } from "@/components/notifications/NotificationCard";
 import { markAllNotificationsReadAction } from "@/app/actions/notifications";
-import type { UserNotificationRow } from "@/lib/notifications/queries";
+import type {
+  InboxFilter,
+  UserNotificationRow,
+} from "@/lib/notifications/queries";
 import { INBOX_FILTER_CATEGORIES } from "@/lib/notifications/catalog";
 import { formatNotificationCategory } from "@/lib/presentation";
 
 const FILTERS = [
   { key: "all", label: "All" },
-  { key: "unread", label: "Unread" },
-] as const;
+  { key: "action", label: "Needs action" },
+  { key: "updates", label: "Updates" },
+] as const satisfies readonly { key: InboxFilter; label: string }[];
+
+const EMPTY_COPY: Record<InboxFilter, { title: string; description: string }> = {
+  all: {
+    title: "No notifications yet",
+    description:
+      "Updates about money, chores, and household activity will appear here.",
+  },
+  action: {
+    title: "Nothing needs your action",
+    description: "Anything waiting on a decision from you shows up here first.",
+  },
+  updates: {
+    title: "No updates yet",
+    description: "Activity that does not need a response will appear here.",
+  },
+};
 
 function groupNotifications(notifications: UserNotificationRow[]) {
   const now = new Date();
@@ -49,11 +69,12 @@ export function NotificationInbox({
   notifications: UserNotificationRow[];
   hasMore: boolean;
   offset: number;
-  filter: "all" | "unread";
+  filter: InboxFilter;
   category: string;
 }) {
   const [filterOpen, setFilterOpen] = useState(false);
   const base = `/app/${householdId}/notifications`;
+  // Filtering happens in the query so paging and "Load more" stay consistent.
   const groups = useMemo(
     () => groupNotifications(notifications),
     [notifications],
@@ -68,7 +89,7 @@ export function NotificationInbox({
     const f = next.filter ?? filter;
     const c = next.category ?? category;
     const o = next.offset ?? 0;
-    if (f === "unread") params.set("filter", "unread");
+    if (f && f !== "all") params.set("filter", f);
     if (c && c !== "all") params.set("category", c);
     if (o > 0) params.set("offset", String(o));
     const qs = params.toString();
@@ -100,7 +121,11 @@ export function NotificationInbox({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="text-sm font-semibold text-text-primary">
-            All notifications
+            {filter === "action"
+              ? "Needs your action"
+              : filter === "updates"
+                ? "Updates"
+                : "All notifications"}
           </h2>
           {category !== "all" ? (
             <p className="text-xs text-text-muted">
@@ -129,7 +154,7 @@ export function NotificationInbox({
       <div
         className="flex flex-wrap gap-1"
         role="tablist"
-        aria-label="Read filter"
+        aria-label="Notification filter"
       >
         {FILTERS.map((f) => {
           const active = filter === f.key;
@@ -154,12 +179,8 @@ export function NotificationInbox({
       {notifications.length === 0 ? (
         <EmptyState
           variant="section"
-          title={
-            filter === "unread"
-              ? "No unread notifications"
-              : "No notifications yet"
-          }
-          description="Updates about payments, chores, and household activity will appear here."
+          title={EMPTY_COPY[filter].title}
+          description={EMPTY_COPY[filter].description}
           testId="inbox-empty"
         />
       ) : (

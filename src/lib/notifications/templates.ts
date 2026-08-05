@@ -49,6 +49,14 @@ const GENERIC_BY_CATEGORY: Record<
     title: "Calendar update in HouseholdOS",
     body: "Open HouseholdOS to review it.",
   },
+  house: {
+    title: "House update in HouseholdOS",
+    body: "Open HouseholdOS to review it.",
+  },
+  meals: {
+    title: "Meal update in HouseholdOS",
+    body: "Open HouseholdOS to review it.",
+  },
   inventory: {
     title: "Inventory update in HouseholdOS",
     body: "Open HouseholdOS to review it.",

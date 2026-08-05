@@ -22,6 +22,7 @@ function makeNotification(
     category: "payments",
     urgency: "high",
     actionOriented: true,
+    actorName: null,
     readAt: null,
     createdAt: "2026-07-15T12:00:00.000Z",
     ...overrides,
@@ -72,5 +73,99 @@ describe("NotificationCard", () => {
     const read = screen.getByTestId("notification-card");
     expect(read.className).toContain("bg-surface");
     expect(read.className).not.toContain("bg-surface-elevated");
+  });
+
+  it("shows needs-action badge and Review CTA for unread action items", () => {
+    render(
+      <ul>
+        <NotificationCard
+          notification={makeNotification()}
+          householdId="hh-1"
+        />
+      </ul>,
+    );
+    expect(screen.getByTestId("notification-kind-badge")).toHaveTextContent(
+      "Needs action",
+    );
+    expect(screen.getByTestId("notification-cta")).toHaveTextContent("Review");
+    expect(screen.getByTestId("notification-cta")).toHaveAttribute(
+      "href",
+      "/app/hh-1/money/payments/p-1",
+    );
+  });
+
+  it("names who caused the notification when the actor is known", () => {
+    const { rerender } = render(
+      <ul>
+        <NotificationCard
+          notification={makeNotification({ actorName: "Jordan" })}
+          householdId="hh-1"
+        />
+      </ul>,
+    );
+    expect(screen.getByTestId("notification-actor")).toHaveTextContent(
+      "Jordan",
+    );
+
+    rerender(
+      <ul>
+        <NotificationCard
+          notification={makeNotification({ actorName: null })}
+          householdId="hh-1"
+        />
+      </ul>,
+    );
+    expect(screen.queryByTestId("notification-actor")).toBeNull();
+  });
+
+  it("shows household, category, and a machine-readable time", () => {
+    render(
+      <ul>
+        <NotificationCard
+          notification={makeNotification()}
+          householdId="hh-1"
+        />
+      </ul>,
+    );
+    expect(screen.getByText("Home")).toBeInTheDocument();
+    expect(screen.getByText("Payments")).toBeInTheDocument();
+    const time = document.querySelector("time");
+    expect(time).toHaveAttribute("datetime", "2026-07-15T12:00:00.000Z");
+  });
+
+  it("keeps the deep link exactly as provided", () => {
+    render(
+      <ul>
+        <NotificationCard
+          notification={makeNotification({
+            actionHref: "/app/hh-1/chores/c-9",
+            category: "chores",
+          })}
+          householdId="hh-1"
+        />
+      </ul>,
+    );
+    expect(screen.getByTestId("notification-cta")).toHaveAttribute(
+      "href",
+      "/app/hh-1/chores/c-9",
+    );
+  });
+
+  it("shows Update badge when the item is not action-oriented", () => {
+    render(
+      <ul>
+        <NotificationCard
+          notification={makeNotification({
+            actionHref: null,
+            actionOriented: false,
+          })}
+          householdId="hh-1"
+        />
+      </ul>,
+    );
+    expect(screen.getByTestId("notification-kind-badge")).toHaveTextContent(
+      "Update",
+    );
+    expect(screen.queryByTestId("notification-cta")).not.toBeInTheDocument();
   });
 });

@@ -22,6 +22,7 @@ const NOTIFICATION_CATEGORY_LABELS: Record<string, string> = {
   meals: "Meals",
   maintenance: "Maintenance",
   governance: "Governance",
+  agreements: "Governance",
   system: "System",
   house: "House",
   expenses: "Expenses",

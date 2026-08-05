@@ -66,7 +66,7 @@ describe("notification catalog", () => {
       quietHoursRespected: true,
     });
     expect(CATEGORY_PREFERENCE_DEFAULTS.chores.deliveryMode).toBe(
-      "daily_digest",
+      "immediate",
     );
     expect(CATEGORY_PREFERENCE_DEFAULTS.system.channels).toEqual(["in_app"]);
     expect(CATEGORY_PREFERENCE_DEFAULTS.membership.quietHoursRespected).toBe(

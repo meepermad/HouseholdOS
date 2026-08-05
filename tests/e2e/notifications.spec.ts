@@ -136,6 +136,13 @@ test.describe("Phase 3.1 notification UI", () => {
     await expect(
       page.getByRole("heading", { name: "Inbox" }),
     ).toBeVisible();
+
+    // Compact filters deep link by query param and stay server-driven.
+    await expect(page.getByRole("tab", { name: "Needs action" })).toBeVisible();
+    await expect(page.getByRole("tab", { name: "Updates" })).toBeVisible();
+    await page.getByRole("tab", { name: "Needs action" }).click();
+    await expect(page).toHaveURL(/\?filter=action/);
+    await expect(page.getByTestId("notification-inbox")).toBeVisible();
   });
 
   test("mobile bottom nav exposes calendar with safe-area padding", async ({

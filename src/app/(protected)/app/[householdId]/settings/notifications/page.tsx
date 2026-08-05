@@ -4,10 +4,10 @@ import { DeviceSubscriptionList } from "@/components/notifications/DeviceSubscri
 import { NotificationPrivacySelector } from "@/components/notifications/NotificationPrivacySelector";
 import { NotificationPreferencesForm } from "@/components/notifications/NotificationPreferencesForm";
 import { QuietHoursEditor } from "@/components/notifications/QuietHoursEditor";
-import { DigestSelector } from "@/components/notifications/DigestSelector";
 import { TestNotificationButton } from "@/components/notifications/TestNotificationButton";
 import { assertActiveMembership } from "@/lib/household-context";
 import { getPublicEnv } from "@/lib/env/public";
+import { getServerEnv } from "@/lib/env/server";
 import {
   getChannelPreferences,
   getNotificationPrivacyPreview,
@@ -62,6 +62,9 @@ export default async function NotificationSettingsPage({
 
   const env = getPublicEnv();
   const vapidPublicKey = env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+  // Push only reaches a device when keys exist *and* the worker is allowed to send.
+  const deliveryEnabled = getServerEnv().NOTIFICATION_DELIVERY_ENABLED === true;
+  const pushDeliverable = Boolean(vapidPublicKey) && deliveryEnabled;
 
   return (
     <main
@@ -90,6 +93,8 @@ export default async function NotificationSettingsPage({
         <PushPermissionCard
           householdId={householdId}
           vapidPublicKey={vapidPublicKey}
+          deliveryEnabled={deliveryEnabled}
+          allowPermissionRequest
         />
       </Surface>
 
@@ -118,14 +123,8 @@ export default async function NotificationSettingsPage({
         <NotificationPreferencesForm
           householdId={householdId}
           preferences={preferences}
+          pushDeliverable={pushDeliverable}
         />
-      </Surface>
-
-      <Surface className="space-y-3">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-text-muted">
-          Push timing / digest
-        </h2>
-        <DigestSelector householdId={householdId} preferences={preferences} />
       </Surface>
 
       <Surface className="space-y-3">
@@ -133,16 +132,6 @@ export default async function NotificationSettingsPage({
           Quiet hours
         </h2>
         <QuietHoursEditor householdId={householdId} quietHours={quietHours} />
-      </Surface>
-
-      <Surface className="space-y-3">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-text-muted">
-          Email
-        </h2>
-        <p className="text-sm text-text-secondary">
-          Email delivery is not configured in this phase. Preferences above are
-          saved for when email is enabled.
-        </p>
       </Surface>
 
       <Surface className="space-y-3">

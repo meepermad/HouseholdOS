@@ -65,7 +65,20 @@ async function rpcAction(args: {
     const { supabase } = await context(householdId, args.capability);
     const { error } = await supabase.rpc(args.rpc, args.params(parsed.data));
     if (error) return { ok: false, error: error.message || "Unable to update chore." };
-    invalidate(householdId, parsed.data.occurrenceId as string | undefined);
+    const occurrenceId = parsed.data.occurrenceId as string | undefined;
+    if (
+      occurrenceId &&
+      (args.rpc === "complete_chore_occurrence" ||
+        args.rpc === "verify_chore_completion" ||
+        args.rpc === "skip_chore_occurrence" ||
+        args.rpc === "cancel_chore_occurrence")
+    ) {
+      const { resolveActionNotifications } = await import(
+        "@/lib/notifications/resolve-actions"
+      );
+      await resolveActionNotifications("chore_occurrence", occurrenceId);
+    }
+    invalidate(householdId, occurrenceId);
     revalidatePath(path(householdId, "/rotations"));
     return { ok: true, message: args.message };
   } catch (error) {

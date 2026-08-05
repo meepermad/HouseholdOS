@@ -11,7 +11,11 @@ import {
   pushSubscriptionClientSchema,
   summarizeUserAgent,
 } from "@/lib/notifications/subscription";
-import { PREFERENCE_CATEGORIES } from "@/lib/notifications/queries";
+import {
+  NOTIFICATION_PREFERENCE_GROUPS,
+  PREFERENCE_CATEGORIES,
+  type NotificationDbCategory,
+} from "@/lib/notifications/catalog";
 
 /** Untyped access until notification delivery RPCs land in generated types. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -31,16 +35,13 @@ const hhMmSchema = z
   })
   .pipe(z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "Use HH:MM (24h)."));
 
-const deliveryModeSchema = z.enum(["immediate", "daily_digest", "off"]);
-const channelSchema = z.enum(["in_app", "push", "email"]);
-const categorySchema = z.enum([
-  "payments",
-  "disputes",
-  "membership",
-  "chores",
-  "calendar",
-  "system",
-]);
+/**
+ * Only modes the pipeline can honor. `daily_digest` is rejected here because no
+ * digest batch is ever claimed or sent, so storing it would silently drop push.
+ */
+const deliveryModeSchema = z.enum(["immediate", "off"]);
+/** Email is excluded: there is no email adapter, so a preference is meaningless. */
+type PreferenceChannel = "in_app" | "push";
 const privacyPreviewSchema = z.enum(["generic", "detailed"]);
 
 function revalidateNotificationPaths(householdId?: string | null) {
@@ -375,27 +376,40 @@ export async function saveNotificationPreferencesAction(
     const { createClient } = await import("@/lib/supabase/server");
     const supabase = await createClient();
 
-    // Channel modes: mode_{category}_{channel}
     const updates: Array<{
-      category: z.infer<typeof categorySchema>;
-      channel: z.infer<typeof channelSchema>;
+      category: NotificationDbCategory;
+      channel: PreferenceChannel;
       deliveryMode: z.infer<typeof deliveryModeSchema>;
     }> = [];
 
-    for (const category of PREFERENCE_CATEGORIES) {
-      for (const channel of ["in_app", "push", "email"] as const) {
-        const key = `mode_${category}_${channel}`;
-        const raw = formData.get(key);
-        if (raw == null || String(raw).trim() === "") continue;
-        const mode = deliveryModeSchema.safeParse(String(raw));
-        const cat = categorySchema.safeParse(category);
-        const ch = channelSchema.safeParse(channel);
-        if (!mode.success || !cat.success || !ch.success) continue;
+    // Preferred shape: push_{groupKey}, expanded to every category it covers.
+    for (const group of NOTIFICATION_PREFERENCE_GROUPS) {
+      const raw = formData.get(`push_${group.key}`);
+      if (raw == null || String(raw).trim() === "") continue;
+      const mode = deliveryModeSchema.safeParse(String(raw));
+      if (!mode.success) continue;
+      for (const category of group.categories) {
         updates.push({
-          category: cat.data,
-          channel: ch.data,
+          category,
+          channel: "push",
           deliveryMode: mode.data,
         });
+      }
+    }
+
+    // Legacy shape: mode_{category}_{channel}. Email keys are ignored.
+    for (const category of PREFERENCE_CATEGORIES) {
+      for (const channel of ["in_app", "push"] as const satisfies readonly PreferenceChannel[]) {
+        const raw = formData.get(`mode_${category}_${channel}`);
+        if (raw == null || String(raw).trim() === "") continue;
+        const mode = deliveryModeSchema.safeParse(String(raw));
+        if (!mode.success) continue;
+        if (
+          updates.some((u) => u.category === category && u.channel === channel)
+        ) {
+          continue;
+        }
+        updates.push({ category, channel, deliveryMode: mode.data });
       }
     }
 

@@ -1,7 +1,10 @@
 import "server-only";
 
 import { createClient } from "@/lib/supabase/server";
-import type { DeliveryMode, NotificationCategory } from "@/lib/notifications/catalog";
+import type {
+  DeliveryMode,
+  InboxFilter,
+} from "@/lib/notifications/catalog";
 import type { PrivacyPreview } from "@/lib/notifications/templates";
 import { normalizeDeepLink } from "@/lib/notifications/deep-links";
 
@@ -24,9 +27,17 @@ export type UserNotificationRow = {
   category: string | null;
   urgency: string | null;
   actionOriented: boolean;
+  /** Who caused this, resolved from the event actor. Null when unknown. */
+  actorName: string | null;
   readAt: string | null;
   createdAt: string;
 };
+
+export type { InboxFilter } from "@/lib/notifications/catalog";
+export {
+  INBOX_FILTERS,
+  parseInboxFilter,
+} from "@/lib/notifications/catalog";
 
 export type PushDeviceRow = {
   id: string;
@@ -77,6 +88,8 @@ function timeToHhMm(value: string | null | undefined): string {
 export async function listUserNotifications(opts: {
   userId: string;
   unreadOnly?: boolean;
+  /** `action` = unread and action-oriented, `updates` = everything else. */
+  filter?: InboxFilter;
   category?: string;
   limit?: number;
   offset?: number;
@@ -89,12 +102,17 @@ export async function listUserNotifications(opts: {
   let query = db(supabase)
     .from("user_notifications")
     .select(
-      "id, user_id, household_id, title, body, action_href, category, urgency, action_oriented, read_at, created_at",
+      "id, user_id, household_id, event_id, title, body, action_href, category, urgency, action_oriented, read_at, created_at",
     )
     .eq("user_id", opts.userId)
     .order("created_at", { ascending: false })
     .range(offset, offset + limit);
 
+  if (opts.filter === "action") {
+    query = query.eq("action_oriented", true).is("read_at", null);
+  } else if (opts.filter === "updates") {
+    query = query.eq("action_oriented", false);
+  }
   if (opts.unreadOnly) {
     query = query.is("read_at", null);
   }
@@ -111,6 +129,7 @@ export async function listUserNotifications(opts: {
     id: string;
     user_id: string;
     household_id: string | null;
+    event_id: string | null;
     title: string;
     body: string;
     action_href: string | null;
@@ -159,6 +178,12 @@ export async function listUserNotifications(opts: {
     }
   }
 
+  const actorByEventId = await resolveActorNames(
+    supabase,
+    page.map((r) => r.event_id),
+    opts.userId,
+  );
+
   const rows: UserNotificationRow[] = page.map((r) => {
     const householdName = r.household_id
       ? (nameById.get(r.household_id) ?? null)
@@ -174,12 +199,75 @@ export async function listUserNotifications(opts: {
       category: r.category,
       urgency: r.urgency,
       actionOriented: r.action_oriented === true,
+      actorName: r.event_id ? (actorByEventId.get(r.event_id) ?? null) : null,
       readAt: r.read_at,
       createdAt: r.created_at,
     };
   });
 
   return { rows, hasMore };
+}
+
+/**
+ * Resolves "who did this" per event. Best-effort: events for households the
+ * user has left are not readable, and system events have no actor, so those
+ * simply resolve to null rather than failing the inbox.
+ */
+async function resolveActorNames(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  eventIds: Array<string | null>,
+  viewerUserId: string,
+): Promise<Map<string, string>> {
+  const result = new Map<string, string>();
+  const ids = [
+    ...new Set(eventIds.filter((id): id is string => typeof id === "string")),
+  ];
+  if (ids.length === 0) return result;
+
+  const { data: events } = await db(supabase)
+    .from("notification_events")
+    .select("id, actor_membership_id")
+    .in("id", ids);
+
+  const eventRows = (events ?? []) as Array<{
+    id: string;
+    actor_membership_id: string | null;
+  }>;
+  const membershipIds = [
+    ...new Set(
+      eventRows
+        .map((e) => e.actor_membership_id)
+        .filter((id): id is string => typeof id === "string"),
+    ),
+  ];
+  if (membershipIds.length === 0) return result;
+
+  const { data: members } = await db(supabase)
+    .from("household_memberships")
+    .select("id, user_id, profiles(display_name, email)")
+    .in("id", membershipIds);
+
+  const labelByMembershipId = new Map<string, string>();
+  for (const m of (members ?? []) as Array<{
+    id: string;
+    user_id: string | null;
+    profiles: { display_name: string | null; email: string | null } | null;
+  }>) {
+    if (m.user_id && m.user_id === viewerUserId) {
+      labelByMembershipId.set(m.id, "You");
+      continue;
+    }
+    const label = m.profiles?.display_name?.trim() || m.profiles?.email?.trim();
+    if (label) labelByMembershipId.set(m.id, label);
+  }
+
+  for (const e of eventRows) {
+    const label = e.actor_membership_id
+      ? labelByMembershipId.get(e.actor_membership_id)
+      : undefined;
+    if (label) result.set(e.id, label);
+  }
+  return result;
 }
 
 export async function countUnreadNotifications(userId: string): Promise<number> {

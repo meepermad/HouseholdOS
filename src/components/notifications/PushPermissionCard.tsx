@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState, useTransition } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   detectPushSupport,
@@ -51,9 +52,18 @@ const STATE_COPY: Record<PushSupportState, { title: string; body: string }> = {
 export function PushPermissionCard({
   householdId,
   vapidPublicKey,
+  deliveryEnabled = true,
+  allowPermissionRequest = false,
 }: {
   householdId: string;
   vapidPublicKey?: string;
+  /** `NOTIFICATION_DELIVERY_ENABLED`; false means the worker never sends. */
+  deliveryEnabled?: boolean;
+  /**
+   * Only the notification settings page may trigger the browser permission
+   * prompt, so an embedded card never interrupts an unrelated task.
+   */
+  allowPermissionRequest?: boolean;
 }) {
   const router = useRouter();
   const [state, setState] = useState<PushSupportState>("not_requested");
@@ -79,10 +89,22 @@ export function PushPermissionCard({
     };
   }, []);
 
-  const copy = STATE_COPY[state];
+  const deliverable = Boolean(vapidPublicKey) && deliveryEnabled;
+  const copy = !vapidPublicKey
+    ? {
+        title: "Push is not configured",
+        body: "This deployment has no VAPID keys, so no device can receive push alerts. Your inbox still works.",
+      }
+    : !deliveryEnabled
+      ? {
+          title: "Push delivery is turned off",
+          body: "Keys are configured but delivery is disabled for this deployment, so nothing would be sent. Your inbox still works.",
+        }
+      : STATE_COPY[state];
   const canEnable =
     ready &&
-    Boolean(vapidPublicKey) &&
+    deliverable &&
+    allowPermissionRequest &&
     (state === "not_requested" ||
       state === "granted" ||
       state === "subscription_missing" ||
@@ -137,10 +159,14 @@ export function PushPermissionCard({
         <h2 className="text-base font-semibold text-text-primary">{copy.title}</h2>
         <p className="mt-1 text-sm text-text-secondary">{copy.body}</p>
       </div>
-      {!vapidPublicKey ? (
-        <p className="text-sm text-text-muted">
-          Push delivery is not configured (missing public VAPID key).
-        </p>
+      {deliverable && !allowPermissionRequest ? (
+        <Link
+          href={`/app/${householdId}/settings/notifications`}
+          className="inline-flex min-h-11 items-center text-sm font-medium text-primary underline underline-offset-2"
+          data-testid="push-settings-link"
+        >
+          Manage push in notification settings
+        </Link>
       ) : null}
       {error ? (
         <p className="text-sm text-destructive" role="alert">
