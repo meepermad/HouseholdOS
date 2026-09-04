@@ -38,36 +38,33 @@ export default async function ReviewExpensePage({
     <main className="space-y-6">
       <div>
         <h1 className="text-2xl font-semibold">Review & confirm</h1>
-        <p className="text-sm text-slate-600">
-          Confirming writes this expense into the household financial record. Later
-          corrections require an amendment or void and will be audited.
+        <p className="text-sm text-text-secondary">
+          Confirming adds this purchase to household balances. You can correct it
+          later if something is wrong.
         </p>
       </div>
 
-      <dl className="grid grid-cols-2 gap-2 rounded-md border border-line bg-surface p-3 text-sm">
-        <dt className="text-slate-500">Merchant</dt>
+      <dl className="grid grid-cols-2 gap-2 rounded-md border border-border bg-surface p-3 text-sm">
+        <dt className="text-text-muted">Merchant</dt>
         <dd>{e.merchant}</dd>
-        <dt className="text-slate-500">Date</dt>
+        <dt className="text-text-muted">Date</dt>
         <dd>{e.purchase_date}</dd>
-        <dt className="text-slate-500">Payer</dt>
+        <dt className="text-text-muted">Paid by</dt>
         <dd>
           {members.find((m) => m.id === e.payer_membership_id)?.label ?? "Payer"}
         </dd>
-        <dt className="text-slate-500">Total</dt>
+        <dt className="text-text-muted">Total</dt>
         <dd>{formatMoney(e.declared_total_cents)}</dd>
       </dl>
 
       <section className="space-y-2">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-text-muted">
           Items
         </h2>
         <ul className="space-y-1 text-sm">
           {bundle.items.map((item) => (
             <li key={item.id} className="flex justify-between">
-              <span>
-                {item.description}{" "}
-                <span className="text-xs text-slate-500">({item.allocation_mode})</span>
-              </span>
+              <span>{item.description}</span>
               <span>{formatMoney(item.total_cents)}</span>
             </li>
           ))}
@@ -76,16 +73,13 @@ export default async function ReviewExpensePage({
 
       {bundle.adjustments.length > 0 ? (
         <section className="space-y-2">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-            Adjustments
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-text-muted">
+            Tax, tip, and fees
           </h2>
           <ul className="space-y-1 text-sm">
             {bundle.adjustments.map((adj) => (
               <li key={adj.id} className="flex justify-between">
-                <span>
-                  {adj.description}{" "}
-                  <span className="text-xs text-slate-500">({adj.allocation_mode})</span>
-                </span>
+                <span>{adj.description}</span>
                 <span>{formatMoney(adj.amount_cents)}</span>
               </li>
             ))}

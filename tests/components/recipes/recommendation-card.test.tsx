@@ -40,6 +40,6 @@ describe("RecipeRecommendationCard", () => {
     );
     expect(screen.getByText(/Warnings/i)).toBeInTheDocument();
     expect(screen.getByText(/would not choose again/i)).toBeInTheDocument();
-    expect(screen.getByText(/Mixed fit/i)).toBeInTheDocument();
+    expect(screen.getByText(/Mixed opinions/i)).toBeInTheDocument();
   });
 });

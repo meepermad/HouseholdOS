@@ -105,8 +105,8 @@ const DETAILED_FALLBACKS: Record<string, (actor: string) => PushContent> = {
     body: `${actor} reversed a previously confirmed payment.`,
   }),
   "waiver.created": (actor) => ({
-    title: "Obligation waived",
-    body: `${actor} waived part or all of an obligation.`,
+    title: "A balance was forgiven",
+    body: `${actor} said you do not need to pay this back.`,
   }),
   "waiver.reversed": (actor) => ({
     title: "Waiver reversed",
@@ -121,10 +121,10 @@ const DETAILED_FALLBACKS: Record<string, (actor: string) => PushContent> = {
     body: `${actor} resolved a financial dispute.`,
   }),
   "refund_obligation.created": (actor) => ({
-    title: "Refund obligation created",
+    title: "A correction means money is owed the other way",
     body: actor === "Someone"
-      ? "An expense correction created a refund obligation."
-      : `${actor} triggered a refund obligation.`,
+      ? "An expense correction created a refund."
+      : `${actor} corrected an expense, so money is owed the other way.`,
   }),
   "expense.voided": (actor) => ({
     title: "Expense voided",

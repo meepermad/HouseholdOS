@@ -23,9 +23,8 @@ export default async function CalendarSettingsPage({
           Calendar settings
         </h1>
         <p className="text-sm text-text-secondary">
-          Manage personal ICS / LifeOS feeds, download exports, and open
-          external integrations. Apple Calendar refresh timing is controlled by
-          Apple and may not be immediate after changes.
+          Subscribe from another calendar app, download a copy, or connect
+          Google Calendar. Updates in Apple Calendar can take a while.
         </p>
       </header>
 
@@ -37,14 +36,14 @@ export default async function CalendarSettingsPage({
       <section className="space-y-2">
         <h2 className="text-lg font-semibold">Export</h2>
         <p className="text-sm text-text-secondary">
-          Download a one-shot <code>.ics</code> file for the next 90 days
-          (authenticated; respects busy-only privacy).
+          Download the next 90 days of household events. Private event details
+          stay hidden when they should.
         </p>
         <a
           href={`/api/calendar/export/${householdId}`}
           className="inline-flex min-h-11 items-center rounded-md border border-border px-4 text-sm font-medium hover:bg-surface-interactive"
         >
-          Download .ics
+          Download calendar file
         </a>
       </section>
 
@@ -54,7 +53,7 @@ export default async function CalendarSettingsPage({
           href={`/app/${householdId}/settings/integrations/calendar`}
           className="inline-flex min-h-11 items-center text-sm font-medium text-primary underline-offset-2 hover:underline"
         >
-          Google, ICS import, and LifeOS →
+          Google Calendar and imports →
         </Link>
         <Link
           href={`/app/${householdId}/settings/notifications`}

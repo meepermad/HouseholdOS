@@ -47,8 +47,8 @@ export const FINANCE_COPY = {
   receiptTotal: "Receipt total",
   applyOldestFirst: "Apply payment to oldest balances",
   youOwe: "You owe",
-  youAreOwed: "You are owed",
-  awaitingConfirmation: "Awaiting confirmation",
+  youAreOwed: "Owed to you",
+  awaitingConfirmation: "Waiting for confirmation",
   net: "Net",
 } as const;
 

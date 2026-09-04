@@ -170,9 +170,7 @@ export function HouseholdNav({
       sections.some((group) =>
         group.items.some((item) => item.match(pathname, householdId)),
       );
-    const moreBadge =
-      (counts.inbox ?? 0) +
-      (counts.maintenance ?? 0);
+    const moreBadge = counts.inbox ?? 0;
 
     return (
       <>

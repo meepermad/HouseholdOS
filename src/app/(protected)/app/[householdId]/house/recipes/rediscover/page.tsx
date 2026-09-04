@@ -63,7 +63,7 @@ export default async function RecipeRediscoverPage({
           Forgotten Favorites
         </h1>
         <p className="mt-2 text-sm text-text-secondary">
-          Occasional meal ideas you liked before. Preference authors stay private.
+          Meals you have not made in a while.
         </p>
         <p className="text-xs text-text-muted" data-testid="household-context-label">
           Household: {String(householdName)}
@@ -72,8 +72,8 @@ export default async function RecipeRediscoverPage({
 
       {rows.length === 0 ? (
         <p className="text-sm text-text-muted">
-          No rediscovery suggestions right now. Cadence and feedback keep this quiet
-          until a strong candidate exists.
+          No forgotten favorites right now. Cook a few meals and we will surface
+          ideas later.
         </p>
       ) : (
         <ul className="space-y-4">
@@ -87,10 +87,12 @@ export default async function RecipeRediscoverPage({
                 {nameById.get(String(r.recipe_id)) ?? "Recipe"}
               </h2>
               <p className="text-sm text-text-secondary">{String(r.explanation)}</p>
-              <p className="text-xs text-text-muted">
-                Preference fit: {String(r.preference_fit)} ·{" "}
-                {Number(r.pantry_have)} of {Number(r.pantry_total)} ingredients covered
-              </p>
+              {Number(r.pantry_total) > 0 ? (
+                <p className="text-xs text-text-muted">
+                  You already have {Number(r.pantry_have)} of{" "}
+                  {Number(r.pantry_total)} ingredients.
+                </p>
+              ) : null}
               <RediscoveryActions
                 householdId={householdId}
                 suggestionId={String(r.id)}

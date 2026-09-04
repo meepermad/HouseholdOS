@@ -4,6 +4,7 @@ import { getOpeningBalance } from "@/lib/payments/opening-routed-queries";
 import { OpeningBalanceActions } from "@/components/payments/OpeningBalanceActions";
 import { AppBackButton } from "@/components/app-back-button";
 import { formatMoney } from "@/lib/expenses/display";
+import { openingBalanceStatusCopy } from "@/lib/presentation/human-status";
 import { householdRoutes } from "@/lib/routes/household";
 import { notFound } from "next/navigation";
 
@@ -42,7 +43,7 @@ export default async function OpeningBalanceDetailPage({
         </p>
       </div>
       <p className="text-sm" data-testid="opening-balance-status">
-        Status: {entry.status}
+        {openingBalanceStatusCopy(entry.status).label}
       </p>
       <p className="whitespace-pre-wrap text-sm">{entry.explanation}</p>
       <OpeningBalanceActions

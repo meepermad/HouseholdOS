@@ -43,11 +43,11 @@ export default async function NewPaymentPage({
       <AppBackButton fallbackHref={`/app/${householdId}/money/payments`} />
       <header className="space-y-2">
         <h1 className="font-[family-name:var(--font-display)] text-2xl font-semibold">
-          Record external payment
+          Record payment
         </h1>
         <p className="text-sm text-text-secondary">
-          Record a payment already sent outside HouseholdOS. The recipient must confirm
-          receipt before official balances change.
+          Log money you already sent a roommate. They confirm it before balances
+          change.
         </p>
       </header>
       <SettleUpForm

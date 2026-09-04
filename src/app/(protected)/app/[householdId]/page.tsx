@@ -3,6 +3,7 @@ import Link from "next/link";
 import { assertActiveMembership } from "@/lib/household-context";
 import { formatUsdFromCents, toCents } from "@/lib/money";
 import { FINANCE_COPY } from "@/lib/presentation";
+import { TimeGreeting } from "@/components/home/TimeGreeting";
 import {
   loadHomeActionCenter,
   type HomeActionCenterData,
@@ -192,7 +193,7 @@ function HomeSections({
             id="house-heading"
             className="text-sm font-semibold uppercase tracking-wide text-text-muted"
           >
-            House summary
+            House status
           </h2>
           <ul className="space-y-1">
             {data.houseExceptions.map((item) => (
@@ -307,10 +308,10 @@ export default async function HouseholdHomePage({
     <main className="app-page-accent space-y-6" data-testid="home-action-center">
       <section>
         <h1 className="font-[family-name:var(--font-display)] text-2xl text-text-primary md:text-3xl">
-          Home
+          <TimeGreeting />
         </h1>
         <p className="mt-1 text-sm text-text-secondary">
-          What needs attention in your household today.
+          What matters in your household right now.
         </p>
       </section>
 

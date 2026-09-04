@@ -33,15 +33,20 @@ export function RediscoveryActions({
         className="inline-flex min-h-11 items-center rounded-md bg-primary px-3 text-sm font-semibold text-primary-foreground"
         data-testid="plan-rediscovered-meal"
       >
-        Plan this meal
+        Plan meal
       </Link>
       <Link
         href={`/app/${householdId}/house/recipes/rediscover/${suggestionId}/ingredients`}
         className="inline-flex min-h-11 items-center rounded-md border border-border px-3 text-sm font-semibold"
         data-testid="add-missing-ingredients"
       >
-        Add missing ingredients
+        Add ingredients
       </Link>
+      <details className="w-full">
+        <summary className="min-h-11 cursor-pointer text-sm font-medium text-text-secondary">
+          More
+        </summary>
+        <div className="mt-2 flex flex-wrap gap-2">
       {(
         [
           ["save_for_later", "Save for later"],
@@ -65,6 +70,8 @@ export function RediscoveryActions({
           </button>
         </form>
       ))}
+        </div>
+      </details>
       {state && !state.ok ? (
         <p className="w-full text-xs text-danger" role="alert">
           {state.error}

@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { assertActiveMembership } from "@/lib/household-context";
 import { can } from "@/lib/permissions";
 import { createClient } from "@/lib/supabase/server";
@@ -18,6 +17,8 @@ import {
 } from "@/components/ui/maturity-badge";
 import { featureMaturity } from "@/lib/launch/feature-maturity";
 import { LIFEOS_CALENDAR_CONTRACT_VERSION } from "@/lib/calendar/lifeos-contract";
+import { DisclosureSection } from "@/components/ui/disclosure-section";
+import { humanStatusLabel } from "@/lib/presentation/human-status";
 
 export const dynamic = "force-dynamic";
 
@@ -60,9 +61,7 @@ export default async function CalendarIntegrationsSettingsPage({
           Calendar integrations
         </h1>
         <p className="text-sm text-text-secondary">
-          Connect Google (OAuth), import ICS files, and authorize LifeOS read
-          feeds. External connections are owned by you — coordinators cannot
-          access your tokens.
+          Connect another calendar or import events. Connections belong to you.
         </p>
       </header>
 
@@ -107,8 +106,8 @@ export default async function CalendarIntegrationsSettingsPage({
                   >
                     <div className="flex flex-wrap justify-between gap-2">
                       <span>
-                        {c.account_email ?? "Google account"} · {c.status} ·{" "}
-                        {c.sync_mode}
+                        {c.account_email ?? "Google account"} ·{" "}
+                        {humanStatusLabel(c.status ?? "")}
                       </span>
                       {c.last_error_message ? (
                         <span className="text-amber-700 dark:text-amber-400">
@@ -138,43 +137,40 @@ export default async function CalendarIntegrationsSettingsPage({
           </section>
 
           <section className="space-y-3">
-            <h2 className="text-lg font-semibold">ICS import</h2>
+            <h2 className="text-lg font-semibold">Import a calendar file</h2>
             <CalendarIcsImportPanel householdId={householdId} />
           </section>
 
-          <section className="space-y-3">
-            <h2 className="text-lg font-semibold">LifeOS</h2>
-            <p className="text-sm text-text-secondary">
-              Contract version {LIFEOS_CALENDAR_CONTRACT_VERSION}. Create a
-              LifeOS-purpose feed under{" "}
-              <Link
-                href={`/app/${householdId}/settings/calendar`}
-                className="text-primary underline-offset-2 hover:underline"
-              >
-                Calendar settings
-              </Link>
-              . Read-only · revocable · never service-role. See{" "}
-              <code className="text-xs">docs/CALENDAR_LIFEOS.md</code>.
-            </p>
-          </section>
-
-          <section className="space-y-3">
-            <h2 className="text-lg font-semibold">Recent sync runs</h2>
-            {(syncRuns ?? []).length === 0 ? (
-              <p className="text-sm text-text-secondary">No sync runs yet.</p>
-            ) : (
-              <ul className="space-y-1 text-sm">
-                {((syncRuns ?? []) as Array<Record<string, string | null>>).map(
-                  (r) => (
-                    <li key={r.id!} className="tabular-nums text-text-secondary">
-                      {r.created_at} · {r.trigger_kind} · {r.status}
-                      {r.error_summary ? ` — ${r.error_summary}` : ""}
-                    </li>
-                  ),
-                )}
-              </ul>
-            )}
-          </section>
+          <DisclosureSection
+            title="Advanced"
+            description="Developer feeds and sync history"
+          >
+            <div className="space-y-3">
+              <h3 className="text-sm font-semibold">LifeOS feed</h3>
+              <p className="text-sm text-text-secondary">
+                Contract version {LIFEOS_CALENDAR_CONTRACT_VERSION}. Create a
+                feed under Calendar settings. Read-only and revocable.
+              </p>
+            </div>
+            <div className="space-y-3">
+              <h3 className="text-sm font-semibold">Recent syncs</h3>
+              {(syncRuns ?? []).length === 0 ? (
+                <p className="text-sm text-text-secondary">No syncs yet.</p>
+              ) : (
+                <ul className="space-y-1 text-sm">
+                  {((syncRuns ?? []) as Array<Record<string, string | null>>).map(
+                    (r) => (
+                      <li key={r.id!} className="tabular-nums text-text-secondary">
+                        {r.created_at ? new Date(r.created_at).toLocaleString() : ""}{" "}
+                        · {humanStatusLabel(r.status ?? "")}
+                        {r.error_summary ? ` — ${r.error_summary}` : ""}
+                      </li>
+                    ),
+                  )}
+                </ul>
+              )}
+            </div>
+          </DisclosureSection>
         </>
       )}
       {/* keep action import referenced for tree */}

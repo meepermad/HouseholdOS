@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { assertActiveMembership } from "@/lib/household-context";
 import { formatMoney } from "@/lib/expenses/display";
+import { formatAuditEventLabel } from "@/lib/presentation/audit-events";
 import { listActiveMemberOptions } from "@/lib/expenses/queries";
 import { getObligationBalance } from "@/lib/payments/queries";
 import { SettlementStatusBadge } from "@/components/ui/status-badge";
@@ -62,14 +63,15 @@ export default async function ObligationDetailPage({
       <header className="space-y-2">
         <div className="flex flex-wrap items-center gap-3">
           <h1 className="font-[family-name:var(--font-display)] text-2xl font-semibold">
-            Obligation
+            {label(balance.debtor_membership_id)} owes{" "}
+            {label(balance.creditor_membership_id)}
           </h1>
           <SettlementStatusBadge status={balance.settlement_state} />
         </div>
         <p className="text-sm text-text-secondary">
-          {label(balance.debtor_membership_id)} owes{" "}
-          {label(balance.creditor_membership_id)}
-          {balance.obligation_kind === "refund" ? " (refund)" : ""}
+          {balance.obligation_kind === "refund"
+            ? "A correction means this money should go the other way."
+            : "From a shared purchase."}
         </p>
         <Link
           href={`/app/${householdId}/money/expenses/${balance.expense_id}`}
@@ -89,11 +91,11 @@ export default async function ObligationDetailPage({
         <Metric label="Pending payment" value={formatMoney(balance.pending_payment_cents)} />
         <Metric label="Waived" value={formatMoney(balance.waived_cents)} />
         <Metric
-          label="Official outstanding"
+          label="Still owed"
           value={formatMoney(balance.official_outstanding_cents)}
         />
         <Metric
-          label="Projected outstanding"
+          label="If pending payments confirm"
           value={formatMoney(balance.projected_outstanding_cents)}
         />
       </section>
@@ -146,9 +148,9 @@ export default async function ObligationDetailPage({
         <ActionForm action={createWaiverAction} pendingLabel="Creating waiver…">
           <input type="hidden" name="householdId" value={householdId} />
           <input type="hidden" name="obligationId" value={obligationId} />
-          <h2 className="text-sm font-semibold">Create waiver</h2>
+          <h2 className="text-sm font-semibold">Forgive part of this balance</h2>
           <label className="mt-2 block text-sm" htmlFor="waiver-amount">
-            Amount (cents)
+            Amount in cents (advanced)
           </label>
           <input
             id="waiver-amount"
@@ -206,7 +208,7 @@ export default async function ObligationDetailPage({
         <ul className="space-y-2 text-sm">
           {(audits ?? []).map((a) => (
             <li key={a.id} className="rounded-md border border-border bg-surface px-3 py-2">
-              <p className="font-medium">{a.event_type}</p>
+              <p className="font-medium">{formatAuditEventLabel(a.event_type)}</p>
               <p className="text-xs text-text-muted">
                 {new Date(a.created_at).toLocaleString()}
               </p>

@@ -24,8 +24,6 @@ describe("nav items growth rules", () => {
   it("exposes coordination destinations under more", () => {
     const keys = moreNavItems().map((i) => i.key);
     expect(keys).toEqual(expect.arrayContaining([
-      "chores",
-      "maintenance",
       "governance",
       "polls",
       "utilities",
@@ -38,6 +36,7 @@ describe("nav items growth rules", () => {
       "profile",
       "away",
     ]));
+    expect(keys).not.toEqual(expect.arrayContaining(["chores", "maintenance"]));
     expect(moreNavBySection().map((g) => g.section)).toEqual([
       "household",
       "communication",

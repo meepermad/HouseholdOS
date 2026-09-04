@@ -114,18 +114,14 @@ export default async function ShoppingRecommendationsPage({
 
       {latest?.run ? (
         <p className="text-xs text-text-muted">
-          Last updated {new Date(latest.run.createdAt).toLocaleString()} · scoring v
-          {String(latest.run.sourceFreshness?.scoringVersion ?? "1")}
-          {latest.run.sourceFreshness?.forecastFormulaVersion
-            ? ` · forecast v${String(latest.run.sourceFreshness.forecastFormulaVersion)}`
-            : null}
+          Suggestions updated {new Date(latest.run.createdAt).toLocaleString()}
         </p>
       ) : null}
 
       {filtered.length === 0 ? (
         <div className="space-y-2" data-testid="recommendations-empty">
           <p className="text-sm text-text-muted">
-            No active suggestions for this filter.
+            No suggestions for this view.
           </p>
           {emptyReasons.map((reason) => (
             <p key={reason} className="text-sm text-text-secondary">

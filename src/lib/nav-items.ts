@@ -122,7 +122,7 @@ export const HOUSEHOLD_NAV_ITEMS: readonly HouseholdNavItem[] = [
     match: (pathname, id) =>
       pathname.startsWith(`/app/${id}/chores`) ||
       pathname.startsWith(`/app/${id}/responsibilities`),
-    enabled: true,
+    enabled: false,
     surface: "more",
     moreSection: "household",
     badge: "chores",
@@ -165,7 +165,7 @@ export const HOUSEHOLD_NAV_ITEMS: readonly HouseholdNavItem[] = [
     icon: "maintenance",
     href: (id) => householdRoutes.maintenance.index(id),
     match: (pathname, id) => pathname.startsWith(`/app/${id}/maintenance`),
-    enabled: true,
+    enabled: false,
     surface: "more",
     moreSection: "household",
     badge: "maintenance",
@@ -255,7 +255,7 @@ export const HOUSEHOLD_NAV_ITEMS: readonly HouseholdNavItem[] = [
   },
   {
     key: "inbox",
-    label: "Inbox",
+    label: "Notifications",
     shortLabel: "Inbox",
     icon: "inbox",
     href: (id) => householdRoutes.notifications(id),

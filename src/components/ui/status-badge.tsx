@@ -1,4 +1,4 @@
-import { statusLabel } from "@/lib/expenses/display";
+import { humanStatusLabel } from "@/lib/presentation/human-status";
 
 const tone: Record<string, string> = {
   draft: "bg-surface-secondary text-text-secondary border-border",
@@ -17,35 +17,15 @@ const tone: Record<string, string> = {
   under_review: "bg-info-soft text-info border-info/40",
   resolved: "bg-success-soft text-success border-success/40",
   withdrawn: "bg-surface-secondary text-text-muted border-border-strong",
+  awaiting_confirmation: "bg-warning-soft text-warning border-warning/40",
+  awaiting_intermediary_approval: "bg-warning-soft text-warning border-warning/40",
+  awaiting_acceptance: "bg-warning-soft text-warning border-warning/40",
+  ready_to_pay: "bg-info-soft text-info border-info/40",
+  stale: "bg-surface-secondary text-text-muted border-border-strong",
 };
 
-function humanize(status: string): string {
-  switch (status) {
-    case "submitted":
-      return "Awaiting recipient confirmation";
-    case "confirmed":
-      return "Confirmed received";
-    case "rejected":
-      return "Rejected";
-    case "cancelled":
-      return "Cancelled";
-    case "reversed":
-      return "Reversed";
-    case "partially_settled":
-      return "Partially settled";
-    case "settled":
-      return "Settled";
-    case "unpaid":
-      return "Unpaid";
-    case "under_review":
-      return "Under review";
-    default:
-      return statusLabel(status);
-  }
-}
-
 export function ExpenseStatusBadge({ status }: { status: string }) {
-  const label = humanize(status);
+  const label = humanStatusLabel(status);
   const classes =
     tone[status] ?? "bg-surface-secondary text-text-secondary border-border";
 

@@ -88,9 +88,9 @@ export function ReconciliationSummary({
           ))}
       </ul>
 
-      <h3 className="pt-2 text-sm font-semibold">Obligations</h3>
+      <h3 className="pt-2 text-sm font-semibold">Who owes whom</h3>
       {calc.obligations.length === 0 ? (
-        <p className="text-sm text-text-secondary">No reimbursements (payer covers all).</p>
+        <p className="text-sm text-text-secondary">No one owes anyone — the payer covers this.</p>
       ) : (
         <ul className="space-y-1 text-sm">
           {calc.obligations.map((o) => (

@@ -1,13 +1,13 @@
 import type { PreferenceFitSummary as PreferenceFit } from "@/lib/meals/types";
 
 const FIT_LABELS: Record<PreferenceFit, string> = {
-  strong: "Strong fit",
-  positive: "Positive fit",
-  neutral: "Neutral fit",
-  mixed: "Mixed fit",
-  negative: "Negative fit",
-  conflict: "Conflicting preferences",
-  unknown: "Preference fit unknown",
+  strong: "Usually a good match",
+  positive: "Likely a good match",
+  neutral: "Fine for most people",
+  mixed: "Mixed opinions",
+  negative: "Some people may not like this",
+  conflict: "People in the household disagree",
+  unknown: "Not sure how this fits yet",
 };
 
 const FIT_TONE: Record<PreferenceFit, string> = {

@@ -28,7 +28,7 @@ export default async function RecipesPage({
         <div>
           <h1 className="font-[family-name:var(--font-display)] text-3xl">Recipes</h1>
           <p className="mt-1 text-sm text-text-secondary">
-            Household and personal recipes. Pantry matching stays approximate.
+            What can we cook? Save recipes and add ingredients to shopping.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -68,7 +68,9 @@ export default async function RecipesPage({
       </form>
 
       {recipes.length === 0 ? (
-        <p className="text-sm text-text-secondary">No recipes yet.</p>
+        <p className="text-sm text-text-secondary">
+          No recipes yet. Add one so the household can cook from the same list.
+        </p>
       ) : (
         <ul className="rounded-md border border-border divide-y divide-border">
           {recipes.map((r) => (

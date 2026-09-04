@@ -193,7 +193,7 @@ export function formatRoutedAttention(params: {
       return {
         ...base,
         urgency: 50,
-        title: "A routed settlement needs your approval.",
+        title: "A suggested settlement needs your approval.",
         body: `Approve reducing two balances with one ${formatCentsPlain(params.amountCents)} payment.`,
         ctaLabel: "Review suggestion",
       };
@@ -201,7 +201,7 @@ export function formatRoutedAttention(params: {
       return {
         ...base,
         urgency: 50,
-        title: "A routed settlement needs your acceptance.",
+        title: "A suggested settlement needs your acceptance.",
         body: `Agree to receive ${formatCentsPlain(params.amountCents)} outside HouseholdOS.`,
         ctaLabel: "Review suggestion",
       };
@@ -209,17 +209,17 @@ export function formatRoutedAttention(params: {
       return {
         ...base,
         urgency: 50,
-        title: "A routed payment is ready to send.",
+        title: "A suggested payment is ready to send.",
         body: `Pay ${formatCentsPlain(params.amountCents)} outside HouseholdOS, then record it here.`,
-        ctaLabel: "Open proposal",
+        ctaLabel: "Open suggestion",
       };
     case "stale":
       return {
         ...base,
         urgency: 70,
-        title: "A routed settlement proposal may be out of date.",
+        title: "A suggested settlement may be out of date.",
         body: "Balances changed since it was created. Review or cancel it.",
-        ctaLabel: "Review proposal",
+        ctaLabel: "Review suggestion",
       };
   }
 }

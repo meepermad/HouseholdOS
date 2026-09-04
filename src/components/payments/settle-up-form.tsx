@@ -10,6 +10,8 @@ import {
   type ObligationForAllocation,
 } from "@/lib/payments";
 import { formatMoney } from "@/lib/expenses/display";
+import { paymentMethodLabel } from "@/lib/presentation/human-status";
+import { DisclosureSection } from "@/components/ui/disclosure-section";
 
 type Member = { id: string; label: string };
 
@@ -153,11 +155,11 @@ export function SettleUpForm({
 
       <section className="space-y-2">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-text-muted">
-          Obligations owed to recipient
+          What this payment covers
         </h2>
         {owedToRecipient.length === 0 ? (
           <p className="text-sm text-text-secondary">
-            No official outstanding obligations to this member.
+            You do not currently owe this person a confirmed amount.
           </p>
         ) : (
           <ul className="divide-y divide-border rounded-md border border-border bg-surface">
@@ -168,15 +170,12 @@ export function SettleUpForm({
                   className="h-5 w-5"
                   checked={selected.has(o.id)}
                   onChange={() => toggleObligation(o.id)}
-                  aria-label={`Select obligation ${o.id}`}
+                  aria-label={`Select ${formatMoney(o.officialOutstandingCents)} still owed`}
                   data-testid={`obligation-select-${o.id}`}
                 />
                 <div className="flex-1 text-sm">
                   <p className="font-medium tabular-nums">
-                    {formatMoney(o.officialOutstandingCents)} outstanding
-                  </p>
-                  <p className="text-xs text-text-muted">
-                    Effective {formatMoney(o.effectiveAmountCents)}
+                    {formatMoney(o.officialOutstandingCents)} still owed
                   </p>
                 </div>
               </li>
@@ -208,17 +207,19 @@ export function SettleUpForm({
           onClick={suggest}
           data-testid="suggest-allocation"
         >
-          Suggest oldest-first allocation
+          Apply to oldest balances
         </button>
       </section>
 
       {allocations.length > 0 ? (
         <section className="space-y-2" data-testid="allocation-preview">
-          <h2 className="text-sm font-semibold">Allocation preview</h2>
+          <h2 className="text-sm font-semibold">How this payment is applied</h2>
           <ul className="space-y-2 text-sm">
             {allocations.map((a) => (
               <li key={a.obligationId} className="flex justify-between gap-2">
-                <span className="text-text-secondary">{a.obligationId.slice(0, 8)}…</span>
+                <span className="text-text-secondary">
+                  {formatMoney(a.amountCents)} toward an open balance
+                </span>
                 <input
                   type="number"
                   className="min-h-11 w-28 rounded-md border border-border bg-surface px-2 text-right"
@@ -239,8 +240,8 @@ export function SettleUpForm({
             ))}
           </ul>
           <p className="text-xs text-text-muted">
-            Official for selection: {formatMoney(officialSelected)}. Projected after
-            confirmation: {formatMoney(projectedAfter)}.
+            Confirmed remaining after this: {formatMoney(projectedAfter)}
+            {officialSelected > 0 ? ` of ${formatMoney(officialSelected)}.` : "."}
           </p>
         </section>
       ) : null}
@@ -271,7 +272,7 @@ export function SettleUpForm({
 
         <div className="space-y-2">
           <label className="block text-sm font-medium" htmlFor="method">
-            External payment method
+            How did you pay?
           </label>
           <select
             id="method"
@@ -285,15 +286,20 @@ export function SettleUpForm({
           >
             {EXTERNAL_PAYMENT_METHODS.map((m) => (
               <option key={m} value={m}>
-                {m.replaceAll("_", " ")}
+                {paymentMethodLabel(m)}
               </option>
             ))}
           </select>
         </div>
 
+        <DisclosureSection
+          title="Advanced"
+          description="Notes, date, and extra details"
+          testId="payment-advanced"
+        >
         <div className="space-y-2">
           <label className="block text-sm font-medium" htmlFor="claimedPaidAt">
-            Claimed payment date (optional)
+            When did you send it? (optional)
           </label>
           <input
             id="claimedPaidAt"
@@ -338,6 +344,7 @@ export function SettleUpForm({
             maxLength={120}
           />
         </div>
+        </DisclosureSection>
 
         <label className="flex items-start gap-3 text-sm">
           <input
@@ -365,7 +372,7 @@ export function SettleUpForm({
           className="inline-flex min-h-11 w-full items-center justify-center rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground"
           data-testid="submit-payment"
         >
-          Submit for recipient confirmation
+          Send for confirmation
         </button>
       </ActionForm>
     </div>

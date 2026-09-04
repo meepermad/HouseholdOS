@@ -34,10 +34,10 @@ export default async function LedgerPage({
     <main className="space-y-6">
       <AppBackButton fallbackHref={`/app/${householdId}/money`} />
       <h1 className="font-[family-name:var(--font-display)] text-2xl font-semibold">
-        Financial ledger
+        Activity history
       </h1>
       <p className="text-sm text-text-secondary">
-        Authoritative household financial events. Entries come from source records and
+        A record of household money events. Entries come from source records and
         allowlisted audit events — not free-text edits.
       </p>
       {events.length === 0 ? (

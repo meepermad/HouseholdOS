@@ -27,14 +27,48 @@ export const CHORE_OCCURRENCE_STATUS_LABELS: Record<
 > = {
   scheduled: "Scheduled",
   in_progress: "In progress",
-  completed: "Completed",
+  completed: "Done",
   blocked: "Blocked",
   skipped: "Skipped",
   cancelled: "Cancelled",
-  awaiting_verification: "Awaiting verification",
-  verified: "Verified",
+  awaiting_verification: "Waiting for a check",
+  verified: "Checked",
   reopened: "Reopened",
 };
+
+export function choreDueLabel(params: {
+  dueAt: Date | string;
+  dueDate?: string | null;
+  allDay?: boolean;
+  now?: Date;
+}): string {
+  const now = params.now ?? new Date();
+  const due =
+    typeof params.dueAt === "string" ? new Date(params.dueAt) : params.dueAt;
+  const startOfToday = new Date(now);
+  startOfToday.setHours(0, 0, 0, 0);
+  const startOfTomorrow = new Date(startOfToday);
+  startOfTomorrow.setDate(startOfTomorrow.getDate() + 1);
+  const msPerDay = 86_400_000;
+
+  if (due.getTime() < startOfToday.getTime()) {
+    const days = Math.max(
+      1,
+      Math.round((startOfToday.getTime() - due.getTime()) / msPerDay),
+    );
+    return days === 1 ? "1 day overdue" : `${days} days overdue`;
+  }
+  if (due.getTime() < startOfTomorrow.getTime()) {
+    return params.allDay || now.getHours() >= 16 ? "Due tonight" : "Due today";
+  }
+  const tomorrowEnd = new Date(startOfTomorrow);
+  tomorrowEnd.setDate(tomorrowEnd.getDate() + 1);
+  if (due.getTime() < tomorrowEnd.getTime()) return "Due tomorrow";
+  if (params.allDay && params.dueDate) {
+    return `Due ${params.dueDate}`;
+  }
+  return `Due ${due.toLocaleDateString()}`;
+}
 
 export const RESPONSIBILITY_AREA_STATUS_LABELS: Record<
   ResponsibilityAreaStatus,
@@ -74,7 +108,7 @@ export const CHORE_BOARD_SECTION_LABELS: Record<ChoreBoardSection, string> = {
   upcoming: "Upcoming",
   overdue: "Overdue",
   blocked: "Blocked",
-  awaiting_verification: "Awaiting verification",
+  awaiting_verification: "Waiting for a check",
   completed_recently: "Completed recently",
 };
 

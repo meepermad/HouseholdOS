@@ -48,11 +48,11 @@ HouseholdOS is a private, mobile-first household management PWA. Identity, multi
 - Nav config lives in `src/lib/nav-items.ts`:
   - Bottom bar shows only enabled `surface: "primary"` items (capped at 4) so new domains do not crowd the thumb bar
   - Sidebar lists all enabled items (primary + `more`)
-  - Primary: Home · Money · Calendar · House. Chores, Maintenance, Governance, Inbox, Settings, and Profile live under `more` (Chores also reachable from the House hub)
-  - Lucide icons only; badges (chores due on House, money confirmations, urgent maintenance, inbox unread) hide when zero
+  - Primary: Home · Money · Calendar · House. Governance, Notifications, Settings, and Profile live under `more`. Chores and Maintenance are House destinations, not More items.
+  - Lucide icons only; badges (chores due on House, money confirmations, inbox unread) hide when zero
   - Unshipped domains stay `enabled: false`
-  - Hub vs destination: House owns chore/meal/recipe/maintenance paths, so `navActiveState` gives the narrowest match `aria-current="page"` and the hub above it `aria-current="location"`. The More button never highlights while a primary tab owns the path
-  - `HouseHubTabs` is the single directory for House sub-destinations (chores, shopping, pantry, supplies, inventory, recipes, meals, meal prep, maintenance)
+  - House owns chore/meal/recipe/maintenance paths, so those routes highlight the House tab. The More button never highlights while a primary tab owns the path
+  - `HouseHubTabs` shows Chores, Shopping, Pantry, Recipes, and Maintenance. Supplies, household items, meals, and meal prep live under More house tools.
   - Items may carry a `maturity` label; the More sheet and sidebar render it as a chip
 - Home is the household action center (attention, today, money summary, exceptions, quick actions); setup/members live under Settings
 - Presentation maps in `src/lib/presentation/` humanize roles, audit events, and enums

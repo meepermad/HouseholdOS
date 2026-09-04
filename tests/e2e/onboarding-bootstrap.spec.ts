@@ -76,11 +76,11 @@ test.describe("Phase 2.2 create and join household", () => {
         timeout: 30_000,
       });
       await expect(page.getByTestId("home-action-center")).toBeVisible();
-      await expect(page.getByRole("heading", { name: "Home" })).toBeVisible();
+      await expect(page.getByTestId("home-action-center")).toBeVisible();
 
       await page.reload();
       await expect(page).toHaveURL(new RegExp(`/app/[0-9a-f-]{36}`));
-      await expect(page.getByRole("heading", { name: "Home" })).toBeVisible();
+      await expect(page.getByTestId("home-action-center")).toBeVisible();
 
       // Recovery path: clear selection cookie → selector → re-enter
       await page.request.post("/auth/clear-household", {
@@ -90,7 +90,7 @@ test.describe("Phase 2.2 create and join household", () => {
       await page.waitForURL(/\/onboarding/);
       await page.getByRole("button", { name: `E2E House ${runId}` }).click();
       await expect(page).toHaveURL(new RegExp(`/app/[0-9a-f-]{36}`));
-      await expect(page.getByRole("heading", { name: "Home" })).toBeVisible();
+      await expect(page.getByTestId("home-action-center")).toBeVisible();
     } finally {
       const { data: mems } = await admin
         .from("household_memberships")
@@ -186,9 +186,9 @@ test.describe("Phase 2.2 create and join household", () => {
         timeout: 30_000,
       });
       await expect(page.getByTestId("home-action-center")).toBeVisible();
-      await expect(page.getByRole("heading", { name: "Home" })).toBeVisible();
+      await expect(page.getByTestId("home-action-center")).toBeVisible();
       await page.reload();
-      await expect(page.getByRole("heading", { name: "Home" })).toBeVisible();
+      await expect(page.getByTestId("home-action-center")).toBeVisible();
     } finally {
       void browser;
       for (const userId of [creator.data.user!.id, invitee.data.user!.id]) {

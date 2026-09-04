@@ -14,6 +14,7 @@ import {
 import { ActionForm } from "@/components/action-form";
 import { openDisputeAction } from "@/app/actions/payments";
 import { createClient } from "@/lib/supabase/server";
+import { paymentMethodLabel } from "@/lib/presentation/human-status";
 
 export const dynamic = "force-dynamic";
 
@@ -62,7 +63,7 @@ export default async function PaymentDetailPage({
         <p className="text-sm text-text-secondary">
           {label(payment.sender_membership_id)} → {label(payment.recipient_membership_id)}
           {" · "}
-          Recorded as {payment.external_method.replaceAll("_", " ")}
+          Recorded as {paymentMethodLabel(payment.external_method)}
         </p>
       </header>
 
@@ -106,7 +107,7 @@ export default async function PaymentDetailPage({
 
       <section className="space-y-2">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-text-muted">
-          Allocations
+          Applied to
         </h2>
         <ul className="divide-y divide-border rounded-md border border-border bg-surface">
           {allocations.map((a) => (
@@ -115,7 +116,7 @@ export default async function PaymentDetailPage({
                 href={`/app/${householdId}/money/reimbursements/${a.obligation_id}`}
                 className="underline"
               >
-                Obligation {a.obligation_id.slice(0, 8)}…
+                What this payment covers
               </Link>
               <span className="tabular-nums">{formatMoney(a.amount_cents)}</span>
             </li>

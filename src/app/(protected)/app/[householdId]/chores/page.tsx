@@ -20,7 +20,7 @@ export default async function ChoresPage({ params }: { params: Promise<{ househo
             Chores
           </h1>
           <p className="mt-1 text-sm text-text-secondary">
-            Upcoming household work and assignments.
+            What needs to get done around the house.
           </p>
         </div>
         <nav className="flex flex-wrap items-center gap-2 text-sm">
@@ -29,7 +29,7 @@ export default async function ChoresPage({ params }: { params: Promise<{ househo
               className="min-h-11 rounded-md bg-primary px-4 py-2.5 font-semibold text-primary-foreground"
               href={`/app/${householdId}/chores/new`}
             >
-              New chore
+              Add chore
             </Link>
           ) : null}
           <Link
@@ -37,18 +37,6 @@ export default async function ChoresPage({ params }: { params: Promise<{ househo
             href={`/app/${householdId}/chores/mine`}
           >
             My chores
-          </Link>
-          <Link
-            className="min-h-11 rounded-md border border-border px-3 py-2.5 text-text-secondary"
-            href={`/app/${householdId}/chores/rotations`}
-          >
-            Rotations
-          </Link>
-          <Link
-            className="min-h-11 rounded-md border border-border px-3 py-2.5 text-text-secondary"
-            href={`/app/${householdId}/responsibilities`}
-          >
-            Responsibilities
           </Link>
         </nav>
       </header>

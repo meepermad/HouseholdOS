@@ -5,7 +5,7 @@ import { HouseHubTabs } from "@/components/house/HouseHubTabs";
 import type { InventoryItemView } from "@/lib/house/queries";
 
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/app/h1/house/supplies",
+  usePathname: () => "/app/h1/chores",
 }));
 
 const sampleItem: InventoryItemView = {
@@ -50,9 +50,10 @@ describe("House UI components", () => {
 
   it("marks the active house hub tab from pathname", () => {
     render(<HouseHubTabs householdId="h1" />);
-    expect(screen.getByRole("link", { name: "Supplies" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "Chores" })).toHaveAttribute(
       "aria-current",
       "page",
     );
+    expect(screen.getByTestId("house-tools-open")).toBeInTheDocument();
   });
 });

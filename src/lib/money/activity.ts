@@ -1,3 +1,5 @@
+import { humanStatusLabel } from "@/lib/presentation/human-status";
+
 /** Friendly recent financial activity formatting (no raw audit keys). */
 
 export type ActivityKind =
@@ -83,7 +85,7 @@ export function activityStatusLabel(kind: ActivityKind, rawStatus?: string | nul
     case "receipt_reviewed":
       return "Reviewed";
     case "payment_submitted":
-      return "Awaiting confirmation";
+      return "Waiting for confirmation";
     case "payment_confirmed":
       return "Confirmed";
     case "payment_reversed":
@@ -99,14 +101,10 @@ export function activityStatusLabel(kind: ActivityKind, rawStatus?: string | nul
     case "dispute_resolved":
       return "Resolved";
     case "reimbursement_updated":
-      return rawStatus ? humanize(rawStatus) : "Updated";
+      return rawStatus ? humanStatusLabel(rawStatus) : "Updated";
     case "utility_recorded":
       return "Recorded";
   }
-}
-
-function humanize(s: string): string {
-  return s.replaceAll("_", " ");
 }
 
 export function sortActivity(items: readonly ActivityItem[]): ActivityItem[] {

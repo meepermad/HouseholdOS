@@ -39,13 +39,13 @@ export default async function ReimbursementsPage({
       <AppBackButton fallbackHref={`/app/${householdId}/money`} />
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="font-[family-name:var(--font-display)] text-2xl font-semibold">
-          Reimbursements
+          What people owe
         </h1>
         <Link
           href={`/app/${householdId}/money/payments/new`}
           className="inline-flex min-h-11 items-center rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground"
         >
-          Settle up
+          Record payment
         </Link>
       </div>
 
@@ -103,9 +103,9 @@ function ObligationList({
                   <SettlementStatusBadge status={r.settlement_state} />
                 </div>
                 <p className="tabular-nums">
-                  Official outstanding {formatMoney(r.official_outstanding_cents)}
+                  Still owed {formatMoney(r.official_outstanding_cents)}
                   {r.pending_payment_cents > 0
-                    ? ` · Awaiting confirmation ${formatMoney(r.pending_payment_cents)}`
+                    ? ` · Waiting for confirmation ${formatMoney(r.pending_payment_cents)}`
                     : ""}
                 </p>
               </Link>

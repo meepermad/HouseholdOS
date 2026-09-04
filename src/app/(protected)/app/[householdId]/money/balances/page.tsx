@@ -119,13 +119,13 @@ export default async function BalancesPage({
       </section>
 
       <p className="text-xs text-text-muted">
-        Official balances change only when the recipient confirms receipt. Submitted
-        payments affect projected balances only.
+        Confirmed amounts change only after the recipient says they received the
+        payment.
       </p>
 
       <section className="space-y-2">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-text-muted">
-          Open obligations
+          Open balances
         </h2>
         {open.length === 0 ? (
           <EmptyState

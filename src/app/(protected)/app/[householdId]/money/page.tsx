@@ -58,8 +58,8 @@ async function MoneyDashboard({
             data-testid="money-single-member"
           >
             <p>
-              Invite your roommates to split shared purchases and track
-              reimbursements.
+              Invite your roommates to split shared purchases and keep track of
+              who owes whom.
             </p>
             {overview.canInvite ? (
               <Link
@@ -91,8 +91,7 @@ async function MoneyDashboard({
       <aside className="space-y-4 lg:sticky lg:top-4">
         <MoneyToolsSheet tools={overview.tools} />
         <p className="hidden text-xs text-text-muted lg:block">
-          Updated {new Date(overview.fetchedAt).toLocaleString()} · overview v
-          {overview.version}
+          Updated {new Date(overview.fetchedAt).toLocaleString()}
         </p>
       </aside>
     </div>
@@ -120,8 +119,7 @@ export default async function MoneyHubPage({
           Money
         </h1>
         <p className="text-sm text-text-secondary">
-          Track shared purchases, reimbursements, and external payment records.
-          HouseholdOS does not move money or verify payment providers.
+          See what you owe, what is owed to you, and what needs a look.
         </p>
       </header>
 

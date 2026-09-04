@@ -5,6 +5,9 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { assertActiveMembership } from "@/lib/household-context";
 import { listHouseDashboard } from "@/lib/house/queries";
 import { formatQuantityLabel } from "@/lib/house/quantity";
+import { inventoryStatusLabel } from "@/lib/house/display";
+import { listBoardOccurrences } from "@/lib/chores/queries";
+import { boardSectionForOccurrence, choreDueLabel } from "@/lib/chores/display";
 
 export const dynamic = "force-dynamic";
 
@@ -61,11 +64,25 @@ export default async function HousePage({
   params: Promise<{ householdId: string }>;
 }) {
   const { householdId } = await params;
-  await assertActiveMembership(householdId);
-  const dashboard = await listHouseDashboard(householdId);
+  const ctx = await assertActiveMembership(householdId);
+  const [dashboard, chores] = await Promise.all([
+    listHouseDashboard(householdId),
+    listBoardOccurrences(householdId, ctx.membershipId, {
+      status: ["scheduled", "in_progress", "blocked", "reopened"],
+      limit: 8,
+    }),
+  ]);
   const base = `/app/${householdId}/house`;
+  const todayChores = chores.filter((chore) => {
+    const section = boardSectionForOccurrence({
+      status: chore.status,
+      dueAt: chore.dueAt,
+    });
+    return section === "due_today" || section === "overdue" || section === "blocked";
+  });
 
-  const hasExceptions =
+  const hasAttention =
+    todayChores.length > 0 ||
     dashboard.openShopping.count > 0 ||
     dashboard.lowSupplies.count > 0 ||
     dashboard.useSoonPantry.count > 0 ||
@@ -79,43 +96,30 @@ export default async function HousePage({
           House
         </h1>
         <p className="mt-1 text-sm text-text-secondary">
-          Chores, shopping, pantry, supplies, recipes, and maintenance.
+          Today&apos;s chores, shopping, and household supplies.
         </p>
       </header>
-      {/* Single directory for the hub — see HouseHubTabs for the destinations. */}
       <HouseHubTabs householdId={householdId} />
 
-      {!hasExceptions && dashboard.recentRestocks.length === 0 ? (
+      {!hasAttention && dashboard.recentRestocks.length === 0 ? (
         <EmptyState
           variant="page"
-          title="Your House area is ready"
-          description="Nothing needs restocking or attention yet. Start with a pantry staple, a shopping list, or the chore schedule."
+          title="Nothing needs attention"
+          description="Add a shopping list, a recurring chore, or a pantry staple when you are ready."
           testId="house-onboarding"
           action={
             <>
               <Link
-                href={`${base}/pantry`}
+                href={`/app/${householdId}/chores/new`}
                 className="inline-flex min-h-11 items-center rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground"
               >
-                Add pantry staple
+                Add chore
               </Link>
               <Link
                 href={`${base}/shopping`}
                 className="inline-flex min-h-11 items-center rounded-md border border-border px-4 text-sm font-medium"
               >
-                Create shopping list
-              </Link>
-              <Link
-                href={`${base}/inventory`}
-                className="inline-flex min-h-11 items-center rounded-md border border-border px-4 text-sm font-medium"
-              >
-                Add household item
-              </Link>
-              <Link
-                href={`/app/${householdId}/chores`}
-                className="inline-flex min-h-11 items-center rounded-md border border-border px-4 text-sm font-medium"
-              >
-                Open chores
+                Add shopping item
               </Link>
             </>
           }
@@ -123,8 +127,24 @@ export default async function HousePage({
       ) : (
         <>
           <SummarySection
-            title={`Shopping requests (${dashboard.openShopping.count})`}
-            emptyLabel="No open shopping requests."
+            title="Today"
+            emptyLabel="No chores need attention today."
+            seeAllHref={`/app/${householdId}/chores`}
+            rows={todayChores.map((chore) => ({
+              id: chore.id,
+              href: `/app/${householdId}/chores/${chore.id}`,
+              primary: chore.title,
+              secondary: choreDueLabel({
+                dueAt: chore.dueAt,
+                dueDate: chore.dueDate,
+                allDay: chore.allDay,
+              }),
+            }))}
+          />
+
+          <SummarySection
+            title="Shopping"
+            emptyLabel="The shopping list is empty."
             seeAllHref={`${base}/shopping`}
             rows={dashboard.openShopping.items.map((item) => ({
               id: item.id,
@@ -138,8 +158,8 @@ export default async function HousePage({
           />
 
           <SummarySection
-            title={`Low supplies (${dashboard.lowSupplies.count})`}
-            emptyLabel="All tracked supplies look stocked."
+            title="Running low"
+            emptyLabel="Nothing is running low."
             seeAllHref={`${base}/supplies`}
             rows={dashboard.lowSupplies.items.map((item) => ({
               id: item.id,
@@ -150,7 +170,7 @@ export default async function HousePage({
           />
 
           <SummarySection
-            title={`Use soon (${dashboard.useSoonPantry.count})`}
+            title="Use soon"
             emptyLabel="Nothing in the pantry needs attention soon."
             seeAllHref={`${base}/pantry`}
             rows={dashboard.useSoonPantry.items.map((item) => ({
@@ -164,31 +184,14 @@ export default async function HousePage({
           />
 
           <SummarySection
-            title={`Missing or damaged (${dashboard.missingDamagedInventory.count})`}
-            emptyLabel="No inventory needs attention."
+            title="Something broken or missing"
+            emptyLabel="No household items need attention."
             seeAllHref={`${base}/inventory`}
             rows={dashboard.missingDamagedInventory.items.map((item) => ({
               id: item.id,
               href: `${base}/inventory/${item.id}`,
               primary: item.name,
-              secondary: item.status,
-            }))}
-          />
-
-          <SummarySection
-            title="Recent restocks"
-            emptyLabel="No supplies have been restocked recently."
-            seeAllHref={`${base}/supplies`}
-            rows={dashboard.recentRestocks.map((row) => ({
-              id: row.id,
-              href: `${base}/supplies/${row.supplyItemId}`,
-              primary: row.supplyName,
-              secondary: row.newQuantity
-                ? formatQuantityLabel({
-                    amount: row.newQuantity,
-                    unit: row.quantityUnit,
-                  })
-                : undefined,
+              secondary: inventoryStatusLabel(item.status),
             }))}
           />
         </>

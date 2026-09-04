@@ -38,11 +38,11 @@ export function MoneyBalanceSummary({
         </div>
         <div>
           <p className="text-[0.65rem] uppercase tracking-wide text-text-muted">
-            You are owed
+            Owed to you
           </p>
           <p
             className="mt-1 text-sm font-semibold tabular-nums"
-            aria-label={`You are owed ${formatMoney(balance.officialYouAreOwedCents)} on confirmed balances`}
+            aria-label={`Owed to you ${formatMoney(balance.officialYouAreOwedCents)} on confirmed balances`}
           >
             {formatMoney(balance.officialYouAreOwedCents)}
           </p>
@@ -60,7 +60,7 @@ export function MoneyBalanceSummary({
         </div>
       </div>
       <p className="mt-2 text-center text-xs text-text-muted">
-        Official balances only
+        Confirmed amounts
         {pendingNote ? (
           <>
             {" · "}

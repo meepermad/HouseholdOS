@@ -5,7 +5,7 @@ export async function ChoreActionCenter({ householdId, membershipId }: { househo
   const items = await listChoreActionCenterItems(householdId, membershipId);
   const chores = [
     ...items.overdue.map((c) => ({ ...c, reason: "Overdue" })),
-    ...items.awaitingVerification.map((c) => ({ ...c, reason: "Awaiting verification" })),
+    ...items.awaitingVerification.map((c) => ({ ...c, reason: "Waiting for a check" })),
     ...items.blockedNeedingIntervention.map((c) => ({ ...c, reason: "Blocked" })),
     ...items.reassignmentPending.map((c) => ({ ...c, reason: "Reassignment pending" })),
     ...items.dueSoon.map((c) => ({ ...c, reason: "Due soon" })),

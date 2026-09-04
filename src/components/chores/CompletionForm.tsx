@@ -9,7 +9,7 @@ export function CompletionForm({ householdId, occurrenceId }: { householdId: str
       <input type="hidden" name="householdId" value={householdId} />
       <input type="hidden" name="occurrenceId" value={occurrenceId} />
       <Textarea name="note" rows={2} maxLength={2000} aria-label="Completion note" placeholder="Completion note (optional)" />
-      <SubmitButton>Mark complete</SubmitButton>
+      <SubmitButton>Done</SubmitButton>
     </ActionForm>
   );
 }

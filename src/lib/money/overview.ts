@@ -733,11 +733,11 @@ function buildTools(params: {
     { label: "All expenses", href: `${base}/expenses`, testId: "tool-expenses" },
     { label: "Payments", href: `${base}/payments`, testId: "tool-payments" },
     {
-      label: "Reimbursements",
+      label: "What people owe",
       href: `${base}/reimbursements`,
       testId: "tool-reimbursements",
     },
-    { label: "Ledger", href: `${base}/ledger`, testId: "tool-ledger" },
+    { label: "Activity history", href: `${base}/ledger`, testId: "tool-ledger" },
   ];
   const balanceTools = [
     { label: "Balances", href: `${base}/balances`, testId: "tool-balances" },
@@ -745,13 +745,13 @@ function buildTools(params: {
       ? []
       : [
           {
-            label: "Simplify balances",
+            label: "Suggested way to settle up",
             href: `${base}/simplify`,
             testId: "tool-simplify",
           },
         ]),
     {
-      label: "Opening balances",
+      label: "Starting balances",
       href: `${base}/opening-balances`,
       testId: "tool-opening",
     },
@@ -761,7 +761,7 @@ function buildTools(params: {
     ...(params.receiptsEnabled
       ? [
           {
-            label: "Receipt drafts",
+            label: "Receipts in progress",
             href: `${base}/receipts`,
             testId: "tool-receipts",
           },

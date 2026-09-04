@@ -9,17 +9,14 @@ vi.mock("next/navigation", () => ({
 }));
 
 describe("House hub owns its sub-destinations", () => {
-  it("marks House as the section and Chores as the page", () => {
+  it("marks House as the current page for chore routes", () => {
     render(<HouseholdNav householdId="hh-1" variant="sidebar" />);
 
     expect(screen.getByRole("link", { name: "House" })).toHaveAttribute(
       "aria-current",
-      "location",
-    );
-    expect(screen.getByRole("link", { name: "Chores" })).toHaveAttribute(
-      "aria-current",
       "page",
     );
+    expect(screen.queryByRole("link", { name: "Chores" })).not.toBeInTheDocument();
 
     const current = screen
       .getAllByRole("link")
@@ -32,7 +29,7 @@ describe("House hub owns its sub-destinations", () => {
 
     expect(screen.getByRole("link", { name: "House" })).toHaveAttribute(
       "aria-current",
-      "location",
+      "page",
     );
     // Only the inactive style carries the muted text token.
     expect(screen.getByTestId("mobile-more-nav").className).toContain(

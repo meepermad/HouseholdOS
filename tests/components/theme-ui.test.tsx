@@ -84,7 +84,7 @@ describe("HouseholdNav", () => {
 describe("ExpenseStatusBadge", () => {
   it("renders text status not color alone", () => {
     render(<ExpenseStatusBadge status="ready_for_review" />);
-    expect(screen.getByText("Ready for review")).toBeInTheDocument();
+    expect(screen.getByText("Waiting for confirmation")).toBeInTheDocument();
   });
 });
 

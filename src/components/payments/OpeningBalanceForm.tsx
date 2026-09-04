@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from "react";
 import { createOpeningBalanceAction } from "@/app/actions/opening-balances";
+import { CurrencyField } from "@/components/ui/currency-field";
 
 function makeIdempotencyKey(prefix: string): string {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
@@ -29,7 +30,7 @@ export function OpeningBalanceForm({
       <input type="hidden" name="idempotencyKey" value={idempotencyKey} />
 
       <label className="block text-sm">
-        Debtor (owes)
+        Who owes
         <select
           name="debtorMembershipId"
           required
@@ -45,7 +46,7 @@ export function OpeningBalanceForm({
       </label>
 
       <label className="block text-sm">
-        Creditor (is owed)
+        Who is owed
         <select
           name="creditorMembershipId"
           required
@@ -60,16 +61,12 @@ export function OpeningBalanceForm({
         </select>
       </label>
 
-      <label className="block text-sm">
-        Amount (cents)
-        <input
-          type="number"
-          name="amountCents"
-          min={1}
-          required
-          className="mt-1 w-full rounded-md border border-border bg-background px-3 py-2"
-        />
-      </label>
+      <CurrencyField
+        label="Amount"
+        name="amountCents"
+        required
+        hint="Enter dollars. HouseholdOS stores cents internally."
+      />
 
       <label className="block text-sm">
         Effective date

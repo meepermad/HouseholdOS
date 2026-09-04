@@ -53,7 +53,7 @@ test.describe("auth login production path", () => {
       timeout: 30000,
     });
     await expect(
-      page.getByText("What needs attention in your household today."),
+      page.getByText("What matters in your household right now."),
     ).toBeVisible();
     await expect(page.getByLabel("Loading household dashboard")).toHaveCount(0);
     await expect(page.getByTestId("protected-error-boundary")).toHaveCount(0);

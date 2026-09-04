@@ -61,8 +61,10 @@ export default async function OnboardingPage() {
               ? "Select an authorized household, create another, or join with an invite."
               : "Create the first household, join with an invite link, or resume where you left off."}
           </p>
-          <p className="mt-1 text-xs text-slate-500">
-            Status: {profile?.onboarding_status ?? "pending"}
+          <p className="mt-1 text-xs text-text-muted">
+            {profile?.onboarding_status === "completed"
+              ? "Setup finished."
+              : "You can finish this later."}
           </p>
         </section>
 

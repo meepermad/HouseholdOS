@@ -13,7 +13,7 @@ import {
   updateExpenseHeaderAction,
 } from "@/app/actions/expenses";
 import { assertActiveMembership } from "@/lib/household-context";
-import { formatMoney } from "@/lib/expenses/display";
+import { formatMoney, statusLabel } from "@/lib/expenses/display";
 import { loadExpenseBundle, recalculateBundle } from "@/lib/expenses/load-bundle";
 import { listActiveMemberOptions } from "@/lib/expenses/queries";
 import { createClient } from "@/lib/supabase/server";
@@ -49,8 +49,8 @@ export default async function EditExpensePage({
         <div>
           <h1 className="text-2xl font-semibold">Edit draft</h1>
           <p className="text-sm text-slate-600">
-            Status: {e.status}
-            {e.supersedes_expense_id ? " (amendment)" : ""}
+            {statusLabel(e.status)}
+            {e.supersedes_expense_id ? " · Correction" : ""}
           </p>
         </div>
         <Link
