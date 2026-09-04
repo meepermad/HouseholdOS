@@ -134,6 +134,32 @@ const DETAILED_FALLBACKS: Record<string, (actor: string) => PushContent> = {
     title: "Expense amended",
     body: `${actor} amended a confirmed expense.`,
   }),
+  "receipt.claiming_started": (actor) => ({
+    title: "A receipt needs your items",
+    body: actor === "Someone"
+      ? "Select anything that belongs to you."
+      : `${actor} paid. Select anything that belongs to you.`,
+  }),
+  "receipt.claim_requested": (actor) => ({
+    title: "A receipt needs your items",
+    body: actor === "Someone"
+      ? "Select anything that belongs to you."
+      : `${actor} asked you to claim your items.`,
+  }),
+  "receipt.claim_completed": (actor) => ({
+    title: "A roommate finished claiming items",
+    body: actor === "Someone"
+      ? "Open the receipt when you are ready to review."
+      : `${actor} finished claiming items.`,
+  }),
+  "receipt.ready_for_payer_review": () => ({
+    title: "Receipt ready to review",
+    body: "Everyone who needed to respond has finished. Review the split.",
+  }),
+  "receipt.claim_reminder": () => ({
+    title: "A receipt still needs your items",
+    body: "Select anything that belongs to you.",
+  }),
   // Calendar fallbacks stay privacy-safe: never include the event title,
   // description, location, or guest details in push copy.
   "calendar.event_created": (actor) => ({

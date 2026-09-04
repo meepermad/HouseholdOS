@@ -83,7 +83,7 @@ export function planReceiptItem(input: {
 }
 
 export type ReceiptAdjustmentPlan = {
-  type: "tax" | "tip";
+  type: "tax" | "tip" | "discount";
   description: string;
   amountCents: number;
 };
@@ -99,9 +99,16 @@ export function planReceiptAdjustments(input: {
   itemSubtotalCents: number;
   taxCents: number | null;
   tipCents: number | null;
+  discountCents?: number | null;
 }): ReceiptAdjustmentPlan[] {
   const plans: ReceiptAdjustmentPlan[] = [];
-  let remaining = input.declaredTotalCents - input.itemSubtotalCents;
+  const discount = Math.max(input.discountCents ?? 0, 0);
+  let remaining = input.declaredTotalCents - input.itemSubtotalCents + discount;
+
+  if (discount > 0) {
+    plans.push({ type: "discount", description: "Discount", amountCents: -discount });
+  }
+
   if (remaining <= 0) return plans;
 
   const tax = Math.max(input.taxCents ?? 0, 0);

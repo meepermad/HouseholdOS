@@ -106,18 +106,19 @@ test.describe("Launch phase navigation and surfaces", () => {
     await page.goto(`/app/${householdId}/money`);
     await expect(page.getByTestId("money-hub")).toBeVisible();
     await expect(page.getByTestId("money-balance-summary")).toBeVisible();
-    await expect(page.getByTestId("money-primary-actions")).toBeVisible();
+    await expect(page.getByTestId("money-hub-actions")).toBeVisible();
+    await expect(page.getByTestId("money-create-open")).toBeVisible();
     await expect(page.getByTestId("money-secondary-tools")).toBeVisible();
-    await expect(page.getByTestId("money-primary-scan-receipt")).toBeVisible();
-    await expect(page.getByTestId("money-primary-add-expense")).toBeVisible();
+    await page.getByTestId("money-create-open").click();
+    await expect(page.getByTestId("money-create-scan-receipt")).toBeVisible();
+    await expect(page.getByTestId("money-create-add-expense")).toBeVisible();
 
     await page.goto(`/app/${householdId}/money/receipts/new`);
     await expect(page.getByTestId("receipt-uploader")).toBeVisible();
     await expect(page.getByTestId("receipt-ocr-status")).toBeVisible();
     await expect(page.getByTestId("receipt-provider-disclosure")).toBeVisible();
-    await expect(page.getByTestId("provider-local")).toBeVisible();
-    await expect(page.getByTestId("provider-manual")).toBeVisible();
-    await expect(page.getByTestId("receipt-file-input")).toBeVisible();
+    await expect(page.getByTestId("receipt-choose-file")).toBeVisible();
+    await expect(page.getByTestId("receipt-file-input")).toBeAttached();
 
     await page.goto(`/app/${householdId}/setup`);
     await expect(page.getByTestId("setup-wizard")).toBeVisible();

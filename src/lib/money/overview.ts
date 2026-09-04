@@ -16,7 +16,10 @@ import {
   formatOpeningBalanceAttention,
   formatPaymentConfirmAttention,
   formatPaymentSenderAttention,
+  formatReceiptClaimAttention,
   formatReceiptDraftAttention,
+  formatReceiptReadFailedAttention,
+  formatReceiptReadyAttention,
   formatRefundAttention,
   formatRoutedAttention,
   sortAttentionItems,
@@ -42,7 +45,7 @@ import { shiftMonth } from "@/lib/money/list-filters";
 import type { MemberBalanceSummary, PairwiseBalance } from "@/lib/payments/types";
 import type { HouseholdResponsibility } from "@/types/database";
 
-export const MONEY_OVERVIEW_VERSION = 1;
+export const MONEY_OVERVIEW_VERSION = 2;
 
 export type PairwiseHubRow = {
   counterpartyMembershipId: string;
@@ -135,15 +138,36 @@ export async function loadMoneyOverview(params: {
       .order("submitted_at", { ascending: true })
       .limit(10),
     launch.receipts
-      ? supabase
+      ? // Claim columns are added by the receipt-claiming migration; types refresh after db:types.
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (supabase as any)
           .from("expense_receipts")
-          .select("id")
+          .select(
+            "id, merchant_corrected, status, ocr_outcome, uploaded_by_membership_id, payer_membership_id",
+          )
           .eq("household_id", householdId)
-          .eq("uploaded_by_membership_id", membershipId)
-          .in("status", ["uploaded", "extracting", "needs_review"])
           .is("deleted_at", null)
-          .limit(50)
-      : Promise.resolve({ data: [] as { id: string }[] }),
+          .neq("status", "confirmed")
+          .limit(50) as Promise<{
+          data: Array<{
+            id: string;
+            merchant_corrected: string | null;
+            status: string;
+            ocr_outcome: string | null;
+            uploaded_by_membership_id: string;
+            payer_membership_id: string | null;
+          }> | null;
+        }>
+      : Promise.resolve({
+          data: [] as Array<{
+            id: string;
+            merchant_corrected: string | null;
+            status: string;
+            ocr_outcome: string | null;
+            uploaded_by_membership_id: string;
+            payer_membership_id: string | null;
+          }>,
+        }),
     supabase
       .from("expenses")
       .select("id, merchant, status")
@@ -353,8 +377,59 @@ export async function loadMoneyOverview(params: {
     }
   }
 
-  const receiptDraftCount = (receiptDrafts.data ?? []).length;
-  if (receiptDraftCount > 0) {
+  const openReceipts = receiptDrafts.data ?? [];
+  const receiptDraftCount = openReceipts.length;
+  for (const receipt of openReceipts) {
+    const merchant = receipt.merchant_corrected ?? "";
+    const isPayer =
+      membershipId ===
+      (receipt.payer_membership_id ?? receipt.uploaded_by_membership_id);
+    if (receipt.status === "claiming" && !isPayer) {
+      attention.push(
+        formatReceiptClaimAttention({
+          receiptId: receipt.id,
+          merchant,
+          householdId,
+        }),
+      );
+    } else if (
+      receipt.status === "ready_for_review" ||
+      (receipt.status === "claiming" && isPayer)
+    ) {
+      attention.push(
+        formatReceiptReadyAttention({
+          receiptId: receipt.id,
+          merchant,
+          householdId,
+        }),
+      );
+    } else if (
+      receipt.ocr_outcome === "failed" ||
+      receipt.ocr_outcome === "timeout" ||
+      receipt.status === "failed"
+    ) {
+      attention.push(
+        formatReceiptReadFailedAttention({
+          receiptId: receipt.id,
+          merchant,
+          householdId,
+        }),
+      );
+    } else if (
+      isPayer &&
+      (receipt.status === "needs_review" ||
+        receipt.status === "uploaded" ||
+        receipt.status === "extracting")
+    ) {
+      attention.push(
+        formatReceiptDraftAttention({ count: 1, householdId }),
+      );
+    }
+  }
+  if (
+    receiptDraftCount > 0 &&
+    !attention.some((item) => item.id.startsWith("receipt-"))
+  ) {
     attention.push(
       formatReceiptDraftAttention({ count: receiptDraftCount, householdId }),
     );

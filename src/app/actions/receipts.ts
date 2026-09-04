@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import type { ActionResult } from "@/app/actions/auth";
 import { assertActiveMembership } from "@/lib/household-context";
-import { toPublicErrorMessage } from "@/lib/errors";
+import { logServerError, toPublicErrorMessage } from "@/lib/errors";
 import {
   RECEIPT_BUCKET,
 } from "@/lib/receipts/types";
@@ -14,6 +14,7 @@ import {
 } from "@/lib/receipts/validate";
 import { detectDuplicateReceipts } from "@/lib/receipts/duplicates";
 import { describeReceiptOcrStatus } from "@/lib/receipts/adapters";
+import { mapReceiptUploadFailure } from "@/lib/receipts/upload-errors";
 
 async function db(householdId: string) {
   const ctx = await assertActiveMembership(householdId);
@@ -58,6 +59,8 @@ export async function uploadReceiptAction(
     if (!validation.ok) return { ok: false, error: validation.error };
 
     const fileHash = createHash("sha256").update(bytes).digest("hex");
+    const idempotencyKey =
+      String(formData.get("idempotencyKey") ?? "").trim() || randomUUID();
     const { ctx, supabase } = await db(householdId);
 
     const { data: existing } = await supabase
@@ -67,20 +70,27 @@ export async function uploadReceiptAction(
       .is("deleted_at", null)
       .limit(50);
 
-    const receiptId = randomUUID();
-    const storagePath = `${householdId}/${receiptId}/${randomUUID()}.${validation.extension}`;
+    const storagePath = `${householdId}/uploads/${idempotencyKey}.${validation.extension}`;
 
     const { error: uploadError } = await supabase.storage
       .from(RECEIPT_BUCKET)
       .upload(storagePath, bytes, {
         contentType: validation.mimeType,
-        upsert: false,
+        upsert: true,
       });
     if (uploadError) {
-      return { ok: false, error: uploadError.message || "Upload failed." };
+      logServerError("receipts.upload.storage", uploadError, { householdId });
+      return {
+        ok: false,
+        error: mapReceiptUploadFailure({
+          stage: "storage_upload",
+          raw: uploadError.message,
+        }).message,
+      };
     }
 
-    const { data: id, error } = await supabase.rpc("register_expense_receipt", {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: id, error } = await (supabase as any).rpc("register_expense_receipt", {
       p_household_id: householdId,
       p_storage_path: storagePath,
       p_mime_type: validation.mimeType,
@@ -88,18 +98,29 @@ export async function uploadReceiptAction(
       p_size_bytes: file.size,
       p_file_hash: fileHash,
       p_perceptual_hash: undefined,
+      p_idempotency_key: idempotencyKey,
     });
     if (error) {
       const { error: removeError } = await supabase.storage
         .from(RECEIPT_BUCKET)
         .remove([storagePath]);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (supabase as any).rpc("record_receipt_orphan_cleanup", {
+        p_household_id: householdId,
+        p_storage_path: storagePath,
+        p_reason: removeError ? "registration_failed_cleanup_failed" : "registration_failed_cleaned",
+        p_cleaned: !removeError,
+      });
       if (removeError) {
-        console.error("receipt orphan cleanup failed", {
-          storagePath,
-          message: removeError.message,
-        });
+        logServerError("receipts.upload.orphan", removeError, { householdId });
       }
-      return { ok: false, error: error.message };
+      return {
+        ok: false,
+        error: mapReceiptUploadFailure({
+          stage: "registration",
+          raw: error.message,
+        }).message,
+      };
     }
 
     const dup = detectDuplicateReceipts(
@@ -183,7 +204,12 @@ export async function updateReceiptReviewAction(
       p_notes: undefined,
       p_line_items: lineItems ?? undefined,
     });
-    if (error) return { ok: false, error: error.message };
+    if (error) {
+      return {
+        ok: false,
+        error: mapReceiptRpcError(error.message),
+      };
+    }
     invalidate(householdId, receiptId);
     return { ok: true, message: "Receipt review saved." };
   } catch (e) {
@@ -208,29 +234,15 @@ export async function confirmReceiptAsExpenseAction(
         p_idempotency_key: idempotencyKey,
       },
     );
-    if (error) return { ok: false, error: error.message };
-    const { data: applyResult, error: applyError } = await supabase.rpc(
-      "apply_receipt_line_destinations",
-      { p_receipt_id: receiptId },
-    );
+    if (error) {
+      return { ok: false, error: mapReceiptRpcError(error.message) };
+    }
     invalidate(householdId, receiptId);
-    if (applyError) {
-      redirect(
-        `/app/${householdId}/money/receipts/${receiptId}?destination=failed&expenseId=${expenseId}`,
-      );
-    }
-    const failedCount =
-      typeof applyResult === "object" &&
-      applyResult &&
-      "failed" in applyResult
-        ? Number((applyResult as { failed?: number }).failed ?? 0)
-        : 0;
-    if (failedCount > 0) {
-      redirect(
-        `/app/${householdId}/money/receipts/${receiptId}?destination=needs_review&expenseId=${expenseId}`,
-      );
-    }
-    redirect(`/app/${householdId}/money/expenses/${expenseId}/edit`);
+    // Inventory / pantry destinations are an optional follow-up, not part of
+    // creating the expense.
+    redirect(
+      `/app/${householdId}/money/expenses/${expenseId}?fromReceipt=1`,
+    );
   } catch (e) {
     if (e && typeof e === "object" && "digest" in e) throw e;
     return { ok: false, error: toPublicErrorMessage(e) };
@@ -298,7 +310,7 @@ export async function submitLocalReceiptExtractionAction(
       p_ocr_lines_json: ocrLines ?? undefined,
       p_processing_meta: processingMeta ?? undefined,
     });
-    if (error) return { ok: false, error: error.message };
+    if (error) return { ok: false, error: mapReceiptRpcError(error.message) };
     invalidate(householdId, receiptId);
     return { ok: true, message: "On-device extraction saved for review." };
   } catch (e) {
@@ -332,6 +344,290 @@ export async function upsertReceiptAliasAction(
     if (error) return { ok: false, error: error.message };
     invalidate(householdId);
     return { ok: true, message: "Alias saved for this household." };
+  } catch (e) {
+    return { ok: false, error: toPublicErrorMessage(e) };
+  }
+}
+
+function mapReceiptRpcError(message: string): string {
+  const m = message.toLowerCase();
+  if (m.includes("claim_conflict")) return "Someone else already claimed this item.";
+  if (m.includes("claim_overclaim")) return "That would claim more than is left on this item.";
+  if (m.includes("claim_finalized")) return "This receipt is already submitted.";
+  if (m.includes("claim_not_open")) return "This receipt is not open for claiming.";
+  if (m.includes("not authenticated") || m.includes("jwt")) {
+    return mapReceiptUploadFailure({ raw: message }).message;
+  }
+  if (m.includes("not authorized") || m.includes("not an active")) {
+    return "You cannot change this receipt.";
+  }
+  if (m.includes("waiting_for_claims")) {
+    return "Some roommates have not claimed yet. Finish now if you want to continue without them.";
+  }
+  return "Could not update this receipt. Try again.";
+}
+
+export async function markReceiptOcrOutcomeAction(
+  householdId: string,
+  receiptId: string,
+  outcome: "pending" | "succeeded" | "failed" | "manual" | "timeout",
+): Promise<ActionResult> {
+  try {
+    const { supabase } = await db(householdId);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase as any).rpc("mark_receipt_ocr_outcome", {
+      p_receipt_id: receiptId,
+      p_outcome: outcome,
+    });
+    if (error) return { ok: false, error: mapReceiptRpcError(error.message) };
+    invalidate(householdId, receiptId);
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: toPublicErrorMessage(e) };
+  }
+}
+
+export async function startReceiptClaimingAction(
+  _prev: ActionResult | null,
+  formData: FormData,
+): Promise<ActionResult> {
+  try {
+    const householdId = String(formData.get("householdId") ?? "");
+    const receiptId = String(formData.get("receiptId") ?? "");
+    const waitMode = String(formData.get("waitMode") ?? "wait_for_everyone");
+    const { supabase } = await db(householdId);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase as any).rpc("start_receipt_claiming", {
+      p_receipt_id: receiptId,
+      p_wait_mode: waitMode,
+    });
+    if (error) return { ok: false, error: mapReceiptRpcError(error.message) };
+    invalidate(householdId, receiptId);
+    return { ok: true, message: "Roommates can now claim their items." };
+  } catch (e) {
+    return { ok: false, error: toPublicErrorMessage(e) };
+  }
+}
+
+export async function setReceiptSplitWorkflowAction(
+  _prev: ActionResult | null,
+  formData: FormData,
+): Promise<ActionResult> {
+  try {
+    const householdId = String(formData.get("householdId") ?? "");
+    const receiptId = String(formData.get("receiptId") ?? "");
+    const workflow = String(formData.get("workflow") ?? "");
+    const membershipIds = String(formData.get("membershipIds") ?? "")
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const payerMembershipId = String(formData.get("payerMembershipId") ?? "").trim();
+    const { supabase } = await db(householdId);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase as any).rpc("set_receipt_split_workflow", {
+      p_receipt_id: receiptId,
+      p_workflow: workflow,
+      p_membership_ids: membershipIds.length ? membershipIds : undefined,
+      p_payer_membership_id: payerMembershipId || undefined,
+    });
+    if (error) return { ok: false, error: mapReceiptRpcError(error.message) };
+    if (workflow === "claiming") {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error: startError } = await (supabase as any).rpc("start_receipt_claiming", {
+        p_receipt_id: receiptId,
+        p_invite_membership_ids: membershipIds.length ? membershipIds : undefined,
+      });
+      if (startError) return { ok: false, error: mapReceiptRpcError(startError.message) };
+    }
+    invalidate(householdId, receiptId);
+    return { ok: true, message: "Split updated." };
+  } catch (e) {
+    return { ok: false, error: toPublicErrorMessage(e) };
+  }
+}
+
+export async function claimReceiptLinesAction(
+  _prev: ActionResult | null,
+  formData: FormData,
+): Promise<ActionResult> {
+  try {
+    const householdId = String(formData.get("householdId") ?? "");
+    const lineIds = String(formData.get("lineIds") ?? "")
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const quantitiesRaw = String(formData.get("quantities") ?? "");
+    const quantities = quantitiesRaw
+      ? quantitiesRaw.split(",").map((s) => Number(s) || 1)
+      : lineIds.map(() => 1);
+    if (lineIds.length === 0) {
+      return { ok: false, error: "Select at least one item." };
+    }
+    const { supabase } = await db(householdId);
+    for (let i = 0; i < lineIds.length; i += 1) {
+      const qty = quantities[i] ?? 1;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (supabase as any).rpc("claim_receipt_line_quantity", {
+        p_line_item_id: lineIds[i],
+        p_quantity: qty,
+        p_idempotency_key: `${lineIds[i]}:${qty}:${String(formData.get("idempotencyKey") ?? randomUUID())}`,
+      });
+      if (error) return { ok: false, error: mapReceiptRpcError(error.message) };
+    }
+    invalidate(householdId);
+    return { ok: true, message: "Items claimed." };
+  } catch (e) {
+    return { ok: false, error: toPublicErrorMessage(e) };
+  }
+}
+
+export async function unclaimReceiptLineAction(
+  _prev: ActionResult | null,
+  formData: FormData,
+): Promise<ActionResult> {
+  try {
+    const householdId = String(formData.get("householdId") ?? "");
+    const lineId = String(formData.get("lineId") ?? "");
+    const { supabase } = await db(householdId);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase as any).rpc("unclaim_receipt_line", {
+      p_line_item_id: lineId,
+    });
+    if (error) return { ok: false, error: mapReceiptRpcError(error.message) };
+    invalidate(householdId);
+    return { ok: true, message: "Item unclaimed." };
+  } catch (e) {
+    return { ok: false, error: toPublicErrorMessage(e) };
+  }
+}
+
+export async function markReceiptLineSharedAction(
+  _prev: ActionResult | null,
+  formData: FormData,
+): Promise<ActionResult> {
+  try {
+    const householdId = String(formData.get("householdId") ?? "");
+    const lineId = String(formData.get("lineId") ?? "");
+    const membershipIds = String(formData.get("membershipIds") ?? "")
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const { supabase } = await db(householdId);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase as any).rpc("mark_receipt_line_shared", {
+      p_line_item_id: lineId,
+      p_membership_ids: membershipIds.length ? membershipIds : undefined,
+    });
+    if (error) return { ok: false, error: mapReceiptRpcError(error.message) };
+    invalidate(householdId);
+    return { ok: true, message: "Item marked shared." };
+  } catch (e) {
+    return { ok: false, error: toPublicErrorMessage(e) };
+  }
+}
+
+export async function assignReceiptLineAction(
+  _prev: ActionResult | null,
+  formData: FormData,
+): Promise<ActionResult> {
+  try {
+    const householdId = String(formData.get("householdId") ?? "");
+    const lineId = String(formData.get("lineId") ?? "");
+    const membershipId = String(formData.get("membershipId") ?? "");
+    const excluded = String(formData.get("excluded") ?? "") === "1";
+    const { supabase } = await db(householdId);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase as any).rpc("assign_receipt_line", {
+      p_line_item_id: lineId,
+      p_membership_id: membershipId || undefined,
+      p_excluded: excluded,
+    });
+    if (error) return { ok: false, error: mapReceiptRpcError(error.message) };
+    invalidate(householdId);
+    return { ok: true, message: excluded ? "Item excluded." : "Item assigned." };
+  } catch (e) {
+    return { ok: false, error: toPublicErrorMessage(e) };
+  }
+}
+
+export async function applyRemainingReceiptLinesAction(
+  _prev: ActionResult | null,
+  formData: FormData,
+): Promise<ActionResult> {
+  try {
+    const householdId = String(formData.get("householdId") ?? "");
+    const receiptId = String(formData.get("receiptId") ?? "");
+    const action = String(formData.get("remainingAction") ?? "");
+    const { supabase } = await db(householdId);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase as any).rpc("apply_remaining_receipt_lines", {
+      p_receipt_id: receiptId,
+      p_action: action,
+    });
+    if (error) return { ok: false, error: mapReceiptRpcError(error.message) };
+    invalidate(householdId, receiptId);
+    return { ok: true, message: "Remaining items updated." };
+  } catch (e) {
+    return { ok: false, error: toPublicErrorMessage(e) };
+  }
+}
+
+export async function finishReceiptClaimingAction(
+  _prev: ActionResult | null,
+  formData: FormData,
+): Promise<ActionResult> {
+  try {
+    const householdId = String(formData.get("householdId") ?? "");
+    const receiptId = String(formData.get("receiptId") ?? "");
+    const { supabase } = await db(householdId);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase as any).rpc("finish_receipt_claiming", {
+      p_receipt_id: receiptId,
+    });
+    if (error) return { ok: false, error: mapReceiptRpcError(error.message) };
+    invalidate(householdId, receiptId);
+    return { ok: true, message: "Thanks — your claims were saved." };
+  } catch (e) {
+    return { ok: false, error: toPublicErrorMessage(e) };
+  }
+}
+
+export async function finalizeReceiptClaimsAction(
+  _prev: ActionResult | null,
+  formData: FormData,
+): Promise<ActionResult> {
+  try {
+    const householdId = String(formData.get("householdId") ?? "");
+    const receiptId = String(formData.get("receiptId") ?? "");
+    const force = String(formData.get("force") ?? "") === "1";
+    const { supabase } = await db(householdId);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase as any).rpc("finalize_receipt_claims", {
+      p_receipt_id: receiptId,
+      p_force: force,
+    });
+    if (error) return { ok: false, error: mapReceiptRpcError(error.message) };
+    invalidate(householdId, receiptId);
+    return { ok: true, message: "Ready to review the split." };
+  } catch (e) {
+    return { ok: false, error: toPublicErrorMessage(e) };
+  }
+}
+
+export async function remindReceiptClaimingAction(
+  _prev: ActionResult | null,
+  formData: FormData,
+): Promise<ActionResult> {
+  try {
+    const householdId = String(formData.get("householdId") ?? "");
+    const receiptId = String(formData.get("receiptId") ?? "");
+    const { supabase } = await db(householdId);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase as any).rpc("remind_receipt_claiming", {
+      p_receipt_id: receiptId,
+    });
+    if (error) return { ok: false, error: mapReceiptRpcError(error.message) };
+    return { ok: true, message: "Reminder sent." };
   } catch (e) {
     return { ok: false, error: toPublicErrorMessage(e) };
   }

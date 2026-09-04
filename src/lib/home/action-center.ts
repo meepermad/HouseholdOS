@@ -106,6 +106,66 @@ async function loadNextMeeting(householdId: string) {
   return nextMeeting;
 }
 
+async function loadReceiptAttention(
+  householdId: string,
+  membershipId: string,
+): Promise<HomeAttentionItem[]> {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const supabase = (await createClient()) as any;
+    const { data } = await supabase
+      .from("expense_receipts")
+      .select(
+        "id, merchant_corrected, status, ocr_outcome, uploaded_by_membership_id, payer_membership_id",
+      )
+      .eq("household_id", householdId)
+      .is("deleted_at", null)
+      .neq("status", "confirmed")
+      .limit(20);
+    const items: HomeAttentionItem[] = [];
+    for (const receipt of data ?? []) {
+      const merchant = receipt.merchant_corrected || "Receipt";
+      const isPayer =
+        membershipId ===
+        (receipt.payer_membership_id ?? receipt.uploaded_by_membership_id);
+      if (receipt.status === "claiming" && !isPayer) {
+        items.push({
+          id: `receipt-claim-${receipt.id}`,
+          title: "Your items need claiming",
+          detail: `${merchant} receipt`,
+          urgency: "normal",
+          href: `/app/${householdId}/money/receipts/${receipt.id}?claim=1`,
+        });
+      } else if (
+        receipt.status === "ready_for_review" ||
+        (receipt.status === "claiming" && isPayer)
+      ) {
+        items.push({
+          id: `receipt-ready-${receipt.id}`,
+          title: "Receipt ready to submit",
+          detail: merchant,
+          urgency: "normal",
+          href: `/app/${householdId}/money/receipts/${receipt.id}`,
+        });
+      } else if (
+        receipt.ocr_outcome === "failed" ||
+        receipt.status === "failed"
+      ) {
+        items.push({
+          id: `receipt-failed-${receipt.id}`,
+          title: "Receipt reading failed",
+          detail: merchant,
+          urgency: "normal",
+          href: `/app/${householdId}/money/receipts/${receipt.id}`,
+        });
+      }
+    }
+    return items;
+  } catch {
+    return [];
+  }
+}
+
 export async function loadHomeActionCenter(options: {
   householdId: string;
   membershipId: string;
@@ -140,6 +200,7 @@ export async function loadHomeActionCenter(options: {
     maintenance,
     nextMeeting,
     shoppingIntel,
+    receiptAttention,
   ] = await Promise.all([
     listActionCenterItems(householdId, membershipId, userId).catch(() => null),
     getSettlementBalancesForMembership(householdId, membershipId).catch(
@@ -163,7 +224,10 @@ export async function loadHomeActionCenter(options: {
     listMaintenanceRequests(householdId).catch(() => null),
     loadNextMeeting(householdId).catch(() => null),
     loadShoppingIntel(householdId).catch(() => null),
+    loadReceiptAttention(householdId, membershipId),
   ]);
+
+  attention.push(...receiptAttention);
 
   if (moneyItems) {
     for (const p of moneyItems.awaitingConfirm) {

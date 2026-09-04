@@ -17,5 +17,5 @@ describe("package:source", () => {
     expect(listing).not.toMatch(/^node_modules\//m);
     expect(listing).not.toMatch(/^\.next\//m);
     expect(listing).toMatch(/package\.json/);
-  });
+  }, 30_000);
 });

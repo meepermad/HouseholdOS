@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { ActionForm } from "@/components/action-form";
 import {
+  confirmExpenseAction,
   createExpenseAmendmentAction,
   voidExpenseAction,
 } from "@/app/actions/expenses";
@@ -19,16 +20,19 @@ export const dynamic = "force-dynamic";
 
 export default async function ExpenseDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ householdId: string; expenseId: string }>;
+  searchParams: Promise<{ fromReceipt?: string }>;
 }) {
   const { householdId, expenseId } = await params;
+  const { fromReceipt } = await searchParams;
   const ctx = await assertActiveMembership(householdId);
   const supabase = await createClient();
   const bundle = await loadExpenseBundle(supabase, expenseId);
   if (!bundle || bundle.expense.household_id !== householdId) notFound();
 
-  if (bundle.expense.status === "draft" || bundle.expense.status === "ready_for_review") {
+  if (bundle.expense.status === "draft") {
     redirect(`/app/${householdId}/money/expenses/${expenseId}/edit`);
   }
 
@@ -67,23 +71,120 @@ export default async function ExpenseDetailPage({
       : recalculateBundle(bundle);
 
   const e = bundle.expense;
+  const shares = calc && calc.ok ? calc.memberShares : [];
+  const myShare = shares.find((s) => s.membershipId === ctx.membershipId);
+  const myObligation = (obligations ?? []).find(
+    (o) => o.debtor_membership_id === ctx.membershipId,
+  );
+  const othersOwe = (obligations ?? [])
+    .filter((o) => o.creditor_membership_id === ctx.membershipId)
+    .reduce((sum, o) => sum + (o.current_amount_cents ?? 0), 0);
+  const isPayer = ctx.membershipId === e.payer_membership_id;
+  const waitingConfirm = e.status === "ready_for_review";
+  const previewOwed = calc && calc.ok
+    ? calc.obligations
+        .filter((o) => o.creditorMembershipId === ctx.membershipId)
+        .reduce((sum, o) => sum + o.amountCents, 0)
+    : 0;
 
   return (
     <main className="space-y-6">
       <div className="flex items-start justify-between gap-2">
         <div>
           <h1 className="text-2xl font-semibold">{e.merchant || "Expense"}</h1>
+          <p className="mt-1 text-2xl font-semibold tabular-nums">
+            {formatMoney(e.declared_total_cents)}
+          </p>
           <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-text-secondary">
             <ExpenseStatusBadge status={e.status} />
-            <span>
-              {e.purchase_date} · {formatMoney(e.declared_total_cents)}
-            </span>
+            <span>Paid by {label(e.payer_membership_id)}</span>
           </p>
         </div>
         <Link href={`/app/${householdId}/money/expenses`} className="text-sm underline">
           All expenses
         </Link>
       </div>
+
+      <section
+        className="rounded-md border border-border bg-surface p-4"
+        data-testid="expense-your-share"
+      >
+        {isPayer ? (
+          <>
+            <p className="text-sm text-text-secondary">You paid</p>
+            <p className="text-xl font-semibold tabular-nums">
+              {formatMoney(e.declared_total_cents)}
+            </p>
+            <p className="mt-2 text-sm text-text-secondary">Others owe you</p>
+            <p className="text-lg font-semibold tabular-nums">
+              {formatMoney(othersOwe || previewOwed)}
+            </p>
+          </>
+        ) : (
+          <>
+            <p className="text-sm text-text-secondary">Your share</p>
+            <p className="text-xl font-semibold tabular-nums">
+              {formatMoney(
+                myShare?.totalShareCents ?? myObligation?.current_amount_cents ?? 0,
+              )}
+            </p>
+            <p className="mt-2 text-sm text-text-secondary">
+              You owe {label(e.payer_membership_id)}:{" "}
+              <span className="font-semibold text-text-primary">
+                {formatMoney(
+                  myObligation?.current_amount_cents ??
+                    myShare?.totalShareCents ??
+                    0,
+                )}
+              </span>
+            </p>
+          </>
+        )}
+        <p className="mt-3 text-sm text-text-secondary">
+          Status:{" "}
+          {waitingConfirm
+            ? isPayer
+              ? "Waiting for roommate confirmation"
+              : "Waiting for your confirmation"
+            : e.status === "confirmed"
+              ? "Confirmed"
+              : e.status}
+        </p>
+        {waitingConfirm && can(ctx.roles, "expense.confirm") ? (
+          <div className="mt-3 flex flex-wrap gap-2">
+            <ActionForm action={confirmExpenseAction} pendingLabel="Confirming…">
+              <input type="hidden" name="householdId" value={householdId} />
+              <input type="hidden" name="expenseId" value={expenseId} />
+              <input type="hidden" name="idempotencyKey" value={crypto.randomUUID()} />
+              <button
+                type="submit"
+                className="min-h-11 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground"
+              >
+                Confirm
+              </button>
+            </ActionForm>
+            <Link
+              href={`/app/${householdId}/money/disputes`}
+              className="inline-flex min-h-11 items-center rounded-md border border-border px-4 text-sm"
+            >
+              Dispute
+            </Link>
+          </div>
+        ) : null}
+      </section>
+
+      {fromReceipt === "1" ? (
+        <section
+          className="rounded-md border border-border bg-surface p-4"
+          data-testid="receipt-inventory-followup"
+        >
+          <p className="font-medium">Receipt submitted successfully.</p>
+          <p className="mt-1 text-sm text-text-secondary">
+            Optional: update household pantry or supplies later. This does not
+            change who owes what.
+          </p>
+        </section>
+      ) : null}
 
       <dl className="grid grid-cols-2 gap-x-3 gap-y-2 rounded-md border border-border bg-surface p-4 text-sm">
         <dt className="text-text-muted">Payer</dt>

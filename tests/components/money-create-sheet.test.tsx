@@ -14,13 +14,14 @@ const create = buildMoneyCreateActions({
 });
 
 describe("MoneyCreateSheet", () => {
-  it("stays closed until the Add button is pressed", () => {
+  it("stays closed until the Add expense button is pressed", () => {
     render(<MoneyCreateSheet create={create} />);
-    expect(screen.getByTestId("money-create-open")).toBeInTheDocument();
+    expect(screen.getByTestId("money-create-open")).toHaveTextContent("Add expense");
     expect(screen.queryByTestId("money-create-sheet")).not.toBeInTheDocument();
+    expect(screen.getByTestId("money-create-record-payment")).toBeInTheDocument();
   });
 
-  it("lists the everyday create options", async () => {
+  it("lists scan, upload, and manual entry in the sheet", async () => {
     const user = userEvent.setup();
     render(<MoneyCreateSheet create={create} />);
     await user.click(screen.getByTestId("money-create-open"));
@@ -28,15 +29,15 @@ describe("MoneyCreateSheet", () => {
     expect(screen.getByTestId("money-create-sheet")).toBeInTheDocument();
     expect(screen.getByTestId("money-create-scan-receipt")).toHaveAttribute(
       "href",
-      "/app/hh1/money/receipts/new",
+      "/app/hh1/money/receipts/new?mode=camera",
+    );
+    expect(screen.getByTestId("money-create-upload-receipt")).toHaveAttribute(
+      "href",
+      "/app/hh1/money/receipts/new?mode=file",
     );
     expect(screen.getByTestId("money-create-add-expense")).toHaveAttribute(
       "href",
       "/app/hh1/money/expenses/new",
-    );
-    expect(screen.getByTestId("money-create-record-payment")).toHaveAttribute(
-      "href",
-      "/app/hh1/money/payments/new",
     );
   });
 
@@ -46,11 +47,10 @@ describe("MoneyCreateSheet", () => {
     await user.click(screen.getByTestId("money-create-open"));
 
     expect(
-      screen.queryByTestId("money-create-opening-balance"),
+      screen.queryByTestId("money-create-shared-purchase"),
     ).not.toBeInTheDocument();
 
     await user.click(screen.getByTestId("money-create-more"));
-    expect(screen.getByTestId("money-create-opening-balance")).toBeInTheDocument();
     expect(screen.getByTestId("money-create-shared-purchase")).toBeInTheDocument();
   });
 

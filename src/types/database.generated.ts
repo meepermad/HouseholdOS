@@ -2681,6 +2681,92 @@ export type Database = {
           },
         ]
       }
+      expense_receipt_claim_events: {
+        Row: {
+          actor_membership_id: string
+          created_at: string
+          event_type: string
+          household_id: string
+          id: string
+          line_item_id: string | null
+          payload: Json
+          receipt_id: string
+        }
+        Insert: {
+          actor_membership_id: string
+          created_at?: string
+          event_type: string
+          household_id: string
+          id?: string
+          line_item_id?: string | null
+          payload?: Json
+          receipt_id: string
+        }
+        Update: {
+          actor_membership_id?: string
+          created_at?: string
+          event_type?: string
+          household_id?: string
+          id?: string
+          line_item_id?: string | null
+          payload?: Json
+          receipt_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expense_receipt_claim_events_receipt_id_household_id_fkey"
+            columns: ["receipt_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "expense_receipts"
+            referencedColumns: ["id", "household_id"]
+          },
+        ]
+      }
+      expense_receipt_claim_invites: {
+        Row: {
+          created_at: string
+          household_id: string
+          membership_id: string
+          receipt_id: string
+          reminder_sent_at: string | null
+          responded_at: string | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          household_id: string
+          membership_id: string
+          receipt_id: string
+          reminder_sent_at?: string | null
+          responded_at?: string | null
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          household_id?: string
+          membership_id?: string
+          receipt_id?: string
+          reminder_sent_at?: string | null
+          responded_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expense_receipt_claim_invites_membership_id_fkey"
+            columns: ["membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expense_receipt_claim_invites_receipt_id_household_id_fkey"
+            columns: ["receipt_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "expense_receipts"
+            referencedColumns: ["id", "household_id"]
+          },
+        ]
+      }
       expense_receipt_duplicates: {
         Row: {
           created_at: string
@@ -2828,6 +2914,73 @@ export type Database = {
           },
         ]
       }
+      expense_receipt_line_claims: {
+        Row: {
+          amount_cents: number | null
+          claim_kind: string
+          created_at: string
+          household_id: string
+          id: string
+          idempotency_key: string | null
+          line_item_id: string
+          membership_id: string
+          quantity: number
+          receipt_id: string
+          retracted_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount_cents?: number | null
+          claim_kind: string
+          created_at?: string
+          household_id: string
+          id?: string
+          idempotency_key?: string | null
+          line_item_id: string
+          membership_id: string
+          quantity?: number
+          receipt_id: string
+          retracted_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount_cents?: number | null
+          claim_kind?: string
+          created_at?: string
+          household_id?: string
+          id?: string
+          idempotency_key?: string | null
+          line_item_id?: string
+          membership_id?: string
+          quantity?: number
+          receipt_id?: string
+          retracted_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expense_receipt_line_claims_line_item_id_household_id_fkey"
+            columns: ["line_item_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "expense_receipt_line_items"
+            referencedColumns: ["id", "household_id"]
+          },
+          {
+            foreignKeyName: "expense_receipt_line_claims_membership_id_fkey"
+            columns: ["membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expense_receipt_line_claims_receipt_id_household_id_fkey"
+            columns: ["receipt_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "expense_receipts"
+            referencedColumns: ["id", "household_id"]
+          },
+        ]
+      }
       expense_receipt_line_items: {
         Row: {
           category: string | null
@@ -2911,8 +3064,44 @@ export type Database = {
           },
         ]
       }
+      expense_receipt_orphan_cleanups: {
+        Row: {
+          cleaned: boolean
+          created_at: string
+          household_id: string
+          id: string
+          reason: string
+          storage_path: string
+        }
+        Insert: {
+          cleaned?: boolean
+          created_at?: string
+          household_id: string
+          id?: string
+          reason: string
+          storage_path: string
+        }
+        Update: {
+          cleaned?: boolean
+          created_at?: string
+          household_id?: string
+          id?: string
+          reason?: string
+          storage_path?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expense_receipt_orphan_cleanups_household_id_fkey"
+            columns: ["household_id"]
+            isOneToOne: false
+            referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       expense_receipts: {
         Row: {
+          claim_wait_mode: string | null
           confirm_idempotency_key: string | null
           created_at: string
           currency: string
@@ -2924,12 +3113,18 @@ export type Database = {
           file_name: string
           household_id: string
           id: string
+          last_split_workflow: string | null
           merchant_corrected: string | null
           mime_type: string
           notes: string | null
+          ocr_outcome: string | null
+          payer_membership_id: string | null
           perceptual_hash: string | null
           purchase_date_corrected: string | null
+          register_idempotency_key: string | null
           size_bytes: number
+          split_membership_ids: string[]
+          split_workflow: string | null
           status: string
           storage_path: string
           unsynced_client_draft: boolean
@@ -2937,6 +3132,7 @@ export type Database = {
           uploaded_by_membership_id: string
         }
         Insert: {
+          claim_wait_mode?: string | null
           confirm_idempotency_key?: string | null
           created_at?: string
           currency?: string
@@ -2948,12 +3144,18 @@ export type Database = {
           file_name: string
           household_id: string
           id?: string
+          last_split_workflow?: string | null
           merchant_corrected?: string | null
           mime_type: string
           notes?: string | null
+          ocr_outcome?: string | null
+          payer_membership_id?: string | null
           perceptual_hash?: string | null
           purchase_date_corrected?: string | null
+          register_idempotency_key?: string | null
           size_bytes: number
+          split_membership_ids?: string[]
+          split_workflow?: string | null
           status?: string
           storage_path: string
           unsynced_client_draft?: boolean
@@ -2961,6 +3163,7 @@ export type Database = {
           uploaded_by_membership_id: string
         }
         Update: {
+          claim_wait_mode?: string | null
           confirm_idempotency_key?: string | null
           created_at?: string
           currency?: string
@@ -2972,12 +3175,18 @@ export type Database = {
           file_name?: string
           household_id?: string
           id?: string
+          last_split_workflow?: string | null
           merchant_corrected?: string | null
           mime_type?: string
           notes?: string | null
+          ocr_outcome?: string | null
+          payer_membership_id?: string | null
           perceptual_hash?: string | null
           purchase_date_corrected?: string | null
+          register_idempotency_key?: string | null
           size_bytes?: number
+          split_membership_ids?: string[]
+          split_workflow?: string | null
           status?: string
           storage_path?: string
           unsynced_client_draft?: boolean
@@ -2997,6 +3206,13 @@ export type Database = {
             columns: ["household_id"]
             isOneToOne: false
             referencedRelation: "households"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expense_receipts_payer_membership_id_fkey"
+            columns: ["payer_membership_id"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
             referencedColumns: ["id"]
           },
           {
@@ -14418,6 +14634,17 @@ export type Database = {
     }
     Functions: {
       _allow_privileged_mutation: { Args: never; Returns: boolean }
+      _append_receipt_claim_event: {
+        Args: {
+          p_actor: string
+          p_event_type: string
+          p_household_id: string
+          p_line_item_id: string
+          p_payload: Json
+          p_receipt_id: string
+        }
+        Returns: undefined
+      }
       _blocking_submitted_payment_id: {
         Args: { p_expense_id: string }
         Returns: string
@@ -14808,6 +15035,15 @@ export type Database = {
         Args: { p_expense_id: string }
         Returns: undefined
       }
+      _receipt_claimed_quantity: {
+        Args: { p_line_item_id: string }
+        Returns: number
+      }
+      _receipt_invite_user_ids: {
+        Args: { p_receipt_id: string }
+        Returns: string[]
+      }
+      _receipt_line_quantity: { Args: { p_quantity: number }; Returns: number }
       _recommendation_base_weight: { Args: { p_key: string }; Returns: number }
       _recommendation_mode_mult: {
         Args: { p_key: string; p_mode: string }
@@ -15099,6 +15335,10 @@ export type Database = {
         Args: { p_receipt_id: string }
         Returns: undefined
       }
+      apply_remaining_receipt_lines: {
+        Args: { p_action: string; p_receipt_id: string }
+        Returns: undefined
+      }
       apply_routed_settlement_correction: {
         Args: { p_request_id: string }
         Returns: undefined
@@ -15148,6 +15388,14 @@ export type Database = {
         }
         Returns: string
       }
+      assign_receipt_line: {
+        Args: {
+          p_excluded?: boolean
+          p_line_item_id: string
+          p_membership_id: string
+        }
+        Returns: undefined
+      }
       assign_responsibility_area: {
         Args: { p_area_id: string; p_membership_id: string; p_role?: string }
         Returns: string
@@ -15159,6 +15407,10 @@ export type Database = {
       build_meal_shopping_proposal: {
         Args: { p_meal_plan_id: string; p_shopping_list_id?: string }
         Returns: string
+      }
+      can_claim_expense_receipt: {
+        Args: { p_receipt_id: string }
+        Returns: boolean
       }
       can_comment_on_parent: {
         Args: {
@@ -15522,6 +15774,18 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      claim_receipt_line: {
+        Args: { p_idempotency_key?: string; p_line_item_id: string }
+        Returns: string
+      }
+      claim_receipt_line_quantity: {
+        Args: {
+          p_idempotency_key?: string
+          p_line_item_id: string
+          p_quantity: number
+        }
+        Returns: string
+      }
       claim_shopping_item: { Args: { p_item_id: string }; Returns: string }
       cleanup_test_household_data: {
         Args: { p_test_run_id: string }
@@ -15630,6 +15894,10 @@ export type Database = {
       complete_shopping_trip: {
         Args: { p_trip_id: string }
         Returns: undefined
+      }
+      confirm_claimed_receipt_as_expense: {
+        Args: { p_idempotency_key: string; p_receipt_id: string }
+        Returns: string
       }
       confirm_expense: {
         Args: {
@@ -16498,6 +16766,14 @@ export type Database = {
         }
         Returns: boolean
       }
+      finalize_receipt_claims: {
+        Args: { p_force?: boolean; p_receipt_id: string }
+        Returns: undefined
+      }
+      finish_receipt_claiming: {
+        Args: { p_receipt_id: string }
+        Returns: undefined
+      }
       get_calendar_feed_context: {
         Args: { p_token_hash: string }
         Returns: {
@@ -16731,6 +17007,14 @@ export type Database = {
       mark_pantry_finished: {
         Args: { p_item_id: string; p_note?: string }
         Returns: string
+      }
+      mark_receipt_line_shared: {
+        Args: { p_line_item_id: string; p_membership_ids?: string[] }
+        Returns: undefined
+      }
+      mark_receipt_ocr_outcome: {
+        Args: { p_outcome: string; p_receipt_id: string }
+        Returns: undefined
       }
       mark_shopping_item_purchased: {
         Args: {
@@ -17011,6 +17295,15 @@ export type Database = {
         }
         Returns: string
       }
+      record_receipt_orphan_cleanup: {
+        Args: {
+          p_cleaned: boolean
+          p_household_id: string
+          p_reason: string
+          p_storage_path: string
+        }
+        Returns: undefined
+      }
       record_registration_invitation_delivery: {
         Args: {
           p_delivery_status: string
@@ -17069,6 +17362,7 @@ export type Database = {
           p_file_hash?: string
           p_file_name: string
           p_household_id: string
+          p_idempotency_key?: string
           p_mime_type: string
           p_perceptual_hash?: string
           p_size_bytes: number
@@ -17109,6 +17403,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      remind_receipt_claiming: {
+        Args: { p_receipt_id: string }
+        Returns: undefined
       }
       remove_governance_attachment: {
         Args: { p_attachment_id: string; p_reason?: string }
@@ -17176,6 +17474,10 @@ export type Database = {
           p_resource_id: string
         }
         Returns: string
+      }
+      resolve_action_notifications: {
+        Args: { p_entity_id: string; p_entity_type: string }
+        Returns: number
       }
       resolve_dispute: {
         Args: {
@@ -17409,6 +17711,15 @@ export type Database = {
         Args: { p_meeting_id: string }
         Returns: undefined
       }
+      set_receipt_split_workflow: {
+        Args: {
+          p_membership_ids?: string[]
+          p_payer_membership_id?: string
+          p_receipt_id: string
+          p_workflow: string
+        }
+        Returns: undefined
+      }
       set_recipe_favorite: {
         Args: { p_is_favorite: boolean; p_recipe_id: string }
         Returns: string
@@ -17457,6 +17768,14 @@ export type Database = {
         Returns: string
       }
       start_meeting: { Args: { p_meeting_id: string }; Returns: undefined }
+      start_receipt_claiming: {
+        Args: {
+          p_invite_membership_ids?: string[]
+          p_receipt_id: string
+          p_wait_mode?: string
+        }
+        Returns: undefined
+      }
       start_shopping_trip: {
         Args: {
           p_household_id: string
@@ -17575,6 +17894,10 @@ export type Database = {
           p_severity?: string
         }
         Returns: string
+      }
+      unclaim_receipt_line: {
+        Args: { p_line_item_id: string }
+        Returns: undefined
       }
       unlink_resource_from_expense_item: {
         Args: { p_link_id: string }
@@ -17895,12 +18218,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -17924,11 +18247,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -17949,11 +18272,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -17974,11 +18297,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -17991,11 +18314,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }

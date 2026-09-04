@@ -77,6 +77,56 @@ export function formatReceiptDraftAttention(params: {
   };
 }
 
+export function formatReceiptClaimAttention(params: {
+  receiptId: string;
+  merchant: string;
+  householdId: string;
+}): AttentionItem {
+  return {
+    id: `receipt-claim-${params.receiptId}`,
+    urgency: 60,
+    title: "Your items need claiming",
+    body: params.merchant
+      ? `1 ${params.merchant} receipt`
+      : "Select anything that belongs to you.",
+    href: `/app/${params.householdId}/money/receipts/${params.receiptId}?claim=1`,
+    ctaLabel: "Claim",
+  };
+}
+
+export function formatReceiptReadyAttention(params: {
+  receiptId: string;
+  merchant: string;
+  householdId: string;
+  respondedLabel?: string;
+}): AttentionItem {
+  return {
+    id: `receipt-ready-${params.receiptId}`,
+    urgency: 60,
+    title: "Receipt ready to submit",
+    body: params.respondedLabel
+      ? `${params.merchant || "Receipt"} · ${params.respondedLabel}`
+      : `${params.merchant || "Receipt"} is ready to review.`,
+    href: `/app/${params.householdId}/money/receipts/${params.receiptId}`,
+    ctaLabel: "Review",
+  };
+}
+
+export function formatReceiptReadFailedAttention(params: {
+  receiptId: string;
+  merchant: string;
+  householdId: string;
+}): AttentionItem {
+  return {
+    id: `receipt-failed-${params.receiptId}`,
+    urgency: 70,
+    title: "Receipt reading failed",
+    body: params.merchant || "Enter the details manually.",
+    href: `/app/${params.householdId}/money/receipts/${params.receiptId}`,
+    ctaLabel: "Enter manually",
+  };
+}
+
 export function formatExpenseDraftAttention(params: {
   expenseId: string;
   merchant: string;

@@ -41,19 +41,30 @@ export function MoneyCreateSheet({ create }: { create: MoneyCreateGroups }) {
   }
 
   return (
-    <section data-testid="money-create">
-      <button
-        type="button"
-        className="inline-flex min-h-11 items-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
-        onClick={() => setOpen(true)}
-        data-testid="money-create-open"
-      >
-        Add
-      </button>
+    <section data-testid="money-create" className="flex flex-wrap items-center gap-2">
+      {create.primary.length > 0 ? (
+        <button
+          type="button"
+          className="inline-flex min-h-11 items-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
+          onClick={() => setOpen(true)}
+          data-testid="money-create-open"
+        >
+          Add expense
+        </button>
+      ) : null}
+      {create.recordPayment ? (
+        <Link
+          href={create.recordPayment.href}
+          data-testid={create.recordPayment.testId}
+          className="inline-flex min-h-11 items-center rounded-md border border-border bg-secondary px-4 py-2 text-sm font-medium text-secondary-foreground"
+        >
+          {create.recordPayment.label}
+        </Link>
+      ) : null}
       <BottomSheet
         open={open}
         onClose={close}
-        title="Add to Money"
+        title="How are you adding it?"
         testId="money-create-sheet"
       >
         <div className="flex flex-col gap-3">

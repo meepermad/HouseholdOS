@@ -22,12 +22,12 @@ export function MoneyToolsSheet({ tools }: { tools: MoneyToolsGroups }) {
         onClick={() => setOpen(true)}
         data-testid="money-tools-open"
       >
-        Tools
+        More money tools
       </button>
       <BottomSheet
         open={open}
         onClose={() => setOpen(false)}
-        title="Money tools"
+        title="More money tools"
         testId="money-tools-sheet"
       >
         <div className="flex flex-col gap-4">

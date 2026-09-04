@@ -3,6 +3,8 @@ import {
   RECEIPT_MAX_BYTES,
   type ReceiptMimeType,
 } from "./types";
+import { detectHeic } from "./heic";
+import { receiptUploadUserMessage } from "./upload-errors";
 
 const EXT_BY_MIME: Record<ReceiptMimeType, readonly string[]> = {
   "image/jpeg": ["jpg", "jpeg"],
@@ -78,44 +80,69 @@ function countPdfPages(bytes: Uint8Array): number | null {
 export function validateReceiptUpload(
   input: ReceiptValidationInput,
 ): ReceiptValidationResult {
-  if (input.sizeBytes <= 0 || input.sizeBytes > RECEIPT_MAX_BYTES) {
-    return {
-      ok: false,
-      error: `File must be between 1 byte and ${RECEIPT_MAX_BYTES} bytes`,
-    };
+  if (input.sizeBytes <= 0) {
+    return { ok: false, error: receiptUploadUserMessage("could_not_read") };
   }
-  const declared = input.mimeType.toLowerCase().trim() as ReceiptMimeType;
-  if (!(RECEIPT_ALLOWED_MIME_TYPES as readonly string[]).includes(declared)) {
-    return {
-      ok: false,
-      error: "Only JPEG, PNG, WebP, and PDF receipts are allowed",
-    };
+  if (input.sizeBytes > RECEIPT_MAX_BYTES) {
+    return { ok: false, error: receiptUploadUserMessage("image_too_large") };
   }
-  const ext = (input.fileName.split(".").pop() ?? "").toLowerCase();
+
+  if (
+    detectHeic({
+      bytes: input.bytes,
+      mimeType: input.mimeType,
+      fileName: input.fileName,
+    })
+  ) {
+    return { ok: false, error: receiptUploadUserMessage("unsupported_heic") };
+  }
+
+  const sniffed = input.bytes && input.bytes.length > 0 ? sniffMime(input.bytes) : null;
+  const declaredRaw = (input.mimeType || "").toLowerCase().trim();
+  const declared = (
+    sniffed ??
+    ((RECEIPT_ALLOWED_MIME_TYPES as readonly string[]).includes(declaredRaw)
+      ? declaredRaw
+      : "")
+  ) as ReceiptMimeType | "";
+
+  if (!declared || !(RECEIPT_ALLOWED_MIME_TYPES as readonly string[]).includes(declared)) {
+    return { ok: false, error: receiptUploadUserMessage("unsupported_format") };
+  }
+
+  const extFromName = (input.fileName.split(".").pop() ?? "").toLowerCase();
   const allowedExt = EXT_BY_MIME[declared];
-  if (!allowedExt.includes(ext)) {
-    return {
-      ok: false,
-      error: `File extension must match MIME type (${allowedExt.join(", ")})`,
-    };
-  }
+  const extLooksWrong =
+    extFromName.length > 0 &&
+    extFromName !== input.fileName.toLowerCase() &&
+    !allowedExt.includes(extFromName) &&
+    !["heic", "heif", "image", "blob", "jpg", "jpeg", "png", "webp", "pdf"].includes(
+      extFromName,
+    );
+  // Mobile cameras often omit extensions or send generic names. Trust magic bytes
+  // when present; only reject a clearly mismatched executable-like name.
   if (/\.(exe|bat|cmd|sh|js|mjs|php|html)$/i.test(input.fileName)) {
     return { ok: false, error: "Executable uploads are not permitted" };
   }
+  if (!sniffed && extLooksWrong) {
+    return { ok: false, error: receiptUploadUserMessage("unsupported_format") };
+  }
 
   if (input.bytes && input.bytes.length > 0) {
-    const sniffed = sniffMime(input.bytes);
     if (!sniffed) {
-      return { ok: false, error: "File signature does not match a supported receipt type" };
+      return { ok: false, error: receiptUploadUserMessage("could_not_read") };
     }
-    if (sniffed !== declared) {
-      return {
-        ok: false,
-        error: `Declared MIME (${declared}) does not match file signature (${sniffed})`,
-      };
+    if (
+      declaredRaw &&
+      (RECEIPT_ALLOWED_MIME_TYPES as readonly string[]).includes(declaredRaw) &&
+      sniffed !== declaredRaw
+    ) {
+      return { ok: false, error: receiptUploadUserMessage("could_not_read") };
     }
     const bomb = guardImageDecompression(input.bytes, MAX_IMAGE_PIXELS);
-    if (!bomb.ok) return bomb;
+    if (!bomb.ok) {
+      return { ok: false, error: receiptUploadUserMessage("image_too_large") };
+    }
     if (sniffed === "application/pdf") {
       const pages = countPdfPages(input.bytes);
       if (pages === -1) {
@@ -127,7 +154,19 @@ export function validateReceiptUpload(
     }
   }
 
-  return { ok: true, mimeType: declared, extension: ext === "jpeg" ? "jpg" : ext };
+  const extension = allowedExt.includes(extFromName)
+    ? extFromName === "jpeg"
+      ? "jpg"
+      : extFromName
+    : declared === "image/jpeg"
+      ? "jpg"
+      : declared === "image/png"
+        ? "png"
+        : declared === "image/webp"
+          ? "webp"
+          : "pdf";
+
+  return { ok: true, mimeType: declared, extension };
 }
 
 /**

@@ -8,6 +8,7 @@ type Props = {
   ocrMessage: string;
   privacyLabel?: string;
   cloudConfigured?: boolean;
+  captureMode?: "camera" | "file" | "auto";
 };
 
 /** Legacy entry — delegates to local OCR capture flow. */
@@ -17,6 +18,7 @@ export function ReceiptUploader({
   ocrMessage,
   privacyLabel,
   cloudConfigured = false,
+  captureMode = "auto",
 }: Props) {
   return (
     <div data-testid="receipt-uploader">
@@ -26,6 +28,7 @@ export function ReceiptUploader({
         ocrMessage={ocrMessage}
         privacyLabel={privacyLabel ?? ocrMessage}
         cloudConfigured={cloudConfigured}
+        captureMode={captureMode}
       />
     </div>
   );

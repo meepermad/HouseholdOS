@@ -1,12 +1,13 @@
 /**
  * "Add to Money" create sheet options.
  *
- * The create sheet only lists ways to *add* a record. Browsing surfaces
- * (ledger, balances, settings) stay in the Money tools sheet.
+ * Primary: Add expense (scan / upload / enter) and Record payment.
+ * Browsing stays in More money tools.
  */
 
 export type MoneyCreateActionKey =
   | "scan_receipt"
+  | "upload_receipt"
   | "add_expense"
   | "record_payment"
   | "opening_balance"
@@ -22,9 +23,11 @@ export type MoneyCreateAction = {
 };
 
 export type MoneyCreateGroups = {
-  /** Everyday entry points, always visible when the sheet opens. */
+  /** Ways to add an expense, shown inside the Add expense sheet. */
   primary: MoneyCreateAction[];
-  /** Rarer entry points behind a "More ways to add" disclosure. */
+  /** Record payment — a sibling hub button, not inside Add expense. */
+  recordPayment: MoneyCreateAction | null;
+  /** Rarer entry points behind a disclosure. */
   more: MoneyCreateAction[];
 };
 
@@ -34,12 +37,7 @@ export type MoneyCreateActionsInput = {
   receiptsEnabled: boolean;
   canCreateExpense: boolean;
   canCreatePayment: boolean;
-  /**
-   * Shared purchase proposals live in Roommate ops and only make sense when
-   * there is someone else to agree to the purchase.
-   */
   sharedPurchaseEnabled: boolean;
-  /** Reimbursements have no create route yet; kept as an explicit switch. */
   reimbursementCreateEnabled?: boolean;
 };
 
@@ -60,21 +58,29 @@ export function buildMoneyCreateActions(
   const base = `/app/${householdId}/money`;
   const primary: MoneyCreateAction[] = [];
   const more: MoneyCreateAction[] = [];
+  let recordPayment: MoneyCreateAction | null = null;
 
   if (receiptsEnabled && canCreateExpense) {
     primary.push({
       key: "scan_receipt",
-      label: "Scan or upload a receipt",
-      description: "Read the items off a photo or PDF, then split them.",
-      href: `${base}/receipts/new`,
+      label: "Scan receipt",
+      description: "Take a photo and let HouseholdOS read the items.",
+      href: `${base}/receipts/new?mode=camera`,
       testId: "money-create-scan-receipt",
+    });
+    primary.push({
+      key: "upload_receipt",
+      label: "Upload receipt",
+      description: "Choose a photo or PDF from this device.",
+      href: `${base}/receipts/new?mode=file`,
+      testId: "money-create-upload-receipt",
     });
   }
 
   if (canCreateExpense) {
     primary.push({
       key: "add_expense",
-      label: "Enter an expense",
+      label: "Enter manually",
       description: "Type in a shared purchase you paid for.",
       href: `${base}/expenses/new`,
       testId: "money-create-add-expense",
@@ -82,22 +88,22 @@ export function buildMoneyCreateActions(
   }
 
   if (canCreatePayment && activeMemberCount > 1) {
-    primary.push({
+    recordPayment = {
       key: "record_payment",
-      label: "Record a payment",
+      label: "Record payment",
       description: "Log money you already sent a roommate outside the app.",
       href: `${base}/payments/new`,
       testId: "money-create-record-payment",
-    });
+    };
   }
 
-  if (canCreateExpense || canCreatePayment) {
+  if (sharedPurchaseEnabled && activeMemberCount > 1) {
     more.push({
-      key: "opening_balance",
-      label: "Add an opening balance",
-      description: "Start from what you already owed each other.",
-      href: `${base}/opening-balances/new`,
-      testId: "money-create-opening-balance",
+      key: "shared_purchase",
+      label: "Propose a shared purchase",
+      description: "Agree on a big buy before anyone spends money.",
+      href: `/app/${householdId}/ops`,
+      testId: "money-create-shared-purchase",
     });
   }
 
@@ -111,20 +117,14 @@ export function buildMoneyCreateActions(
     });
   }
 
-  if (sharedPurchaseEnabled && activeMemberCount > 1) {
-    more.push({
-      key: "shared_purchase",
-      label: "Propose a shared purchase",
-      description: "Agree on a big buy before anyone spends money.",
-      href: `/app/${householdId}/ops`,
-      testId: "money-create-shared-purchase",
-    });
-  }
-
-  return { primary, more };
+  return { primary, more, recordPayment };
 }
 
 /** True when the sheet has nothing to offer and should not be rendered. */
 export function isMoneyCreateEmpty(groups: MoneyCreateGroups): boolean {
-  return groups.primary.length === 0 && groups.more.length === 0;
+  return (
+    groups.primary.length === 0 &&
+    groups.more.length === 0 &&
+    groups.recordPayment === null
+  );
 }

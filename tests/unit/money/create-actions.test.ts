@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
+import { buildMoneyCreateActions, isMoneyCreateEmpty } from "@/lib/money/create-actions";
 import {
-  buildMoneyCreateActions,
-  isMoneyCreateEmpty,
-} from "@/lib/money/create-actions";
+  formatReceiptClaimAttention,
+  formatReceiptReadFailedAttention,
+  formatReceiptReadyAttention,
+} from "@/lib/money/attention";
 
 const base = {
   householdId: "hh1",
@@ -14,29 +16,24 @@ const base = {
 };
 
 describe("buildMoneyCreateActions", () => {
-  it("offers the three everyday ways to add money records", () => {
+  it("puts scan, upload, and manual entry in the Add expense sheet", () => {
     const groups = buildMoneyCreateActions(base);
     expect(groups.primary.map((a) => a.key)).toEqual([
       "scan_receipt",
+      "upload_receipt",
       "add_expense",
-      "record_payment",
     ]);
+    expect(groups.recordPayment?.key).toBe("record_payment");
   });
 
   it("keeps rarer entry points in the more group", () => {
     const groups = buildMoneyCreateActions(base);
-    expect(groups.more.map((a) => a.key)).toEqual([
-      "opening_balance",
-      "shared_purchase",
-    ]);
+    expect(groups.more.map((a) => a.key)).toEqual(["shared_purchase"]);
   });
 
   it("omits receipt scanning when receipt capture is not ready", () => {
     const groups = buildMoneyCreateActions({ ...base, receiptsEnabled: false });
-    expect(groups.primary.map((a) => a.key)).toEqual([
-      "add_expense",
-      "record_payment",
-    ]);
+    expect(groups.primary.map((a) => a.key)).toEqual(["add_expense"]);
   });
 
   it("omits expense entry points without expense.create", () => {
@@ -44,7 +41,8 @@ describe("buildMoneyCreateActions", () => {
       ...base,
       canCreateExpense: false,
     });
-    expect(groups.primary.map((a) => a.key)).toEqual(["record_payment"]);
+    expect(groups.primary).toEqual([]);
+    expect(groups.recordPayment?.key).toBe("record_payment");
   });
 
   it("omits payments and shared purchases for single-member households", () => {
@@ -54,9 +52,11 @@ describe("buildMoneyCreateActions", () => {
     });
     expect(groups.primary.map((a) => a.key)).toEqual([
       "scan_receipt",
+      "upload_receipt",
       "add_expense",
     ]);
-    expect(groups.more.map((a) => a.key)).toEqual(["opening_balance"]);
+    expect(groups.recordPayment).toBeNull();
+    expect(groups.more.map((a) => a.key)).toEqual([]);
   });
 
   it("hides reimbursement until a create route exists", () => {
@@ -71,7 +71,11 @@ describe("buildMoneyCreateActions", () => {
 
   it("never lists browsing surfaces", () => {
     const groups = buildMoneyCreateActions(base);
-    const hrefs = [...groups.primary, ...groups.more].map((a) => a.href);
+    const hrefs = [
+      ...groups.primary,
+      ...groups.more,
+      ...(groups.recordPayment ? [groups.recordPayment] : []),
+    ].map((a) => a.href);
     expect(hrefs.some((h) => h.endsWith("/ledger"))).toBe(false);
     expect(hrefs.some((h) => h.endsWith("/balances"))).toBe(false);
     expect(hrefs.some((h) => h.endsWith("/settings"))).toBe(false);
@@ -85,5 +89,32 @@ describe("buildMoneyCreateActions", () => {
       sharedPurchaseEnabled: false,
     });
     expect(isMoneyCreateEmpty(groups)).toBe(true);
+  });
+});
+
+describe("receipt attention copy", () => {
+  it("deep-links claim and review actions", () => {
+    expect(
+      formatReceiptClaimAttention({
+        receiptId: "r1",
+        merchant: "Target",
+        householdId: "hh",
+      }).href,
+    ).toContain("/receipts/r1?claim=1");
+    expect(
+      formatReceiptReadyAttention({
+        receiptId: "r1",
+        merchant: "Target",
+        householdId: "hh",
+        respondedLabel: "4 people responded",
+      }).title,
+    ).toBe("Receipt ready to submit");
+    expect(
+      formatReceiptReadFailedAttention({
+        receiptId: "r2",
+        merchant: "Walmart",
+        householdId: "hh",
+      }).ctaLabel,
+    ).toBe("Enter manually");
   });
 });

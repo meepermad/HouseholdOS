@@ -223,6 +223,12 @@ export const EVENT_REFUND_OBLIGATION_CREATED =
   "refund_obligation.created" as const;
 export const EVENT_EXPENSE_VOIDED = "expense.voided" as const;
 export const EVENT_EXPENSE_AMENDED = "expense.amended" as const;
+export const EVENT_RECEIPT_CLAIMING_STARTED = "receipt.claiming_started" as const;
+export const EVENT_RECEIPT_CLAIM_REQUESTED = "receipt.claim_requested" as const;
+export const EVENT_RECEIPT_CLAIM_COMPLETED = "receipt.claim_completed" as const;
+export const EVENT_RECEIPT_READY_FOR_PAYER_REVIEW =
+  "receipt.ready_for_payer_review" as const;
+export const EVENT_RECEIPT_CLAIM_REMINDER = "receipt.claim_reminder" as const;
 
 export const EVENT_SETTLEMENT_INTERMEDIARY_APPROVAL_REQUIRED =
   "settlement.intermediary_approval_required" as const;
@@ -367,6 +373,9 @@ const PAYMENT_LINK = "/app/{householdId}/money/payments/{entityId}";
 const REIMBURSEMENT_LINK = "/app/{householdId}/money/reimbursements/{entityId}";
 const DISPUTE_LINK = "/app/{householdId}/money/disputes/{entityId}";
 const EXPENSE_LINK = "/app/{householdId}/money/expenses/{entityId}";
+const RECEIPT_CLAIM_LINK =
+  "/app/{householdId}/money/receipts/{entityId}?claim=1";
+const RECEIPT_REVIEW_LINK = "/app/{householdId}/money/receipts/{entityId}";
 const APP_LINK = "/app/{householdId}";
 const CALENDAR_EVENT_LINK = "/app/{householdId}/calendar/event/{entityId}";
 
@@ -511,6 +520,61 @@ export const NOTIFICATION_CATALOG: Readonly<Record<string, CatalogEntry>> = {
     deepLinkPattern: EXPENSE_LINK,
     digestAllowed: true,
     actionOriented: false,
+    privacy: "generic_ok",
+    active: true,
+  }),
+  [EVENT_RECEIPT_CLAIMING_STARTED]: entry({
+    eventType: EVENT_RECEIPT_CLAIMING_STARTED,
+    category: "expenses",
+    defaultUrgency: "high",
+    recipientRule: "explicit",
+    deepLinkPattern: RECEIPT_CLAIM_LINK,
+    digestAllowed: false,
+    actionOriented: true,
+    privacy: "generic_ok",
+    active: true,
+  }),
+  [EVENT_RECEIPT_CLAIM_REQUESTED]: entry({
+    eventType: EVENT_RECEIPT_CLAIM_REQUESTED,
+    category: "expenses",
+    defaultUrgency: "high",
+    recipientRule: "explicit",
+    deepLinkPattern: RECEIPT_CLAIM_LINK,
+    digestAllowed: false,
+    actionOriented: true,
+    privacy: "generic_ok",
+    active: true,
+  }),
+  [EVENT_RECEIPT_CLAIM_COMPLETED]: entry({
+    eventType: EVENT_RECEIPT_CLAIM_COMPLETED,
+    category: "expenses",
+    defaultUrgency: "normal",
+    recipientRule: "explicit",
+    deepLinkPattern: RECEIPT_REVIEW_LINK,
+    digestAllowed: true,
+    actionOriented: false,
+    privacy: "generic_ok",
+    active: true,
+  }),
+  [EVENT_RECEIPT_READY_FOR_PAYER_REVIEW]: entry({
+    eventType: EVENT_RECEIPT_READY_FOR_PAYER_REVIEW,
+    category: "expenses",
+    defaultUrgency: "high",
+    recipientRule: "explicit",
+    deepLinkPattern: RECEIPT_REVIEW_LINK,
+    digestAllowed: false,
+    actionOriented: true,
+    privacy: "generic_ok",
+    active: true,
+  }),
+  [EVENT_RECEIPT_CLAIM_REMINDER]: entry({
+    eventType: EVENT_RECEIPT_CLAIM_REMINDER,
+    category: "expenses",
+    defaultUrgency: "normal",
+    recipientRule: "explicit",
+    deepLinkPattern: RECEIPT_CLAIM_LINK,
+    digestAllowed: false,
+    actionOriented: true,
     privacy: "generic_ok",
     active: true,
   }),

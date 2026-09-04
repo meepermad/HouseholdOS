@@ -1,7 +1,15 @@
 export const RECEIPT_BUCKET = "expense-receipts";
-export const RECEIPT_MAX_BYTES = 10 * 1024 * 1024; // 10 MiB
+/** Server hard cap after client compression. Large phone photos are resized first. */
+export const RECEIPT_MAX_BYTES = 20 * 1024 * 1024; // 20 MiB
 export const RECEIPT_MAX_PDF_PAGES = 10;
 export const RECEIPT_MAX_IMAGE_PIXELS = 40_000_000;
+/** Target longest edge for the stored/OCR working copy. */
+export const RECEIPT_UPLOAD_MAX_DIMENSION = 2400;
+/** Target JPEG quality for the stored working copy. */
+export const RECEIPT_UPLOAD_JPEG_QUALITY = 0.82;
+/** Soft cap for the bytes we actually upload after local compression. */
+export const RECEIPT_UPLOAD_TARGET_BYTES = 3 * 1024 * 1024;
+export const RECEIPT_OCR_TIMEOUT_MS = 45_000;
 
 export const RECEIPT_ALLOWED_MIME_TYPES = [
   "image/jpeg",
@@ -10,15 +18,42 @@ export const RECEIPT_ALLOWED_MIME_TYPES = [
   "application/pdf",
 ] as const;
 
+export const RECEIPT_HEIC_MIME_TYPES = [
+  "image/heic",
+  "image/heif",
+  "image/heic-sequence",
+  "image/heif-sequence",
+] as const;
+
 export type ReceiptMimeType = (typeof RECEIPT_ALLOWED_MIME_TYPES)[number];
 
 export type ReceiptStatus =
   | "uploaded"
   | "extracting"
   | "needs_review"
+  | "claiming"
+  | "ready_for_review"
   | "confirmed"
   | "rejected"
   | "failed";
+
+export type ReceiptSplitWorkflow = "equal_all" | "assign_items" | "claiming";
+
+export type ReceiptOcrOutcome =
+  | "pending"
+  | "succeeded"
+  | "failed"
+  | "manual"
+  | "timeout";
+
+export type LineOwnershipKind =
+  | "unclaimed"
+  | "mine"
+  | "someone_else"
+  | "shared"
+  | "household"
+  | "excluded"
+  | "quantity";
 
 export type LineItemClassification =
   | "shared_household"

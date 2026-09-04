@@ -29,6 +29,9 @@ function groupKey(n: GroupableNotification): string {
   if (n.eventType.startsWith("settlement.")) {
     return `settlement:${n.eventType}`;
   }
+  if (n.eventType.startsWith("receipt.")) {
+    return `receipt:${n.eventType}`;
+  }
   return `single:${n.id}`;
 }
 

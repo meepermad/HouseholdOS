@@ -7,23 +7,28 @@ export const dynamic = "force-dynamic";
 
 export default async function NewReceiptPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ householdId: string }>;
+  searchParams: Promise<{ mode?: string }>;
 }) {
   const { householdId } = await params;
+  const { mode } = await searchParams;
   await assertActiveMembership(householdId);
   const ocr = describeReceiptOcrStatus();
+  const captureMode =
+    mode === "camera" ? "camera" : mode === "file" ? "file" : "auto";
 
   return (
     <main className="space-y-6">
       <AppBackButton fallbackHref={`/app/${householdId}/money/receipts`} />
       <header>
         <h1 className="font-[family-name:var(--font-display)] text-2xl text-text-primary">
-          Scan receipt
+          Add a receipt
         </h1>
         <p className="mt-1 text-sm text-text-secondary">
-          Capture, improve, and read the receipt on this device. Review and
-          correct every field before any expense is created.
+          Upload a photo. HouseholdOS reads it on this device, then you decide
+          who each item belongs to.
         </p>
       </header>
       <ReceiptUploader
@@ -32,6 +37,7 @@ export default async function NewReceiptPage({
         ocrMessage={ocr.message}
         privacyLabel={ocr.privacyLabel}
         cloudConfigured={ocr.cloudAvailable}
+        captureMode={captureMode}
       />
     </main>
   );
