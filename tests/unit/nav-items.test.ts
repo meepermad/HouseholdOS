@@ -39,8 +39,9 @@ describe("nav items growth rules", () => {
     expect(keys).not.toEqual(expect.arrayContaining(["chores", "maintenance"]));
     expect(moreNavBySection().map((g) => g.section)).toEqual([
       "household",
-      "communication",
-      "account",
+      "planning",
+      "tools",
+      "app",
     ]);
   });
 

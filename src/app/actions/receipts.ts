@@ -23,6 +23,10 @@ import {
   parseMembershipIdList,
   SHARE_NEEDS_PERSON,
 } from "@/lib/receipts/errors";
+import { applyPasteEdits, type PasteEditInput } from "@/lib/receipts/paste/overrides";
+import { parseHouseholdOsReceipt } from "@/lib/receipts/paste/parse";
+import { pastedReceiptToExtraction } from "@/lib/receipts/paste/to-extraction";
+import { listActiveMemberOptions } from "@/lib/expenses/queries";
 
 async function db(householdId: string) {
   const ctx = await assertActiveMembership(householdId);
@@ -181,6 +185,165 @@ export async function uploadReceiptAction(
     if (isNextRedirectError(e)) {
       const next = householdId
         ? receiptCaptureReturnPath(householdId)
+        : "/app";
+      return {
+        ok: false,
+        error: receiptUploadUserMessage("session_expired"),
+        actionHref: loginUrlForPath(next, "session_expired"),
+        actionLabel: "Sign in again",
+      };
+    }
+    return { ok: false, error: toPublicErrorMessage(e) };
+  }
+}
+
+/** 1×1 PNG used only when the receipt bucket rejects text/plain. */
+const PASTE_PLACEHOLDER_PNG = Uint8Array.from([
+  0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d, 0x49,
+  0x48, 0x44, 0x52, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x08, 0x06,
+  0x00, 0x00, 0x00, 0x1f, 0x15, 0xc4, 0x89, 0x00, 0x00, 0x00, 0x0a, 0x49, 0x44,
+  0x41, 0x54, 0x78, 0x9c, 0x63, 0x00, 0x01, 0x00, 0x00, 0x05, 0x00, 0x01, 0x0d,
+  0x0a, 0x2d, 0xb4, 0x00, 0x00, 0x00, 0x00, 0x49, 0x45, 0x4e, 0x44, 0xae, 0x42,
+  0x60, 0x82,
+]);
+
+/**
+ * Create a receipt draft from pasted text and persist it through the same
+ * extraction / review / claim pipeline as an uploaded photo.
+ */
+export async function registerPastedReceiptAction(
+  _prev: ActionResult | null,
+  formData: FormData,
+): Promise<ActionResult> {
+  const householdId = String(formData.get("householdId") ?? "");
+  try {
+    const originalText = String(formData.get("originalText") ?? "");
+    const acceptQuick = String(formData.get("acceptQuick") ?? "") === "1";
+    const totalOnly = String(formData.get("totalOnly") ?? "") === "1";
+    const idempotencyKey =
+      String(formData.get("idempotencyKey") ?? "").trim() || randomUUID();
+    let edit: PasteEditInput | null = null;
+    const editRaw = String(formData.get("editJson") ?? "").trim();
+    if (editRaw) {
+      try {
+        edit = JSON.parse(editRaw) as PasteEditInput;
+      } catch {
+        return { ok: false, error: "We could not save those receipt edits." };
+      }
+    }
+
+    const members = await listActiveMemberOptions(householdId);
+    const parsed = parseHouseholdOsReceipt(originalText, members);
+    const base =
+      parsed.ok
+        ? parsed.receipt
+        : acceptQuick && parsed.quickCandidate
+          ? parsed.quickCandidate
+          : parsed.receipt;
+    if (!base) {
+      return {
+        ok: false,
+        error:
+          (!parsed.ok ? parsed.error.message : null) ??
+          "We could not confidently understand part of this receipt.",
+      };
+    }
+    const applied = applyPasteEdits(base, { ...edit, totalOnly: totalOnly || edit?.totalOnly });
+    if ("error" in applied) return { ok: false, error: applied.error };
+    if (!applied.merchant || applied.totalCents == null) {
+      return { ok: false, error: "This receipt still needs a store name and total." };
+    }
+
+    const extraction = pastedReceiptToExtraction(applied);
+    const textBytes = new TextEncoder().encode(applied.originalText.slice(0, 50_000));
+    const fileHash = createHash("sha256").update(textBytes).digest("hex");
+    const { supabase } = await db(householdId);
+
+    let storagePath = `${householdId}/pastes/${idempotencyKey}.txt`;
+    let mimeType = "text/plain";
+    let fileName = "pasted-receipt.txt";
+    let sizeBytes = textBytes.byteLength || 1;
+    let uploaded = await supabase.storage.from(RECEIPT_BUCKET).upload(storagePath, textBytes, {
+      contentType: "text/plain; charset=utf-8",
+      upsert: true,
+    });
+    if (uploaded.error) {
+      storagePath = `${householdId}/pastes/${idempotencyKey}.png`;
+      mimeType = "image/png";
+      fileName = "pasted-receipt.png";
+      sizeBytes = PASTE_PLACEHOLDER_PNG.byteLength;
+      uploaded = await supabase.storage.from(RECEIPT_BUCKET).upload(storagePath, PASTE_PLACEHOLDER_PNG, {
+        contentType: "image/png",
+        upsert: true,
+      });
+    }
+    if (uploaded.error) {
+      logServerError("receipts.paste.storage", uploaded.error, { householdId });
+      return { ok: false, error: "Could not save the pasted receipt. Try again." };
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let registered = await (supabase as any).rpc("register_pasted_receipt", {
+      p_household_id: householdId,
+      p_storage_path: storagePath,
+      p_mime_type: mimeType,
+      p_file_name: fileName,
+      p_size_bytes: sizeBytes,
+      p_file_hash: fileHash,
+      p_idempotency_key: idempotencyKey,
+      p_payer_membership_id: applied.payerMembershipId,
+    });
+    if (registered.error) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      registered = await (supabase as any).rpc("register_expense_receipt", {
+        p_household_id: householdId,
+        p_storage_path: storagePath,
+        p_mime_type: mimeType,
+        p_file_name: fileName,
+        p_size_bytes: sizeBytes,
+        p_file_hash: fileHash,
+        p_perceptual_hash: undefined,
+        p_idempotency_key: idempotencyKey,
+      });
+    }
+    if (registered.error || !registered.data) {
+      await supabase.storage.from(RECEIPT_BUCKET).remove([storagePath]);
+      return {
+        ok: false,
+        error: mapReceiptRpcError(registered.error?.message ?? "Could not save this receipt."),
+      };
+    }
+
+    const receiptId = String(registered.data);
+    const extractFd = new FormData();
+    extractFd.set("householdId", householdId);
+    extractFd.set("receiptId", receiptId);
+    extractFd.set("adapterName", "manual");
+    extractFd.set("confidence", "1");
+    extractFd.set("contentHash", extraction.contentHash);
+    extractFd.set("proposedJson", JSON.stringify(extraction.proposed));
+    extractFd.set("lineItemsJson", JSON.stringify(extraction.lineItems));
+    extractFd.set("ocrFullText", applied.originalText.slice(0, 50_000));
+    extractFd.set(
+      "processingMetaJson",
+      JSON.stringify(extraction.processingMeta),
+    );
+    const saved = await submitLocalReceiptExtractionAction(null, extractFd);
+    if (!saved.ok) return saved;
+
+    invalidate(householdId, receiptId);
+    return {
+      ok: true,
+      message: "Receipt ready to review.",
+      data: {
+        redirectTo: `/app/${householdId}/money/receipts/${receiptId}`,
+        receiptId,
+      },
+    };
+  } catch (e) {
+    if (isNextRedirectError(e)) {
+      const next = householdId
+        ? receiptCaptureReturnPath(householdId, "paste")
         : "/app";
       return {
         ok: false,

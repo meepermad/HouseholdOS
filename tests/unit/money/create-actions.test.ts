@@ -16,11 +16,12 @@ const base = {
 };
 
 describe("buildMoneyCreateActions", () => {
-  it("puts scan, upload, and manual entry in the Add expense sheet", () => {
+  it("puts scan, upload, paste, and manual entry in the Add expense sheet", () => {
     const groups = buildMoneyCreateActions(base);
     expect(groups.primary.map((a) => a.key)).toEqual([
       "scan_receipt",
       "upload_receipt",
+      "paste_receipt",
       "add_expense",
     ]);
     expect(groups.recordPayment?.key).toBe("record_payment");
@@ -56,6 +57,7 @@ describe("buildMoneyCreateActions", () => {
     expect(groups.primary.map((a) => a.key)).toEqual([
       "scan_receipt",
       "upload_receipt",
+      "paste_receipt",
       "add_expense",
     ]);
     expect(groups.recordPayment).toBeNull();

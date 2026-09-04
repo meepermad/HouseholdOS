@@ -74,6 +74,8 @@ export const householdRoutes = {
       `${base(householdId)}/money/receipts`,
     receiptNew: (householdId: string) =>
       `${base(householdId)}/money/receipts/new`,
+    receiptPaste: (householdId: string) =>
+      `${base(householdId)}/money/receipts/new?mode=paste`,
     receipt: (householdId: string, receiptId: string) =>
       `${base(householdId)}/money/receipts/${assertRouteSegment(receiptId, "receipt id")}`,
     payments: (householdId: string, paymentId: string) =>

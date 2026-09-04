@@ -1,5 +1,6 @@
 import { assertActiveMembership } from "@/lib/household-context";
 import { AppBackButton } from "@/components/app-back-button";
+import { ResourceGone } from "@/components/recovery/resource-gone";
 import {
   ReceiptReviewForm,
   type ReviewClaim,
@@ -41,7 +42,11 @@ export default async function ReceiptDetailPage({
     return (
       <main className="space-y-4">
         <AppBackButton fallbackHref={`/app/${householdId}/money/receipts`} />
-        <p className="text-sm text-text-secondary">Receipt not found.</p>
+        <ResourceGone
+          title="This item is no longer available."
+          href={`/app/${householdId}/money`}
+          actionLabel="Go to Money"
+        />
       </main>
     );
   }
@@ -62,7 +67,7 @@ export default async function ReceiptDetailPage({
         .maybeSingle(),
       supabase
         .from("expense_receipt_extractions")
-        .select("proposed")
+        .select("proposed, ocr_full_text, processing_meta")
         .eq("receipt_id", receiptId)
         .order("created_at", { ascending: false })
         .limit(1)
@@ -241,6 +246,19 @@ export default async function ReceiptDetailPage({
         ocrOutcome={receipt.ocr_outcome ?? null}
         lastError={receipt.last_error ?? null}
         startInClaimMode={claim === "1" || receipt.status === "claiming"}
+        intakeSource={
+          receipt.intake_source === "paste" ||
+          receipt.file_name?.startsWith("pasted-receipt") ||
+          receipt.mime_type === "text/plain" ||
+          (extraction?.processing_meta as { source?: string } | null)?.source === "paste"
+            ? "paste"
+            : receipt.intake_source === "camera"
+              ? "camera"
+              : "upload"
+        }
+        originalTranscription={
+          typeof extraction?.ocr_full_text === "string" ? extraction.ocr_full_text : null
+        }
       />
     </main>
   );

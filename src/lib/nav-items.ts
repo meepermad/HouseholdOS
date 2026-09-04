@@ -20,7 +20,7 @@ export type NavIconKey =
   | "add"
   | "search";
 
-export type MoreNavSection = "household" | "communication" | "account";
+export type MoreNavSection = "household" | "planning" | "tools" | "app";
 
 /**
  * Household primary navigation config.
@@ -146,7 +146,7 @@ export const HOUSEHOLD_NAV_ITEMS: readonly HouseholdNavItem[] = [
     match: (pathname, id) => pathname.startsWith(`/app/${id}/meetings`),
     enabled: true,
     surface: "more",
-    moreSection: "household",
+    moreSection: "planning",
   },
   {
     key: "products",
@@ -180,7 +180,7 @@ export const HOUSEHOLD_NAV_ITEMS: readonly HouseholdNavItem[] = [
       pathname.startsWith(`/app/${id}/settings/governance`),
     enabled: true,
     surface: "more",
-    moreSection: "household",
+    moreSection: "planning",
   },
   {
     key: "search",
@@ -190,8 +190,20 @@ export const HOUSEHOLD_NAV_ITEMS: readonly HouseholdNavItem[] = [
     match: (pathname, id) => pathname.startsWith(`/app/${id}/search`),
     enabled: true,
     surface: "more",
-    moreSection: "communication",
+    moreSection: "tools",
     maturity: "beta",
+  },
+  {
+    key: "import_export",
+    label: "Import / export",
+    icon: "settings",
+    href: (id) => householdRoutes.settings.import(id),
+    match: (pathname, id) =>
+      pathname.startsWith(`/app/${id}/settings/import`) ||
+      pathname.startsWith(`/app/${id}/settings/export`),
+    enabled: true,
+    surface: "more",
+    moreSection: "tools",
   },
   {
     key: "polls",
@@ -201,7 +213,7 @@ export const HOUSEHOLD_NAV_ITEMS: readonly HouseholdNavItem[] = [
     match: (pathname, id) => pathname.startsWith(`/app/${id}/polls`),
     enabled: true,
     surface: "more",
-    moreSection: "household",
+    moreSection: "planning",
   },
   {
     key: "utilities",
@@ -241,7 +253,7 @@ export const HOUSEHOLD_NAV_ITEMS: readonly HouseholdNavItem[] = [
     match: (pathname, id) => pathname.startsWith(`/app/${id}/away`),
     enabled: true,
     surface: "more",
-    moreSection: "account",
+    moreSection: "app",
   },
   {
     key: "review",
@@ -262,7 +274,7 @@ export const HOUSEHOLD_NAV_ITEMS: readonly HouseholdNavItem[] = [
     match: (pathname, id) => pathname.startsWith(`/app/${id}/notifications`),
     enabled: true,
     surface: "more",
-    moreSection: "communication",
+    moreSection: "app",
     badge: "inbox",
   },
   {
@@ -270,10 +282,13 @@ export const HOUSEHOLD_NAV_ITEMS: readonly HouseholdNavItem[] = [
     label: "Settings",
     icon: "settings",
     href: (id) => householdRoutes.settings.index(id),
-    match: (pathname, id) => pathname.startsWith(`/app/${id}/settings`),
+    match: (pathname, id) =>
+      pathname.startsWith(`/app/${id}/settings`) &&
+      !pathname.startsWith(`/app/${id}/settings/import`) &&
+      !pathname.startsWith(`/app/${id}/settings/export`),
     enabled: true,
     surface: "more",
-    moreSection: "account",
+    moreSection: "app",
   },
   {
     key: "profile",
@@ -285,20 +300,22 @@ export const HOUSEHOLD_NAV_ITEMS: readonly HouseholdNavItem[] = [
       pathname === `/app/${id}/settings/profile/`,
     enabled: true,
     surface: "more",
-    moreSection: "account",
+    moreSection: "app",
   },
 ] as const;
 
 export const MORE_SECTION_LABELS: Record<MoreNavSection, string> = {
   household: "Household",
-  communication: "Communication",
-  account: "Account",
+  planning: "Planning",
+  tools: "Tools",
+  app: "App",
 };
 
 export const MORE_SECTION_ORDER: MoreNavSection[] = [
   "household",
-  "communication",
-  "account",
+  "planning",
+  "tools",
+  "app",
 ];
 
 export function enabledNavItems(): HouseholdNavItem[] {

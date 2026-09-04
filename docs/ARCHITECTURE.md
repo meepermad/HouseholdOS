@@ -43,7 +43,7 @@ HouseholdOS is a private, mobile-first household management PWA. Identity, multi
 ## Application shell
 
 - Mobile: compact sticky `AppHeader` (household name opens switcher; Account opens sheet) plus fixed bottom nav with notch/home-indicator safe areas (`viewport-fit=cover`, `shell-top`, `app-main-pad`, `safe-pb`)
-- Floating quick-add (`+`) deep-links into existing create routes; More sheet groups Household / Communication / Account
+- Floating quick-add (`+`) deep-links into existing create routes; More sheet groups Household / Planning / Tools / App
 - Desktop (`lg+`): sidebar navigation + wider content (capped ~`max-w-5xl`)
 - Nav config lives in `src/lib/nav-items.ts`:
   - Bottom bar shows only enabled `surface: "primary"` items (capped at 4) so new domains do not crowd the thumb bar

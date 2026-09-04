@@ -5,6 +5,7 @@ import type { NavBadgeCounts } from "@/components/household-nav";
 import { HouseholdSwitcher } from "@/components/household-switcher";
 import { AppBadgeSync } from "@/components/notifications/app-badge-sync";
 import { RouteLoadGuard } from "@/components/route-load-guard";
+import { DevIntegrityObserver } from "@/components/interaction/dev-integrity-observer";
 import { UnauthorizedHouseholdState } from "@/components/unauthorized-household";
 import { AppError, logServerError } from "@/lib/errors";
 import {
@@ -100,6 +101,7 @@ async function HouseholdNavChrome({
           />
         </div>
         <div className="app-main-pad flex-1 px-4 py-4 md:px-6 md:py-6">
+          <DevIntegrityObserver />
           <Suspense fallback={<RouteLoadGuard stage="home" />}>
             {children}
           </Suspense>

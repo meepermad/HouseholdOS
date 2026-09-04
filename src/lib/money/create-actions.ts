@@ -8,6 +8,7 @@
 export type MoneyCreateActionKey =
   | "scan_receipt"
   | "upload_receipt"
+  | "paste_receipt"
   | "add_expense"
   | "record_payment"
   | "opening_balance"
@@ -73,7 +74,7 @@ export function buildMoneyCreateActions(
     };
     primary.push({
       key: "scan_receipt",
-      label: "Scan receipt",
+      label: "Take photo",
       description: "Take a photo and let HouseholdOS read the items.",
       href: `${base}/receipts/new?mode=camera`,
       testId: "money-create-scan-receipt",
@@ -84,6 +85,13 @@ export function buildMoneyCreateActions(
       description: "Choose a photo or PDF from this device.",
       href: `${base}/receipts/new?mode=file`,
       testId: "money-create-upload-receipt",
+    });
+    primary.push({
+      key: "paste_receipt",
+      label: "Paste receipt",
+      description: "Paste text from ChatGPT, Live Text, or another tool.",
+      href: `${base}/receipts/new?mode=paste`,
+      testId: "money-create-paste-receipt",
     });
   }
 

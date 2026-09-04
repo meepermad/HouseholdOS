@@ -72,6 +72,8 @@ type Props = {
   ocrOutcome?: string | null;
   lastError?: string | null;
   startInClaimMode?: boolean;
+  intakeSource?: "upload" | "camera" | "paste" | null;
+  originalTranscription?: string | null;
 };
 
 type Workflow = "choose" | "equal_all" | "assign_items" | "claiming" | "review";
@@ -101,6 +103,8 @@ export function ReceiptReviewForm({
   ocrOutcome = null,
   lastError = null,
   startInClaimMode = false,
+  intakeSource = null,
+  originalTranscription = null,
 }: Props) {
   const [merchant, setMerchant] = useState(initialMerchant);
   const [purchaseDate, setPurchaseDate] = useState(initialDate);
@@ -128,6 +132,8 @@ export function ReceiptReviewForm({
   const [selected, setSelected] = useState<string[]>([]);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [showOriginal, setShowOriginal] = useState(false);
+  const pasted = intakeSource === "paste";
   const [message, setMessage] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const [claimQty, setClaimQty] = useState<Record<string, number>>({});
@@ -338,10 +344,11 @@ export function ReceiptReviewForm({
   const confirmed = status === "confirmed";
   const claimMode = workflow === "claiming" || status === "claiming";
   const readFailed =
-    ocrOutcome === "failed" ||
-    ocrOutcome === "timeout" ||
-    ocrOutcome === "manual" ||
-    status === "failed";
+    !pasted &&
+    (ocrOutcome === "failed" ||
+      ocrOutcome === "timeout" ||
+      ocrOutcome === "manual" ||
+      status === "failed");
   const readFailure = readFailed
     ? describeReceiptReadFailure({ ocrOutcome, lastError, status })
     : null;
@@ -470,6 +477,26 @@ export function ReceiptReviewForm({
         <p className="mt-3 text-sm text-text-secondary">
           {lines.length === 1 ? "1 item found" : `${lines.length} items found`}
         </p>
+        {pasted ? (
+          <div className="mt-3 space-y-2" data-testid="receipt-paste-source">
+            <p className="text-sm text-text-secondary">Source: Pasted transcription</p>
+            {originalTranscription ? (
+              <button
+                type="button"
+                className="text-sm font-medium text-primary"
+                onClick={() => setShowOriginal((v) => !v)}
+                data-testid="receipt-view-original"
+              >
+                {showOriginal ? "Hide original transcription" : "View original transcription"}
+              </button>
+            ) : null}
+            {showOriginal && originalTranscription ? (
+              <pre className="max-h-56 overflow-auto whitespace-pre-wrap rounded-md border border-border bg-background p-3 text-xs">
+                {originalTranscription}
+              </pre>
+            ) : null}
+          </div>
+        ) : null}
         {!looksRight ? (
           <button
             type="button"

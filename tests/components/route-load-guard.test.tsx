@@ -24,9 +24,10 @@ describe("RouteLoadGuard", () => {
     });
     expect(screen.getByTestId("route-load-guard-recovery")).toBeInTheDocument();
     expect(screen.getByTestId("route-load-guard-retry")).toBeInTheDocument();
-    expect(screen.getByTestId("route-load-guard-reload-latest")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /choose household/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /sign out/i })).toBeInTheDocument();
-    expect(screen.getByText(/Home data is taking too long/i)).toBeInTheDocument();
+    expect(screen.getByTestId("route-load-guard-back")).toBeInTheDocument();
+    expect(screen.getByTestId("route-load-guard-home")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^retry$/i })).toBeInTheDocument();
+    expect(screen.getByText(/This is taking longer than expected/i)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /sign out/i })).not.toBeInTheDocument();
   });
 });

@@ -28,6 +28,10 @@ export function loginUrlForPath(
   return `/login?${params.toString()}`;
 }
 
-export function receiptCaptureReturnPath(householdId: string): string {
-  return `/app/${householdId}/money/receipts/new`;
+export function receiptCaptureReturnPath(
+  householdId: string,
+  mode?: "camera" | "file" | "paste",
+): string {
+  const path = `/app/${householdId}/money/receipts/new`;
+  return mode ? `${path}?mode=${mode}` : path;
 }

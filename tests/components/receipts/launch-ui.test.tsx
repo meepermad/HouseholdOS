@@ -14,6 +14,7 @@ import { RECEIPT_LIBRARY_ACCEPT } from "@/lib/receipts/types";
 
 vi.mock("@/app/actions/receipts", () => ({
   uploadReceiptAction: vi.fn(async () => ({ ok: true })),
+  registerPastedReceiptAction: vi.fn(async () => ({ ok: true })),
   updateReceiptReviewAction: vi.fn(async () => ({ ok: true })),
   confirmReceiptAsExpenseAction: vi.fn(async () => ({ ok: true })),
   submitLocalReceiptExtractionAction: vi.fn(async () => ({ ok: true })),

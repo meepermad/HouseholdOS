@@ -1,9 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import {
-  RecoveryLogoutForm,
-} from "@/components/recovery-actions";
 import { RecoveryScreen, recoveryControlClass } from "@/components/recovery-screen";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -53,7 +50,7 @@ export function RouteLoadGuard({
     return (
       <RecoveryScreen
         testId="route-load-guard-recovery"
-        title={`${loadStageLabel(stage)} is taking too long`}
+        title="This is taking longer than expected."
         body={stageBody(stage)}
         reference={reference}
         primary={
@@ -69,25 +66,24 @@ export function RouteLoadGuard({
             <button
               type="button"
               className={recoveryControlClass.secondary}
-              data-testid="route-load-guard-reload-latest"
+              data-testid="route-load-guard-back"
               onClick={() => {
-                const url = new URL(window.location.href);
-                url.searchParams.set("_hos_dpl", String(Date.now()));
-                window.location.assign(url.toString());
+                if (window.history.length > 1) window.history.back();
+                else window.location.assign("/app");
               }}
             >
-              Reload latest version
+              Go back
             </button>
             <button
               type="button"
               className={recoveryControlClass.secondary}
+              data-testid="route-load-guard-home"
               onClick={() => {
                 window.location.assign("/app");
               }}
             >
-              Choose household
+              Home
             </button>
-            <RecoveryLogoutForm variant="secondary" />
           </>
         }
       />

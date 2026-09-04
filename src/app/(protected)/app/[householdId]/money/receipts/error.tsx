@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { RecoveryLinks, RecoveryLogoutForm } from "@/components/recovery-actions";
 import { RecoveryScreen, recoveryControlClass } from "@/components/recovery-screen";
@@ -21,14 +21,16 @@ export default function ReceiptsError({
   const headingRef = useRef<HTMLHeadingElement>(null);
   const copy = classifyHouseholdPageError(error);
   const reference = formatErrorReference(error.digest);
-  const [householdId, setHouseholdId] = useState<string | null>(null);
+  const householdId = useSyncExternalStore(
+    () => () => {},
+    () =>
+      householdReceiptsPathFromLocation(window.location.pathname)?.householdId ??
+      null,
+    () => null,
+  );
 
   useEffect(() => {
     headingRef.current?.focus();
-    setHouseholdId(
-      householdReceiptsPathFromLocation(window.location.pathname)?.householdId ??
-        null,
-    );
   }, []);
 
   return (

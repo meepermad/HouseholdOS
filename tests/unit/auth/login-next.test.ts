@@ -12,6 +12,15 @@ describe("safeLoginReturnPath", () => {
     expect(safeLoginReturnPath(`/app/${H1}/money/receipts/new?mode=camera`)).toBe(
       `/app/${H1}/money/receipts/new?mode=camera`,
     );
+    expect(safeLoginReturnPath(`/app/${H1}/money/receipts/new?mode=paste`)).toBe(
+      `/app/${H1}/money/receipts/new?mode=paste`,
+    );
+  });
+
+  it("returns to paste receipt after a dropped session", () => {
+    expect(receiptCaptureReturnPath(H1, "paste")).toBe(
+      `/app/${H1}/money/receipts/new?mode=paste`,
+    );
   });
 
   it("rejects external and recovery destinations", () => {

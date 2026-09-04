@@ -3113,6 +3113,7 @@ export type Database = {
           file_name: string
           household_id: string
           id: string
+          intake_source: string
           last_split_workflow: string | null
           merchant_corrected: string | null
           mime_type: string
@@ -3144,6 +3145,7 @@ export type Database = {
           file_name: string
           household_id: string
           id?: string
+          intake_source?: string
           last_split_workflow?: string | null
           merchant_corrected?: string | null
           mime_type: string
@@ -3175,6 +3177,7 @@ export type Database = {
           file_name?: string
           household_id?: string
           id?: string
+          intake_source?: string
           last_split_workflow?: string | null
           merchant_corrected?: string | null
           mime_type?: string
@@ -17365,6 +17368,19 @@ export type Database = {
           p_idempotency_key?: string
           p_mime_type: string
           p_perceptual_hash?: string
+          p_size_bytes: number
+          p_storage_path: string
+        }
+        Returns: string
+      }
+      register_pasted_receipt: {
+        Args: {
+          p_file_hash?: string
+          p_file_name: string
+          p_household_id: string
+          p_idempotency_key?: string
+          p_mime_type: string
+          p_payer_membership_id?: string
           p_size_bytes: number
           p_storage_path: string
         }

@@ -39,6 +39,10 @@ describe("MoneyCreateSheet", () => {
       "href",
       "/app/hh1/money/receipts/new?mode=file",
     );
+    expect(screen.getByTestId("money-create-paste-receipt")).toHaveAttribute(
+      "href",
+      "/app/hh1/money/receipts/new?mode=paste",
+    );
     expect(screen.getByTestId("money-create-add-expense")).toHaveAttribute(
       "href",
       "/app/hh1/money/expenses/new",
