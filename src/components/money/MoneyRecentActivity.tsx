@@ -24,12 +24,21 @@ export function MoneyRecentActivity({
           description="Scan a receipt or add an expense to get started."
           action={
             canCreateExpense ? (
-              <Link
-                href={`/app/${householdId}/money/expenses/new`}
-                className="inline-flex min-h-11 items-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
-              >
-                Add expense
-              </Link>
+              <>
+                <Link
+                  href={`/app/${householdId}/money/receipts/new`}
+                  className="inline-flex min-h-11 items-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
+                  data-testid="money-activity-scan-receipt"
+                >
+                  Scan receipt
+                </Link>
+                <Link
+                  href={`/app/${householdId}/money/expenses/new`}
+                  className="inline-flex min-h-11 items-center rounded-md border border-border px-4 py-2 text-sm font-medium"
+                >
+                  Add expense
+                </Link>
+              </>
             ) : undefined
           }
         />

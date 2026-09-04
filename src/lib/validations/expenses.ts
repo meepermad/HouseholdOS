@@ -61,28 +61,70 @@ export const expenseIdSchema = z.object({
   expenseId: z.string().uuid(),
 });
 
+/** Missing optional ints must not be coerced from null (Zod 4 turns null into 0). */
+const optionalInt = z.preprocess((value) => {
+  if (value == null || value === "") return undefined;
+  return value;
+}, z.coerce.number().int().optional());
+
+const optionalPositiveInt = z.preprocess((value) => {
+  if (value == null || value === "") return undefined;
+  return value;
+}, z.coerce.number().int().min(1).optional());
+
+const optionalBps = z.preprocess((value) => {
+  if (value == null || value === "") return undefined;
+  return value;
+}, z.coerce.number().int().min(0).max(10_000).optional());
+
+const optionalFlag = z.preprocess((value) => {
+  if (value == null || value === "" || value === false) return undefined;
+  return value;
+}, z.union([z.literal("on"), z.literal("true"), z.boolean()]).optional());
+
 export const participantSchema = z.object({
   membershipId: z.string().uuid(),
-  fixedCents: z.coerce.number().int().optional(),
-  percentBps: z.coerce.number().int().min(0).max(10_000).optional(),
-  weight: z.coerce.number().int().min(1).optional(),
+  fixedCents: optionalInt,
+  percentBps: optionalBps,
+  weight: optionalPositiveInt,
 });
 
-export const upsertExpenseItemSchema = z.object({
-  householdId: z.string().uuid(),
-  expenseId: z.string().uuid(),
-  itemId: z.string().uuid().optional(),
-  description: z.string().trim().min(1).max(500),
-  quantityLabel: z.string().trim().max(80).optional().or(z.literal("")),
-  totalCents: z.coerce.number().int().min(0).max(100_000_000),
-  displayOrder: z.coerce.number().int().min(0).default(0),
-  allocationMode: itemAllocationModeSchema,
-  personalMembershipId: z.string().uuid().optional().nullable(),
-  excludeFromAdjustmentBasis: z
-    .union([z.literal("on"), z.literal("true"), z.boolean()])
-    .optional(),
-  participants: z.array(participantSchema).default([]),
-});
+function requireSelectedParticipants<
+  T extends { allocationMode: string; participants: Array<{ membershipId: string }> },
+>(value: T, ctx: z.RefinementCtx) {
+  if (value.allocationMode === "equal_selected" && value.participants.length === 0) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["participants"],
+      message: "Choose at least one person to share this with.",
+    });
+  }
+}
+
+export const upsertExpenseItemSchema = z
+  .object({
+    householdId: z.string().uuid(),
+    expenseId: z.string().uuid(),
+    itemId: z.string().uuid().optional(),
+    description: z.string().trim().min(1).max(500),
+    quantityLabel: z.string().trim().max(80).optional().or(z.literal("")),
+    totalCents: z.coerce.number().int().min(0).max(100_000_000),
+    displayOrder: z.coerce.number().int().min(0).default(0),
+    allocationMode: itemAllocationModeSchema,
+    personalMembershipId: z.string().uuid().optional().nullable(),
+    excludeFromAdjustmentBasis: optionalFlag,
+    participants: z.array(participantSchema).default([]),
+  })
+  .superRefine((value, ctx) => {
+    requireSelectedParticipants(value, ctx);
+    if (value.allocationMode === "personal" && !value.personalMembershipId) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["personalMembershipId"],
+        message: "Choose who this item belongs to.",
+      });
+    }
+  });
 
 export const deleteExpenseItemSchema = z.object({
   householdId: z.string().uuid(),
@@ -90,18 +132,46 @@ export const deleteExpenseItemSchema = z.object({
   itemId: z.string().uuid(),
 });
 
-export const upsertExpenseAdjustmentSchema = z.object({
-  householdId: z.string().uuid(),
-  expenseId: z.string().uuid(),
-  adjustmentId: z.string().uuid().optional(),
-  adjustmentType: adjustmentTypeSchema,
-  description: z.string().trim().min(1).max(500),
-  amountCents: z.coerce.number().int().min(-100_000_000).max(100_000_000),
-  allocationMode: adjustmentAllocationModeSchema,
-  assignedMembershipId: z.string().uuid().optional().nullable(),
-  displayOrder: z.coerce.number().int().min(0).default(0),
-  participants: z.array(participantSchema).default([]),
-});
+export const upsertExpenseAdjustmentSchema = z
+  .object({
+    householdId: z.string().uuid(),
+    expenseId: z.string().uuid(),
+    adjustmentId: z.string().uuid().optional(),
+    adjustmentType: adjustmentTypeSchema,
+    description: z.string().trim().min(1).max(500),
+    amountCents: z.coerce.number().int().min(-100_000_000).max(100_000_000),
+    allocationMode: adjustmentAllocationModeSchema,
+    assignedMembershipId: z.string().uuid().optional().nullable(),
+    displayOrder: z.coerce.number().int().min(0).default(0),
+    participants: z.array(participantSchema).default([]),
+  })
+  .superRefine(requireSelectedParticipants);
+
+export function humanizeExpenseValidationError(
+  error: z.ZodError,
+  fallback: string,
+): string {
+  const issue = error.issues[0];
+  if (!issue) return fallback;
+  if (issue.message && !/^Invalid input/i.test(issue.message)) {
+    return issue.message;
+  }
+  switch (String(issue.path[0] ?? "")) {
+    case "participants":
+      return "Choose at least one person to share this with.";
+    case "allocationMode":
+      return "Choose how to split this item.";
+    case "totalCents":
+    case "amountCents":
+      return "Enter a valid dollar amount.";
+    case "description":
+      return "Add a short description.";
+    case "personalMembershipId":
+      return "Choose who this item belongs to.";
+    default:
+      return fallback;
+  }
+}
 
 export const deleteExpenseAdjustmentSchema = z.object({
   householdId: z.string().uuid(),

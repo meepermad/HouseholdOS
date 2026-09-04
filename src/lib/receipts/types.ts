@@ -25,6 +25,17 @@ export const RECEIPT_HEIC_MIME_TYPES = [
   "image/heif-sequence",
 ] as const;
 
+/**
+ * Library picker accept list. Omit HEIC/HEIF so iOS Photos converts to JPEG
+ * instead of handing the web app a raw HEIC that often OOMs Safari.
+ */
+export const RECEIPT_LIBRARY_ACCEPT =
+  "image/jpeg,image/png,image/webp,application/pdf";
+/** Camera capture: JPEG/PNG only. */
+export const RECEIPT_CAMERA_ACCEPT = "image/jpeg,image/png";
+/** Skip in-browser HEIC decode above this size to avoid iPhone Safari OOM. */
+export const RECEIPT_HEIC_DECODE_MAX_BYTES = 8 * 1024 * 1024;
+
 export type ReceiptMimeType = (typeof RECEIPT_ALLOWED_MIME_TYPES)[number];
 
 export type ReceiptStatus =

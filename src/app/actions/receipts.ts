@@ -14,7 +14,15 @@ import {
 } from "@/lib/receipts/validate";
 import { detectDuplicateReceipts } from "@/lib/receipts/duplicates";
 import { describeReceiptOcrStatus } from "@/lib/receipts/adapters";
-import { mapReceiptUploadFailure } from "@/lib/receipts/upload-errors";
+import { mapReceiptUploadFailure, receiptUploadUserMessage } from "@/lib/receipts/upload-errors";
+import { loginUrlForPath, receiptCaptureReturnPath } from "@/lib/auth/login-next";
+import { isNextRedirectError } from "@/lib/navigation-errors";
+import {
+  isMembershipUuid,
+  mapReceiptRpcError,
+  parseMembershipIdList,
+  SHARE_NEEDS_PERSON,
+} from "@/lib/receipts/errors";
 
 async function db(householdId: string) {
   const ctx = await assertActiveMembership(householdId);
@@ -42,8 +50,8 @@ export async function uploadReceiptAction(
   _prev: ActionResult | null,
   formData: FormData,
 ): Promise<ActionResult> {
+  const householdId = String(formData.get("householdId") ?? "");
   try {
-    const householdId = String(formData.get("householdId") ?? "");
     const file = formData.get("file");
     if (!(file instanceof File) || file.size === 0) {
       return { ok: false, error: "Choose a receipt photo or PDF." };
@@ -170,7 +178,17 @@ export async function uploadReceiptAction(
       data: { redirectTo, receiptId: String(id) },
     };
   } catch (e) {
-    if (e && typeof e === "object" && "digest" in e) throw e;
+    if (isNextRedirectError(e)) {
+      const next = householdId
+        ? receiptCaptureReturnPath(householdId)
+        : "/app";
+      return {
+        ok: false,
+        error: receiptUploadUserMessage("session_expired"),
+        actionHref: loginUrlForPath(next, "session_expired"),
+        actionLabel: "Sign in again",
+      };
+    }
     return { ok: false, error: toPublicErrorMessage(e) };
   }
 }
@@ -349,22 +367,12 @@ export async function upsertReceiptAliasAction(
   }
 }
 
-function mapReceiptRpcError(message: string): string {
-  const m = message.toLowerCase();
-  if (m.includes("claim_conflict")) return "Someone else already claimed this item.";
-  if (m.includes("claim_overclaim")) return "That would claim more than is left on this item.";
-  if (m.includes("claim_finalized")) return "This receipt is already submitted.";
-  if (m.includes("claim_not_open")) return "This receipt is not open for claiming.";
-  if (m.includes("not authenticated") || m.includes("jwt")) {
-    return mapReceiptUploadFailure({ raw: message }).message;
+function validMembershipIds(raw: string): string[] | { error: string } {
+  const ids = parseMembershipIdList(raw);
+  if (ids.some((id) => !isMembershipUuid(id))) {
+    return { error: SHARE_NEEDS_PERSON };
   }
-  if (m.includes("not authorized") || m.includes("not an active")) {
-    return "You cannot change this receipt.";
-  }
-  if (m.includes("waiting_for_claims")) {
-    return "Some roommates have not claimed yet. Finish now if you want to continue without them.";
-  }
-  return "Could not update this receipt. Try again.";
+  return ids;
 }
 
 export async function markReceiptOcrOutcomeAction(
@@ -417,10 +425,16 @@ export async function setReceiptSplitWorkflowAction(
     const householdId = String(formData.get("householdId") ?? "");
     const receiptId = String(formData.get("receiptId") ?? "");
     const workflow = String(formData.get("workflow") ?? "");
-    const membershipIds = String(formData.get("membershipIds") ?? "")
-      .split(",")
-      .map((s) => s.trim())
-      .filter(Boolean);
+    const membershipIdsOrError = validMembershipIds(
+      String(formData.get("membershipIds") ?? ""),
+    );
+    if (!Array.isArray(membershipIdsOrError)) {
+      return { ok: false, error: membershipIdsOrError.error };
+    }
+    const membershipIds = membershipIdsOrError;
+    if (workflow === "equal_all" && formData.has("membershipIds") && membershipIds.length === 0) {
+      return { ok: false, error: SHARE_NEEDS_PERSON };
+    }
     const payerMembershipId = String(formData.get("payerMembershipId") ?? "").trim();
     const { supabase } = await db(householdId);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -508,10 +522,16 @@ export async function markReceiptLineSharedAction(
   try {
     const householdId = String(formData.get("householdId") ?? "");
     const lineId = String(formData.get("lineId") ?? "");
-    const membershipIds = String(formData.get("membershipIds") ?? "")
-      .split(",")
-      .map((s) => s.trim())
-      .filter(Boolean);
+    const membershipIdsOrError = validMembershipIds(
+      String(formData.get("membershipIds") ?? ""),
+    );
+    if (!Array.isArray(membershipIdsOrError)) {
+      return { ok: false, error: membershipIdsOrError.error };
+    }
+    const membershipIds = membershipIdsOrError;
+    if (formData.has("membershipIds") && membershipIds.length === 0) {
+      return { ok: false, error: SHARE_NEEDS_PERSON };
+    }
     const { supabase } = await db(householdId);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await (supabase as any).rpc("mark_receipt_line_shared", {

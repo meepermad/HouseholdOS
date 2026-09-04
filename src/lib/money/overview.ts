@@ -761,6 +761,11 @@ function buildTools(params: {
     ...(params.receiptsEnabled
       ? [
           {
+            label: "Add a receipt",
+            href: `${base}/receipts/new`,
+            testId: "tool-add-receipt",
+          },
+          {
             label: "Receipts in progress",
             href: `${base}/receipts`,
             testId: "tool-receipts",

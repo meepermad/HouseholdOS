@@ -42,10 +42,23 @@ export function MoneyCreateSheet({ create }: { create: MoneyCreateGroups }) {
 
   return (
     <section data-testid="money-create" className="flex flex-wrap items-center gap-2">
+      {create.scanReceipt ? (
+        <Link
+          href={create.scanReceipt.href}
+          data-testid={create.scanReceipt.testId}
+          className="inline-flex min-h-11 items-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
+        >
+          {create.scanReceipt.label}
+        </Link>
+      ) : null}
       {create.primary.length > 0 ? (
         <button
           type="button"
-          className="inline-flex min-h-11 items-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
+          className={
+            create.scanReceipt
+              ? "inline-flex min-h-11 items-center rounded-md border border-border bg-secondary px-4 py-2 text-sm font-medium text-secondary-foreground"
+              : "inline-flex min-h-11 items-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
+          }
           onClick={() => setOpen(true)}
           data-testid="money-create-open"
         >

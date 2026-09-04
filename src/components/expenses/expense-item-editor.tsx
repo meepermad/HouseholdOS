@@ -78,14 +78,23 @@ export function ExpenseItemEditor({
         ? selectedIds
         : [];
     return JSON.stringify(
-      ids.map((membershipId) => ({
-        membershipId,
-        fixedCents: fixedMap[membershipId],
-        percentBps: percentMap[membershipId] !== undefined
-          ? Math.round(percentMap[membershipId]! * 100)
-          : undefined,
-        weight: weightMap[membershipId],
-      })),
+      ids.map((membershipId) => {
+        if (mode === "equal_selected") {
+          return { membershipId };
+        }
+        return {
+          membershipId,
+          ...(mode === "fixed_cents" && fixedMap[membershipId] !== undefined
+            ? { fixedCents: fixedMap[membershipId] }
+            : {}),
+          ...(mode === "percentage" && percentMap[membershipId] !== undefined
+            ? { percentBps: Math.round(percentMap[membershipId]! * 100) }
+            : {}),
+          ...(mode === "weighted" && weightMap[membershipId] !== undefined
+            ? { weight: weightMap[membershipId] }
+            : {}),
+        };
+      }),
     );
   }, [mode, selectedIds, fixedMap, percentMap, weightMap]);
 

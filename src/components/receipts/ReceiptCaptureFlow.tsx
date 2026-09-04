@@ -1,11 +1,13 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useRef, useState, useTransition } from "react";
 import {
   markReceiptOcrOutcomeAction,
   submitLocalReceiptExtractionAction,
   uploadReceiptAction,
 } from "@/app/actions/receipts";
+import { loginUrlForPath, receiptCaptureReturnPath } from "@/lib/auth/login-next";
 import {
   cancelLocalOcr,
   runLocalOcrOnImages,
@@ -23,8 +25,13 @@ import { normalizeReceiptUpload } from "@/lib/receipts/client/normalize-upload";
 import { parseReceiptFromOcr } from "@/lib/receipts/local-ocr/parse";
 import { preprocessReceiptImage } from "@/lib/receipts/preprocess/pipeline";
 import { describeProviderChoices } from "@/lib/receipts/adapters/provider-copy";
+import { describeReceiptReadFailure } from "@/lib/receipts/errors";
 import { mapReceiptUploadFailure } from "@/lib/receipts/upload-errors";
-import { RECEIPT_OCR_TIMEOUT_MS } from "@/lib/receipts/types";
+import {
+  RECEIPT_CAMERA_ACCEPT,
+  RECEIPT_LIBRARY_ACCEPT,
+  RECEIPT_OCR_TIMEOUT_MS,
+} from "@/lib/receipts/types";
 import type { ReceiptAlias } from "@/lib/receipts/local-ocr/types";
 
 type Props = {
@@ -45,6 +52,8 @@ type Stage =
   | "ready"
   | "timeout"
   | "manual";
+
+type CaptureRecovery = "none" | "heic" | "session" | "generic";
 
 async function sha256Hex(bytes: BufferSource): Promise<string> {
   const digest = await crypto.subtle.digest("SHA-256", bytes);
@@ -80,6 +89,7 @@ export function ReceiptCaptureFlow({
 }: Props) {
   const [stage, setStage] = useState<Stage>("capture");
   const [error, setError] = useState<string | null>(null);
+  const [recovery, setRecovery] = useState<CaptureRecovery>("none");
   const [pending, startTransition] = useTransition();
   const [progress, setProgress] = useState<OcrProgress | null>(null);
   const [offlineDrafts, setOfflineDrafts] = useState<OfflineReceiptDraft[]>([]);
@@ -120,11 +130,31 @@ export function ReceiptCaptureFlow({
     }
   }
 
+  function resetFileInputs() {
+    if (cameraRef.current) cameraRef.current.value = "";
+    if (fileRef.current) fileRef.current.value = "";
+  }
+
+  function showCaptureFailure(mapped: ReturnType<typeof mapReceiptUploadFailure>) {
+    setRecovery(
+      mapped.code === "session_expired"
+        ? "session"
+        : mapped.code === "unsupported_heic"
+          ? "heic"
+          : "generic",
+    );
+    setError(mapped.message);
+    setStage("capture");
+    resetFileInputs();
+  }
+
   async function handleFile(file: File) {
-    setError(null);
-    setFileLabel(file.name);
-    setStage("uploading");
-    setProgress({ stage: "preparing", label: "Uploading receipt…", progress: 0.15 });
+    try {
+      setError(null);
+      setRecovery("none");
+      setFileLabel(file.name);
+      setStage("uploading");
+      setProgress({ stage: "preparing", label: "Uploading receipt…", progress: 0.15 });
 
     let normalized: File;
     try {
@@ -136,84 +166,102 @@ export function ReceiptCaptureFlow({
         stage: "preprocessing",
         raw: e instanceof Error ? e.message : "read",
       });
-      setError(mapped.message);
-      setStage("capture");
+      showCaptureFailure(mapped);
       return;
     }
 
     const online = typeof navigator === "undefined" ? true : navigator.onLine;
     if (!online) {
       await persistOffline(normalized, "offline");
-      setError(mapReceiptUploadFailure({ offline: true }).message);
-      setStage("capture");
+      showCaptureFailure(mapReceiptUploadFailure({ offline: true }));
       return;
     }
 
-    startTransition(async () => {
-      const fd = new FormData();
-      fd.set("householdId", householdId);
-      fd.set("file", normalized);
-      fd.set("idempotencyKey", idempotencyRef.current);
-      const upload = await uploadReceiptAction(null, fd);
-      if (!upload.ok) {
-        if (!navigator.onLine) {
-          await persistOffline(normalized, "connection_lost");
-        }
-        setError(
-          mapReceiptUploadFailure({
-            stage: "storage_upload",
-            raw: upload.error,
-          }).message,
-        );
-        setStage("capture");
-        return;
-      }
-
-      const nextId = String(
-        (upload.data as { receiptId?: string } | undefined)?.receiptId ?? "",
-      );
-      const nextRedirect = upload.data?.redirectTo as string | undefined;
-      setReceiptId(nextId);
-      setRedirectTo(nextRedirect ?? null);
-      await discardOfflineReceiptDraft(idempotencyRef.current).catch(() => undefined);
-
-      setStage("reading");
-      setProgress({ stage: "reading", label: "Reading receipt…", progress: 0.4 });
-
-      try {
-        await withTimeout(runOcrAndPersist(normalized, nextId), RECEIPT_OCR_TIMEOUT_MS);
-        setStage("checking");
-        setProgress({ stage: "parsing", label: "Checking items…", progress: 0.9 });
-        await markReceiptOcrOutcomeAction(householdId, nextId, "succeeded");
-        setStage("ready");
-        setProgress({ stage: "ready", label: "Ready to review", progress: 1 });
-        await terminateLocalOcrWorker();
-        if (nextRedirect) window.location.href = nextRedirect;
-      } catch (e) {
-        const timedOut = e instanceof Error && e.message === "timeout";
-        if (timedOut) {
-          cancelLocalOcr();
-          if (nextId) {
-            await markReceiptOcrOutcomeAction(householdId, nextId, "timeout");
+    startTransition(() => {
+      void (async () => {
+        try {
+          const fd = new FormData();
+          fd.set("householdId", householdId);
+          fd.set("file", normalized);
+          fd.set("idempotencyKey", idempotencyRef.current);
+          const upload = await uploadReceiptAction(null, fd);
+          if (!upload.ok) {
+            if (!navigator.onLine) {
+              await persistOffline(normalized, "connection_lost");
+            }
+            const mapped = mapReceiptUploadFailure({
+              stage: "storage_upload",
+              raw: upload.error,
+            });
+            showCaptureFailure(mapped);
+            return;
           }
-          setStage("timeout");
-          setError(
-            "Receipt is saved, but automatic reading is taking longer than expected.",
+
+          const nextId = String(
+            (upload.data as { receiptId?: string } | undefined)?.receiptId ?? "",
           );
-          return;
+          const nextRedirect = upload.data?.redirectTo as string | undefined;
+          setReceiptId(nextId);
+          setRedirectTo(nextRedirect ?? null);
+          await discardOfflineReceiptDraft(idempotencyRef.current).catch(
+            () => undefined,
+          );
+
+          setStage("reading");
+          setProgress({ stage: "reading", label: "Reading receipt…", progress: 0.4 });
+
+          try {
+            await withTimeout(
+              runOcrAndPersist(normalized, nextId),
+              RECEIPT_OCR_TIMEOUT_MS,
+            );
+            setStage("checking");
+            setProgress({ stage: "parsing", label: "Checking items…", progress: 0.9 });
+            await markReceiptOcrOutcomeAction(householdId, nextId, "succeeded");
+            setStage("ready");
+            setProgress({ stage: "ready", label: "Ready to review", progress: 1 });
+            await terminateLocalOcrWorker();
+            if (nextRedirect) window.location.href = nextRedirect;
+          } catch (e) {
+            const timedOut = e instanceof Error && e.message === "timeout";
+            if (timedOut) {
+              cancelLocalOcr();
+              if (nextId) {
+                await markReceiptOcrOutcomeAction(householdId, nextId, "timeout");
+              }
+              setStage("timeout");
+              const failure = describeReceiptReadFailure({ ocrOutcome: "timeout" });
+              setError(`${failure.explanation} ${failure.nextStep}`);
+              return;
+            }
+            if (nextId) {
+              await markReceiptOcrOutcomeAction(householdId, nextId, "failed");
+            }
+            setStage("manual");
+            setError(
+              mapReceiptUploadFailure({
+                stage: "ocr_processing",
+                raw: e instanceof Error ? e.message : "ocr",
+              }).message,
+            );
+          }
+        } catch (e) {
+          const mapped = mapReceiptUploadFailure({
+            stage: "storage_upload",
+            raw: e instanceof Error ? e.message : "upload",
+          });
+          showCaptureFailure(mapped);
         }
-        if (nextId) {
-          await markReceiptOcrOutcomeAction(householdId, nextId, "failed");
-        }
-        setStage("manual");
-        setError(
-          mapReceiptUploadFailure({
-            stage: "ocr_processing",
-            raw: e instanceof Error ? e.message : "ocr",
-          }).message,
-        );
-      }
+      })();
     });
+    } catch (e) {
+      showCaptureFailure(
+        mapReceiptUploadFailure({
+          stage: "preprocessing",
+          raw: e instanceof Error ? e.message : "read",
+        }),
+      );
+    }
   }
 
   async function runOcrAndPersist(file: File, savedReceiptId: string) {
@@ -373,7 +421,7 @@ export function ReceiptCaptureFlow({
           <input
             ref={cameraRef}
             type="file"
-            accept="image/jpeg,image/png,image/webp,image/heic,image/heif,application/pdf"
+            accept={RECEIPT_CAMERA_ACCEPT}
             capture="environment"
             className="sr-only"
             data-testid="receipt-camera-input"
@@ -385,7 +433,7 @@ export function ReceiptCaptureFlow({
           <input
             ref={fileRef}
             type="file"
-            accept="image/jpeg,image/png,image/webp,image/heic,image/heif,application/pdf"
+            accept={RECEIPT_LIBRARY_ACCEPT}
             className="sr-only"
             data-testid="receipt-file-input"
             onChange={(e) => {
@@ -416,8 +464,9 @@ export function ReceiptCaptureFlow({
             ) : null}
           </div>
           <p className="text-xs text-text-muted">
-            JPEG, PNG, WebP, or PDF. iPhone HEIC photos are converted when this
-            browser can read them.
+            JPEG, PNG, WebP, or PDF. iPhone photos are converted on this device
+            when possible. If a photo fails, try a screenshot or choose Most
+            Compatible in Camera settings.
           </p>
         </div>
       ) : null}
@@ -496,9 +545,10 @@ export function ReceiptCaptureFlow({
                         goToReceipt();
                       } catch {
                         setStage("timeout");
-                        setError(
-                          "Receipt is saved, but automatic reading is taking longer than expected.",
-                        );
+                        const failure = describeReceiptReadFailure({
+                          ocrOutcome: "timeout",
+                        });
+                        setError(`${failure.explanation} ${failure.nextStep}`);
                       }
                     });
                   }
@@ -534,9 +584,42 @@ export function ReceiptCaptureFlow({
       </details>
 
       {error && stage === "capture" ? (
-        <p className="text-sm text-destructive" role="alert">
-          {error}
-        </p>
+        <div className="space-y-2" role="alert" data-testid="receipt-capture-error">
+          <p className="text-sm text-destructive">{error}</p>
+          <div className="flex flex-col gap-2">
+            {recovery === "session" ? (
+              <Link
+                href={loginUrlForPath(
+                  receiptCaptureReturnPath(householdId),
+                  "session_expired",
+                )}
+                className="inline-flex min-h-11 items-center justify-center rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground"
+                data-testid="receipt-sign-in-again"
+              >
+                Sign in again
+              </Link>
+            ) : null}
+            <Link
+              href={`/app/${householdId}/money/expenses/new`}
+              className="inline-flex min-h-11 items-center justify-center rounded-md border border-border px-4 text-sm font-medium"
+              data-testid="receipt-enter-manually"
+            >
+              Enter manually
+            </Link>
+            <button
+              type="button"
+              className="min-h-11 rounded-md border border-border px-4 text-sm"
+              onClick={() => {
+                setError(null);
+                setRecovery("none");
+                fileRef.current?.click();
+              }}
+              data-testid="receipt-try-jpeg"
+            >
+              Try a JPEG or PNG
+            </button>
+          </div>
+        </div>
       ) : null}
     </div>
   );

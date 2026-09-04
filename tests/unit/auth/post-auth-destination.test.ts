@@ -16,6 +16,16 @@ describe("resolvePostAuthDestination", () => {
     ).toBe(`/app/${H1}/calendar/agenda`);
   });
 
+  it("returns to Add receipt after login", () => {
+    expect(
+      resolvePostAuthDestination({
+        requestedNext: `/app/${H1}/money/receipts/new?mode=file`,
+        authorizedHouseholdIds: [H1],
+        preferredHouseholdId: H1,
+      }),
+    ).toBe(`/app/${H1}/money/receipts/new?mode=file`);
+  });
+
   it("falls back from unauthorized household to preferred", () => {
     expect(
       resolvePostAuthDestination({

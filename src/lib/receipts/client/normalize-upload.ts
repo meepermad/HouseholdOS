@@ -5,6 +5,7 @@
  */
 
 import {
+  RECEIPT_HEIC_DECODE_MAX_BYTES,
   RECEIPT_UPLOAD_JPEG_QUALITY,
   RECEIPT_UPLOAD_MAX_DIMENSION,
   RECEIPT_UPLOAD_TARGET_BYTES,
@@ -21,6 +22,10 @@ export type NormalizedReceiptFile = {
   width: number | null;
   height: number | null;
 };
+
+function mappedError(raw: string, stage: "preprocessing" = "preprocessing"): Error {
+  return new Error(mapReceiptUploadFailure({ raw, stage }).message);
+}
 
 function canvasToJpegBlob(
   canvas: HTMLCanvasElement,
@@ -41,6 +46,7 @@ async function drawToCanvas(
 ): Promise<{ canvas: HTMLCanvasElement; width: number; height: number; resized: boolean }> {
   const srcW = "naturalWidth" in source ? source.naturalWidth || source.width : source.width;
   const srcH = "naturalHeight" in source ? source.naturalHeight || source.height : source.height;
+  if (!srcW || !srcH) throw new Error("Could not read image");
   const longest = Math.max(srcW, srcH);
   const scale = longest > maxDimension ? maxDimension / longest : 1;
   const width = Math.max(1, Math.round(srcW * scale));
@@ -54,12 +60,49 @@ async function drawToCanvas(
   return { canvas, width, height, resized: scale < 1 };
 }
 
-async function decodeImage(file: Blob): Promise<ImageBitmap> {
-  try {
-    return await createImageBitmap(file, { imageOrientation: "from-image" });
-  } catch {
-    return createImageBitmap(file);
+function loadHtmlImage(file: Blob): Promise<{ image: HTMLImageElement; revoke: () => void }> {
+  const url = URL.createObjectURL(file);
+  return new Promise((resolve, reject) => {
+    const el = new Image();
+    el.onload = () => {
+      if (!el.naturalWidth || !el.naturalHeight) {
+        URL.revokeObjectURL(url);
+        reject(new Error("Could not read image"));
+        return;
+      }
+      resolve({
+        image: el,
+        revoke: () => URL.revokeObjectURL(url),
+      });
+    };
+    el.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error("Could not read image"));
+    };
+    el.src = url;
+  });
+}
+
+async function decodeImage(
+  file: Blob,
+  heic: boolean,
+): Promise<{ source: ImageBitmap | HTMLImageElement; close: () => void }> {
+  if (typeof createImageBitmap === "function") {
+    try {
+      const bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
+      return { source: bitmap, close: () => bitmap.close() };
+    } catch {
+      try {
+        const bitmap = await createImageBitmap(file);
+        return { source: bitmap, close: () => bitmap.close() };
+      } catch {
+        // A second HEIC decode via <img> often hangs or OOMs iPhone Safari.
+        if (heic) throw new Error("heic");
+      }
+    }
   }
+  const loaded = await loadHtmlImage(file);
+  return { source: loaded.image, close: loaded.revoke };
 }
 
 async function compressUntilTarget(
@@ -81,6 +124,7 @@ async function compressUntilTarget(
  * Prepare a selected receipt file for upload.
  * PDFs pass through (size-checked by the caller). Images are oriented,
  * optionally converted from HEIC, and resized/compressed.
+ * Never throws a raw DOMException — callers always get a human message.
  */
 export async function normalizeReceiptUpload(file: File): Promise<NormalizedReceiptFile> {
   const originalBytes = file.size;
@@ -96,48 +140,48 @@ export async function normalizeReceiptUpload(file: File): Promise<NormalizedRece
     };
   }
 
-  const header = new Uint8Array(await file.slice(0, 16).arrayBuffer());
-  const heic = detectHeic({
-    bytes: header,
-    mimeType: file.type,
-    fileName: file.name,
-  });
-
-  let bitmap: ImageBitmap;
   try {
-    bitmap = await decodeImage(file);
-  } catch (error) {
-    if (heic) {
-      const mapped = mapReceiptUploadFailure({ raw: "heic", stage: "preprocessing" });
-      throw new Error(mapped.message);
-    }
-    const mapped = mapReceiptUploadFailure({
-      raw: error instanceof Error ? error.message : "decode",
-      stage: "preprocessing",
+    const header = new Uint8Array(await file.slice(0, 16).arrayBuffer());
+    const heic = detectHeic({
+      bytes: header,
+      mimeType: file.type,
+      fileName: file.name,
     });
-    throw new Error(mapped.message);
-  }
 
-  try {
-    const drawn = await drawToCanvas(bitmap, RECEIPT_UPLOAD_MAX_DIMENSION);
-    bitmap.close();
-    const compressed = await compressUntilTarget(drawn.canvas, file.name);
-    drawn.canvas.width = 0;
-    drawn.canvas.height = 0;
-    return {
-      file: compressed.file,
-      convertedFromHeic: heic,
-      resized: drawn.resized || compressed.bytes < originalBytes,
-      originalBytes,
-      outputBytes: compressed.bytes,
-      width: drawn.width,
-      height: drawn.height,
-    };
-  } catch (error) {
-    bitmap.close();
-    if (heic) {
-      throw new Error(mapReceiptUploadFailure({ raw: "heic" }).message);
+    if (heic && originalBytes > RECEIPT_HEIC_DECODE_MAX_BYTES) {
+      throw mappedError("heic");
     }
-    throw error instanceof Error ? error : new Error("Could not read image");
+
+    let decoded: { source: ImageBitmap | HTMLImageElement; close: () => void };
+    try {
+      decoded = await decodeImage(file, heic);
+    } catch (error) {
+      if (heic) throw mappedError("heic");
+      throw mappedError(error instanceof Error ? error.message : "decode");
+    }
+
+    try {
+      const drawn = await drawToCanvas(decoded.source, RECEIPT_UPLOAD_MAX_DIMENSION);
+      decoded.close();
+      const compressed = await compressUntilTarget(drawn.canvas, file.name);
+      drawn.canvas.width = 0;
+      drawn.canvas.height = 0;
+      return {
+        file: compressed.file,
+        convertedFromHeic: heic,
+        resized: drawn.resized || compressed.bytes < originalBytes,
+        originalBytes,
+        outputBytes: compressed.bytes,
+        width: drawn.width,
+        height: drawn.height,
+      };
+    } catch (error) {
+      decoded.close();
+      if (heic) throw mappedError("heic");
+      throw mappedError(error instanceof Error ? error.message : "canvas");
+    }
+  } catch (error) {
+    if (error instanceof Error) throw error;
+    throw mappedError("decode");
   }
 }

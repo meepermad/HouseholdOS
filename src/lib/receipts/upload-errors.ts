@@ -36,7 +36,8 @@ const MESSAGES: Record<ReceiptUploadErrorCode, string> = {
   could_not_upload: "Could not upload securely. Check your connection and try again.",
   ocr_failed: "Receipt saved, but text recognition failed. You can enter the details manually.",
   connection_lost: "Connection lost. Your receipt draft is saved on this device — retry when you are back online.",
-  session_expired: "Your session expired. Sign in again, then retry the upload.",
+  session_expired:
+    "Your session expired. Sign in again, then you can add this receipt.",
   manual_fallback: "Receipt uploaded. Enter the details manually.",
   unknown: "Something went wrong while handling this receipt. Try again, or enter it manually.",
 };
@@ -105,7 +106,14 @@ export function mapReceiptUploadFailure(input: {
   ) {
     return { code: "could_not_read", message: MESSAGES.could_not_read, stage: "preprocessing" };
   }
-  if (stage === "ocr_processing" || stage === "ocr_init" || raw.includes("ocr") || raw.includes("tesseract")) {
+  if (
+    stage === "ocr_processing" ||
+    stage === "ocr_init" ||
+    raw.includes("ocr") ||
+    raw.includes("tesseract") ||
+    raw.includes("ocr_worker") ||
+    raw.includes("worker_timeout")
+  ) {
     return { code: "ocr_failed", message: MESSAGES.ocr_failed, stage: "ocr_processing" };
   }
   if (

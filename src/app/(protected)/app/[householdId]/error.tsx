@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { DeploymentSkewRecovery } from "@/components/deployment-skew-recovery";
 import {
@@ -9,75 +9,13 @@ import {
   RecoveryLogoutForm,
 } from "@/components/recovery-actions";
 import { RecoveryScreen, recoveryControlClass } from "@/components/recovery-screen";
+import { loginUrlForPath, receiptCaptureReturnPath } from "@/lib/auth/login-next";
 import { formatErrorReference } from "@/lib/recovery";
 import { isDeploymentSkewError } from "@/lib/deployment-skew";
-import { AppError } from "@/lib/errors";
-
-function classifyHouseholdPageError(error: Error & { digest?: string }): {
-  title: string;
-  body: string;
-  showLogout: boolean;
-} {
-  if (isDeploymentSkewError(error)) {
-    return {
-      title: "Update required",
-      body: "HouseholdOS was redeployed. Refreshing to load the latest version…",
-      showLogout: false,
-    };
-  }
-
-  const message = error.message.toLowerCase();
-  if (
-    message.includes("sign in") ||
-    message.includes("session") ||
-    message.includes("auth")
-  ) {
-    return {
-      title: "Session expired",
-      body: "Your session ended. Sign in again — this is not a password problem if you just signed in successfully.",
-      showLogout: true,
-    };
-  }
-
-  if (error instanceof AppError) {
-    if (error.code === "authorization") {
-      return {
-        title: "Household unavailable",
-        body: error.publicMessage,
-        showLogout: true,
-      };
-    }
-    if (error.code === "not_found") {
-      return {
-        title: "Household not found",
-        body: error.publicMessage,
-        showLogout: true,
-      };
-    }
-    if (error.code === "database_failure") {
-      const timedOut = error.publicMessage.toLowerCase().includes("timed out");
-      return {
-        title: timedOut ? "Load timed out" : "Database unavailable",
-        body: error.publicMessage,
-        showLogout: true,
-      };
-    }
-  }
-
-  if (message.includes("timed out")) {
-    return {
-      title: "Load timed out",
-      body: error.message,
-      showLogout: true,
-    };
-  }
-
-  return {
-    title: "Page failed after login",
-    body: "This household screen hit a problem after authentication. Retry, return Home, or sign out. Your password was not rejected.",
-    showLogout: true,
-  };
-}
+import {
+  classifyHouseholdPageError,
+  householdReceiptsPathFromLocation,
+} from "@/lib/recovery/household-page-error";
 
 export default function HouseholdError({
   error,
@@ -90,9 +28,13 @@ export default function HouseholdError({
   const reference = formatErrorReference(error.digest);
   const copy = classifyHouseholdPageError(error);
   const skew = isDeploymentSkewError(error);
+  const [receiptsPath, setReceiptsPath] = useState<{ householdId: string } | null>(
+    null,
+  );
 
   useEffect(() => {
     headingRef.current?.focus();
+    setReceiptsPath(householdReceiptsPathFromLocation(window.location.pathname));
   }, []);
 
   return (
@@ -121,6 +63,36 @@ export default function HouseholdError({
             >
               {skew ? "Refresh now" : "Try again"}
             </button>
+            {receiptsPath ? (
+              <>
+                <Link
+                  href={receiptCaptureReturnPath(receiptsPath.householdId)}
+                  className={recoveryControlClass.secondary}
+                  data-testid="error-add-receipt"
+                >
+                  Add a receipt
+                </Link>
+                <Link
+                  href={`/app/${receiptsPath.householdId}/money/expenses/new`}
+                  className={recoveryControlClass.secondary}
+                  data-testid="error-enter-manually"
+                >
+                  Enter manually
+                </Link>
+                {copy.kind === "session" ? (
+                  <Link
+                    href={loginUrlForPath(
+                      receiptCaptureReturnPath(receiptsPath.householdId),
+                      "session_expired",
+                    )}
+                    className={recoveryControlClass.secondary}
+                    data-testid="error-sign-in-again"
+                  >
+                    Sign in again
+                  </Link>
+                ) : null}
+              </>
+            ) : null}
             <button
               type="button"
               className={recoveryControlClass.secondary}

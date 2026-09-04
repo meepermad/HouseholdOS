@@ -177,10 +177,17 @@ function HomeSections({
           <p className="text-xs text-text-secondary" data-testid="home-money-empty">
             No shared balances yet.{" "}
             <Link
+              href={`/app/${householdId}/money/receipts/new`}
+              className="text-primary underline-offset-2 hover:underline"
+            >
+              Scan a receipt
+            </Link>
+            {" or "}
+            <Link
               href={`/app/${householdId}/money/expenses/new`}
               className="text-primary underline-offset-2 hover:underline"
             >
-              Add an expense
+              add an expense
             </Link>{" "}
             to start splitting costs.
           </p>

@@ -1,6 +1,8 @@
 import { cache } from "react";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { loginUrlForPath } from "@/lib/auth/login-next";
+import { currentRequestPath } from "@/lib/auth/request-path";
 import { createClient } from "@/lib/supabase/server";
 import {
   CURRENT_HOUSEHOLD_COOKIE,
@@ -31,7 +33,7 @@ export async function requireUser() {
 export async function ensureProfileOrRecover() {
   const { supabase, user } = await requireUser();
   if (!user) {
-    redirect("/login");
+    redirect(loginUrlForPath(await currentRequestPath("/app")));
   }
 
   const { data, error } = await supabase.rpc("ensure_profile");
@@ -81,7 +83,9 @@ export const assertActiveMembership = cache(
 
     const { supabase, user } = await requireUser();
     if (!user) {
-      redirect(`/login?next=${encodeURIComponent(`/app/${householdId}`)}`);
+      redirect(
+        loginUrlForPath(await currentRequestPath(`/app/${householdId}`)),
+      );
     }
 
     const { data: membership, error } = await supabase

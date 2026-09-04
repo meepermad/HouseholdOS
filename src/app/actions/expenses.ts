@@ -24,6 +24,7 @@ import {
   expenseIdSchema,
   submitExpenseReviewSchema,
   updateExpenseHeaderSchema,
+  humanizeExpenseValidationError,
   upsertExpenseAdjustmentSchema,
   upsertExpenseItemSchema,
   voidExpenseSchema,
@@ -39,7 +40,23 @@ function parseParticipants(formData: FormData) {
   try {
     const parsed = JSON.parse(raw) as unknown;
     if (!Array.isArray(parsed)) return [];
-    return parsed;
+    return parsed
+      .filter((row): row is Record<string, unknown> =>
+        Boolean(row) && typeof row === "object",
+      )
+      .map((row) => {
+        const out: Record<string, unknown> = { membershipId: row.membershipId };
+        if (row.fixedCents != null && row.fixedCents !== "") {
+          out.fixedCents = row.fixedCents;
+        }
+        if (row.percentBps != null && row.percentBps !== "") {
+          out.percentBps = row.percentBps;
+        }
+        if (row.weight != null && row.weight !== "") {
+          out.weight = row.weight;
+        }
+        return out;
+      });
   } catch {
     return [];
   }
@@ -184,11 +201,14 @@ export async function upsertExpenseItemAction(
       displayOrder: formData.get("displayOrder") || 0,
       allocationMode: formData.get("allocationMode"),
       personalMembershipId: formData.get("personalMembershipId") || null,
-      excludeFromAdjustmentBasis: formData.get("excludeFromAdjustmentBasis"),
+      excludeFromAdjustmentBasis: formData.get("excludeFromAdjustmentBasis") || undefined,
       participants: parseParticipants(formData),
     });
     if (!parsed.success) {
-      return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid line item." };
+      return {
+        ok: false,
+        error: humanizeExpenseValidationError(parsed.error, "This line item could not be saved."),
+      };
     }
 
     await assertActiveMembership(parsed.data.householdId);
@@ -323,7 +343,10 @@ export async function upsertExpenseAdjustmentAction(
       participants: parseParticipants(formData),
     });
     if (!parsed.success) {
-      return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid adjustment." };
+      return {
+        ok: false,
+        error: humanizeExpenseValidationError(parsed.error, "This adjustment could not be saved."),
+      };
     }
 
     await assertActiveMembership(parsed.data.householdId);

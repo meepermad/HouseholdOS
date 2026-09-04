@@ -104,6 +104,14 @@ export default async function ReceiptDraftsPage({
         <EmptyState
           title="No open receipts"
           description="Scan a receipt to split it with your roommates."
+          action={
+            <Link
+              href={`/app/${householdId}/money/receipts/new`}
+              className="inline-flex min-h-11 items-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
+            >
+              Add receipt
+            </Link>
+          }
         />
       ) : (
         <ul className="divide-y divide-border rounded-md border border-border bg-surface">

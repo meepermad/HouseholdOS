@@ -17,6 +17,7 @@ import {
 } from "@/app/actions/receipts";
 import { CurrencyAmountInput } from "@/components/ui/currency-field";
 import { formatCentsAsUsd } from "@/lib/receipts/currency";
+import { describeReceiptReadFailure, SHARE_NEEDS_PERSON } from "@/lib/receipts/errors";
 import { ownershipLabel, classificationToSimpleOwnership } from "@/lib/receipts/ownership";
 import { previewReceiptSplit, type PreviewLine } from "@/lib/receipts/split-preview";
 import { remainingQuantity, type LineClaim } from "@/lib/receipts/claims";
@@ -69,6 +70,7 @@ type Props = {
   invites?: ReviewInvite[];
   claims?: ReviewClaim[];
   ocrOutcome?: string | null;
+  lastError?: string | null;
   startInClaimMode?: boolean;
 };
 
@@ -97,6 +99,7 @@ export function ReceiptReviewForm({
   invites = [],
   claims = [],
   ocrOutcome = null,
+  lastError = null,
   startInClaimMode = false,
 }: Props) {
   const [merchant, setMerchant] = useState(initialMerchant);
@@ -271,6 +274,10 @@ export function ReceiptReviewForm({
   }
 
   function submitExpense() {
+    if (workflow === "equal_all" && splitMembers.length === 0) {
+      setMessage(SHARE_NEEDS_PERSON);
+      return;
+    }
     if (preview.unclaimed.count > 0 && workflow !== "equal_all") {
       setMessage(
         `${preview.unclaimed.count} items still need assignment · ${formatCentsAsUsd(preview.unclaimed.cents)} unassigned`,
@@ -330,6 +337,14 @@ export function ReceiptReviewForm({
 
   const confirmed = status === "confirmed";
   const claimMode = workflow === "claiming" || status === "claiming";
+  const readFailed =
+    ocrOutcome === "failed" ||
+    ocrOutcome === "timeout" ||
+    ocrOutcome === "manual" ||
+    status === "failed";
+  const readFailure = readFailed
+    ? describeReceiptReadFailure({ ocrOutcome, lastError, status })
+    : null;
 
   return (
     <div className="space-y-6 pb-[calc(6rem+env(safe-area-inset-bottom))]" data-testid="receipt-review">
@@ -343,11 +358,32 @@ export function ReceiptReviewForm({
         </div>
       ) : null}
 
-      {ocrOutcome === "failed" || ocrOutcome === "timeout" || ocrOutcome === "manual" ? (
-        <p className="text-sm text-text-secondary" data-testid="receipt-manual-fallback">
-          We could not read this receipt automatically. Enter the merchant, total,
-          and items below.
-        </p>
+      {readFailure ? (
+        <div
+          className="space-y-3 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-3"
+          data-testid="receipt-manual-fallback"
+        >
+          <p className="text-sm font-medium text-text-primary">{readFailure.title}</p>
+          <p className="text-sm text-text-secondary">{readFailure.explanation}</p>
+          <p className="text-sm text-text-secondary">{readFailure.nextStep}</p>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <button
+              type="button"
+              className="min-h-11 rounded-md bg-primary px-3 text-sm font-semibold text-primary-foreground"
+              onClick={() => setHeaderOpen(true)}
+              data-testid="receipt-enter-manually"
+            >
+              Enter manually
+            </button>
+            <a
+              href={`/app/${householdId}/money/receipts/new`}
+              className="inline-flex min-h-11 items-center justify-center rounded-md border border-border bg-surface px-3 text-sm"
+              data-testid="receipt-try-again"
+            >
+              Try again
+            </a>
+          </div>
+        </div>
       ) : null}
 
       <section className="rounded-md border border-border bg-surface p-4">
@@ -850,6 +886,10 @@ export function ReceiptReviewForm({
                                 (line.participantMembershipIds.length
                                   ? line.participantMembershipIds
                                   : members.map((m) => m.id));
+                              if (ids.length === 0) {
+                                setMessage(SHARE_NEEDS_PERSON);
+                                return;
+                              }
                               const fd = new FormData();
                               fd.set("householdId", householdId);
                               fd.set("lineId", line.id!);

@@ -25,6 +25,8 @@ export type MoneyCreateAction = {
 export type MoneyCreateGroups = {
   /** Ways to add an expense, shown inside the Add expense sheet. */
   primary: MoneyCreateAction[];
+  /** Scan receipt — a sibling hub button so capture is one tap from Money. */
+  scanReceipt: MoneyCreateAction | null;
   /** Record payment — a sibling hub button, not inside Add expense. */
   recordPayment: MoneyCreateAction | null;
   /** Rarer entry points behind a disclosure. */
@@ -59,8 +61,16 @@ export function buildMoneyCreateActions(
   const primary: MoneyCreateAction[] = [];
   const more: MoneyCreateAction[] = [];
   let recordPayment: MoneyCreateAction | null = null;
+  let scanReceipt: MoneyCreateAction | null = null;
 
   if (receiptsEnabled && canCreateExpense) {
+    scanReceipt = {
+      key: "scan_receipt",
+      label: "Scan receipt",
+      description: "Take a photo and let HouseholdOS read the items.",
+      href: `${base}/receipts/new?mode=camera`,
+      testId: "money-hub-scan-receipt",
+    };
     primary.push({
       key: "scan_receipt",
       label: "Scan receipt",
@@ -117,7 +127,7 @@ export function buildMoneyCreateActions(
     });
   }
 
-  return { primary, more, recordPayment };
+  return { primary, more, recordPayment, scanReceipt };
 }
 
 /** True when the sheet has nothing to offer and should not be rendered. */
@@ -125,6 +135,7 @@ export function isMoneyCreateEmpty(groups: MoneyCreateGroups): boolean {
   return (
     groups.primary.length === 0 &&
     groups.more.length === 0 &&
-    groups.recordPayment === null
+    groups.recordPayment === null &&
+    groups.scanReceipt === null
   );
 }

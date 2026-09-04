@@ -16,6 +16,10 @@ const create = buildMoneyCreateActions({
 describe("MoneyCreateSheet", () => {
   it("stays closed until the Add expense button is pressed", () => {
     render(<MoneyCreateSheet create={create} />);
+    expect(screen.getByTestId("money-hub-scan-receipt")).toHaveAttribute(
+      "href",
+      "/app/hh1/money/receipts/new?mode=camera",
+    );
     expect(screen.getByTestId("money-create-open")).toHaveTextContent("Add expense");
     expect(screen.queryByTestId("money-create-sheet")).not.toBeInTheDocument();
     expect(screen.getByTestId("money-create-record-payment")).toBeInTheDocument();

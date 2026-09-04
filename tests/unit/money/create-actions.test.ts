@@ -24,6 +24,8 @@ describe("buildMoneyCreateActions", () => {
       "add_expense",
     ]);
     expect(groups.recordPayment?.key).toBe("record_payment");
+    expect(groups.scanReceipt?.href).toBe("/app/hh1/money/receipts/new?mode=camera");
+    expect(groups.scanReceipt?.testId).toBe("money-hub-scan-receipt");
   });
 
   it("keeps rarer entry points in the more group", () => {
@@ -34,6 +36,7 @@ describe("buildMoneyCreateActions", () => {
   it("omits receipt scanning when receipt capture is not ready", () => {
     const groups = buildMoneyCreateActions({ ...base, receiptsEnabled: false });
     expect(groups.primary.map((a) => a.key)).toEqual(["add_expense"]);
+    expect(groups.scanReceipt).toBeNull();
   });
 
   it("omits expense entry points without expense.create", () => {

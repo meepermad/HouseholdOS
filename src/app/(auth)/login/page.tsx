@@ -3,12 +3,8 @@ import { redirect } from "next/navigation";
 import { LoginForm } from "@/components/auth/login-form";
 import { createClient } from "@/lib/supabase/server";
 import { resolveInviteToken } from "@/lib/invitations/resolve-token";
-import { safeRedirectPath } from "@/lib/navigation";
-import {
-  classifyRecoveryReason,
-  recoveryCopy,
-  safeRecoveryDestination,
-} from "@/lib/recovery";
+import { safeLoginReturnPath } from "@/lib/auth/login-next";
+import { classifyRecoveryReason, recoveryCopy } from "@/lib/recovery";
 import { getPublicBuildInfo } from "@/lib/build-info";
 import {
   isRecoveryAuthErrorCode,
@@ -57,10 +53,10 @@ export default async function LoginPage({
   } = await supabase.auth.getUser();
 
   if (user && params.reason !== "signed_out") {
-    redirect(safeRecoveryDestination(params.next));
+    redirect(safeLoginReturnPath(params.next));
   }
 
-  const next = safeRedirectPath(params.next, "/app");
+  const next = safeLoginReturnPath(params.next, "/app");
   const inviteToken = resolveInviteToken({
     invite: params.invite,
     next,

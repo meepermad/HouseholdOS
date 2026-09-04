@@ -4,23 +4,16 @@ import {
   RecoveryLogoutForm,
 } from "@/components/recovery-actions";
 import { RecoveryScreen, recoveryControlClass } from "@/components/recovery-screen";
+import { loginUrlForPath } from "@/lib/auth/login-next";
+import { currentRequestPath } from "@/lib/auth/request-path";
 import { ensureProfileOrRecover } from "@/lib/household-context";
 import { AppError } from "@/lib/errors";
 import {
   LAYOUT_DEADLINE_MS,
   withDeadline,
 } from "@/lib/async/with-deadline";
+import { isNextRedirectError } from "@/lib/navigation-errors";
 import { redirect } from "next/navigation";
-
-function isNextRedirectError(error: unknown): boolean {
-  return (
-    !!error &&
-    typeof error === "object" &&
-    "digest" in error &&
-    typeof (error as { digest?: unknown }).digest === "string" &&
-    String((error as { digest: string }).digest).startsWith("NEXT_REDIRECT")
-  );
-}
 
 export default async function ProtectedLayout({
   children,
@@ -57,7 +50,9 @@ export default async function ProtectedLayout({
         />
       );
     }
-    redirect("/login?reason=session_expired");
+    redirect(
+      loginUrlForPath(await currentRequestPath("/app"), "session_expired"),
+    );
   }
 
   return <>{children}</>;

@@ -115,6 +115,87 @@ describe("ReceiptReviewForm simple flow", () => {
     await user.click(screen.getByTestId("claim-mine"));
   });
 
+  it("lets the payer share equally among some people", async () => {
+    const user = userEvent.setup();
+    render(
+      <ReceiptReviewForm
+        householdId="hh"
+        receiptId="r1"
+        merchant="Target"
+        purchaseDate="2026-09-04"
+        declaredTotalCents={9240}
+        status="needs_review"
+        payerMembershipId="m1"
+        currentMembershipId="m1"
+        members={members}
+        lineItems={lines}
+      />,
+    );
+    await user.click(screen.getByTestId("receipt-looks-right"));
+    await user.click(screen.getByTestId("split-everything"));
+    expect(screen.getByTestId("receipt-equal-split")).toBeInTheDocument();
+    await user.click(screen.getByLabelText("Henry"));
+    await user.click(screen.getByLabelText("Michael"));
+    expect(screen.getByTestId("receipt-confirm-expense")).toBeEnabled();
+    await user.click(screen.getByTestId("receipt-confirm-expense"));
+    expect(screen.queryByText(/invalid input/i)).not.toBeInTheDocument();
+  });
+
+  it("asks for at least one person when nobody is selected to share equally", async () => {
+    const user = userEvent.setup();
+    render(
+      <ReceiptReviewForm
+        householdId="hh"
+        receiptId="r1"
+        merchant="Target"
+        purchaseDate="2026-09-04"
+        declaredTotalCents={9240}
+        status="needs_review"
+        payerMembershipId="m1"
+        currentMembershipId="m1"
+        members={members}
+        lineItems={lines}
+      />,
+    );
+    await user.click(screen.getByTestId("receipt-looks-right"));
+    await user.click(screen.getByTestId("split-everything"));
+    for (const name of ["Atem", "Andrew", "Henry", "Michael"]) {
+      await user.click(screen.getByLabelText(name));
+    }
+    await user.click(screen.getByTestId("receipt-confirm-expense"));
+    expect(
+      screen.getByText("Choose at least one person to share this with."),
+    ).toBeInTheDocument();
+  });
+
+  it("explains a failed receipt with recovery actions, not worker codes", () => {
+    render(
+      <ReceiptReviewForm
+        householdId="hh"
+        receiptId="r1"
+        merchant=""
+        purchaseDate="2026-09-04"
+        declaredTotalCents={0}
+        status="failed"
+        ocrOutcome="timeout"
+        lastError="OCR_WORKER_TIMEOUT"
+        payerMembershipId="m1"
+        currentMembershipId="m1"
+        members={members}
+        lineItems={[]}
+      />,
+    );
+    const banner = screen.getByTestId("receipt-manual-fallback");
+    expect(banner).toHaveTextContent(/timed out|could not read/i);
+    expect(banner).toHaveTextContent(/enter the merchant/i);
+    expect(banner).not.toHaveTextContent("OCR_WORKER_TIMEOUT");
+    expect(screen.getByTestId("receipt-enter-manually")).toBeInTheDocument();
+    expect(screen.getByTestId("receipt-try-again")).toHaveAttribute(
+      "href",
+      "/app/hh/money/receipts/new",
+    );
+  });
+
   it("does not force line review for split-everything", async () => {
     const user = userEvent.setup();
     render(

@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
+import { HOUSEHOLDOS_PATH_HEADER } from "@/lib/auth/login-next";
 import { safeRedirectPath } from "@/lib/navigation";
 import {
   AUTH_NO_STORE_HEADERS,
@@ -152,6 +153,8 @@ export async function proxy(request: NextRequest) {
   requestHeaders.set("x-nonce", nonce);
   // Next.js reads the nonce from the request CSP header during SSR.
   requestHeaders.set("Content-Security-Policy", csp);
+  const pathWithSearch = `${request.nextUrl.pathname}${request.nextUrl.search}`;
+  requestHeaders.set(HOUSEHOLDOS_PATH_HEADER, pathWithSearch);
 
   const cleanup = sensitiveQueryCleanupIfNeeded(request);
   if (cleanup) return withSecurityHeaders(cleanup, csp);
@@ -193,7 +196,7 @@ export async function proxy(request: NextRequest) {
 
   if (isProtected && !hasAuthCookie && pathname !== "/") {
     const login = new URL("/login", request.url);
-    login.searchParams.set("next", safeRedirectPath(pathname));
+    login.searchParams.set("next", safeRedirectPath(pathWithSearch));
     return withSessionCookies(
       response,
       withSecurityHeaders(

@@ -251,7 +251,10 @@ export function previewReceiptSplit(input: {
         owesPayerCents: owes,
       });
     }
-  } else if (input.splitEverything) {
+  } else if (
+    input.splitEverything &&
+    input.splitEverything.membershipIds.length > 0
+  ) {
     const split = splitEvenlyDeterministic(
       input.declaredTotalCents,
       input.splitEverything.membershipIds,

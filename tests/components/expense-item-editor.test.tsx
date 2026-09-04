@@ -70,6 +70,25 @@ describe("ExpenseItemEditor", () => {
     expect(screen.getByText("Owner")).toBeInTheDocument();
   });
 
+  it("submits only selected members for an equal-selected split", async () => {
+    const user = userEvent.setup();
+    const { upsertExpenseItemAction } = await import("@/app/actions/expenses");
+    renderEditor({
+      allocationMode: "equal_selected",
+      selectedIds: [members[0]!.id],
+      description: "Milk",
+      totalCents: 1250,
+    });
+
+    await user.click(screen.getByRole("button", { name: /update item|add item/i }));
+    expect(upsertExpenseItemAction).toHaveBeenCalled();
+    const fd = vi.mocked(upsertExpenseItemAction).mock.calls.at(-1)?.[1] as FormData;
+    expect(fd.get("allocationMode")).toBe("equal_selected");
+    expect(JSON.parse(String(fd.get("participantsJson")))).toEqual([
+      { membershipId: members[0]!.id },
+    ]);
+  });
+
   it("opens expanded when the item already uses a non-default split", () => {
     renderEditor({ allocationMode: "equal_selected", selectedIds: [members[0]!.id] });
     expect(screen.getByTestId("item-split-controls")).toBeInTheDocument();

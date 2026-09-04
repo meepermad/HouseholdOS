@@ -239,6 +239,7 @@ export default async function ReceiptDetailPage({
         invites={invites}
         claims={claimList}
         ocrOutcome={receipt.ocr_outcome ?? null}
+        lastError={receipt.last_error ?? null}
         startInClaimMode={claim === "1" || receipt.status === "claiming"}
       />
     </main>

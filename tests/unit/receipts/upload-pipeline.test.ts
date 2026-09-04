@@ -94,6 +94,12 @@ describe("receipt upload formats", () => {
     expect(mapReceiptUploadFailure({ stage: "ocr_processing" }).code).toBe("ocr_failed");
     expect(mapReceiptUploadFailure({ offline: true }).code).toBe("connection_lost");
     expect(mapReceiptUploadFailure({ raw: "jwt expired" }).code).toBe("session_expired");
+    expect(mapReceiptUploadFailure({ raw: "jwt expired" }).message).toMatch(
+      /sign in again/i,
+    );
+    expect(mapReceiptUploadFailure({ raw: "jwt expired" }).message).toMatch(
+      /add this receipt/i,
+    );
     expect(mapReceiptUploadFailure({ raw: "boom" }).message).not.toMatch(/violates|rpc|sql/i);
   });
 
@@ -105,6 +111,13 @@ describe("receipt upload formats", () => {
     });
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.error).toMatch(/large|size/i);
+  });
+
+  it("maps worker timeout codes to a saved-receipt message, not the raw code", () => {
+    const mapped = mapReceiptUploadFailure({ raw: "OCR_WORKER_TIMEOUT" });
+    expect(mapped.code).toBe("ocr_failed");
+    expect(mapped.message).toMatch(/manually/i);
+    expect(mapped.message).not.toMatch(/OCR_WORKER_TIMEOUT/i);
   });
 
   it("maps OCR failure after upload as a saved receipt, not an upload failure", () => {
