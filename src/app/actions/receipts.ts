@@ -200,15 +200,9 @@ export async function uploadReceiptAction(
   }
 }
 
-/** 1×1 PNG used only when the receipt bucket rejects text/plain. */
-const PASTE_PLACEHOLDER_PNG = Uint8Array.from([
-  0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d, 0x49,
-  0x48, 0x44, 0x52, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x08, 0x06,
-  0x00, 0x00, 0x00, 0x1f, 0x15, 0xc4, 0x89, 0x00, 0x00, 0x00, 0x0a, 0x49, 0x44,
-  0x41, 0x54, 0x78, 0x9c, 0x63, 0x00, 0x01, 0x00, 0x00, 0x05, 0x00, 0x01, 0x0d,
-  0x0a, 0x2d, 0xb4, 0x00, 0x00, 0x00, 0x00, 0x49, 0x45, 0x4e, 0x44, 0xae, 0x42,
-  0x60, 0x82,
-]);
+function isReusablePasteObjectError(message: string | undefined): boolean {
+  return /already exists|duplicate|the resource already exists/i.test(message ?? "");
+}
 
 /**
  * Create a receipt draft from pasted text and persist it through the same
@@ -273,25 +267,18 @@ export async function registerPastedReceiptAction(
     const fileHash = createHash("sha256").update(textBytes).digest("hex");
     const { supabase } = await db(householdId);
 
-    let storagePath = `${householdId}/pastes/${idempotencyKey}.txt`;
-    let mimeType = "text/plain";
-    let fileName = "pasted-receipt.txt";
-    let sizeBytes = textBytes.byteLength || 1;
-    let uploaded = await supabase.storage.from(RECEIPT_BUCKET).upload(storagePath, textBytes, {
-      contentType: "text/plain; charset=utf-8",
-      upsert: true,
+    // Insert only. upsert:true hits the storage UPDATE policy, which requires an
+    // existing receipt row, so first-time pastes fail RLS. Do not send charset
+    // (the bucket allowlist is exact `text/plain`) and do not substitute a PNG.
+    const storagePath = `${householdId}/pastes/${idempotencyKey}.txt`;
+    const mimeType = "text/plain";
+    const fileName = "pasted-receipt.txt";
+    const sizeBytes = textBytes.byteLength || 1;
+    const uploaded = await supabase.storage.from(RECEIPT_BUCKET).upload(storagePath, textBytes, {
+      contentType: "text/plain",
+      upsert: false,
     });
-    if (uploaded.error) {
-      storagePath = `${householdId}/pastes/${idempotencyKey}.png`;
-      mimeType = "image/png";
-      fileName = "pasted-receipt.png";
-      sizeBytes = PASTE_PLACEHOLDER_PNG.byteLength;
-      uploaded = await supabase.storage.from(RECEIPT_BUCKET).upload(storagePath, PASTE_PLACEHOLDER_PNG, {
-        contentType: "image/png",
-        upsert: true,
-      });
-    }
-    if (uploaded.error) {
+    if (uploaded.error && !isReusablePasteObjectError(uploaded.error.message)) {
       logServerError("receipts.paste.storage", uploaded.error, { householdId });
       return { ok: false, error: "Could not save the pasted receipt. Try again." };
     }
