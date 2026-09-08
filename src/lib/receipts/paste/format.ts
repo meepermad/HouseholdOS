@@ -1,35 +1,23 @@
 export const RECEIPT_FORMAT_HEADER = "HOUSEHOLDOS RECEIPT";
 export const RECEIPT_FORMAT_ITEMS = "ITEMS";
 export const RECEIPT_FORMAT_END = "END";
+/** Current documented paste format. Missing Format field implies this version. */
+export const PASTE_FORMAT_VERSION = 1;
 
-export const RECEIPT_FORMAT_EXAMPLE = `${RECEIPT_FORMAT_HEADER}
-
-Merchant: Target
-Date: 2026-09-04
-Paid By: Atem
-Total: 42.17
-Subtotal: 37.94
-Tax: 4.23
-Tip: 0.00
-Fees: 0.00
-Discount: 0.00
-
-${RECEIPT_FORMAT_ITEMS}
-Milk | 4.29 | 1
-Paper towels | 12.99 | 1
-
-${RECEIPT_FORMAT_END}
-`;
+export {
+  copyFormatExample,
+  PASTE_FIXTURE_WALMART as RECEIPT_FORMAT_EXAMPLE,
+} from "./fixtures";
 
 export const RECEIPT_FORMAT_PLACEHOLDER = `${RECEIPT_FORMAT_HEADER}
 
-Merchant: Target
+Merchant: Walmart
 Date: 2026-09-04
-Total: 42.17
+Total: 55.41
 
 ${RECEIPT_FORMAT_ITEMS}
-Milk | 4.29 | 1
-Paper towels | 12.99 | 1
+Chocolate-Covered Pretzels | 4.97 | 1
+Great Value 9-inch Plates, 100 count | 5.58 | 1
 
 ${RECEIPT_FORMAT_END}
 `;

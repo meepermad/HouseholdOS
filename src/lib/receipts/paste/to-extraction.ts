@@ -5,8 +5,12 @@ export type PastedExtractionLine = {
   ocrText: string;
   name: string;
   quantity: number;
+  /** Derived unit price; never treat this as the line total. */
   unitPriceCents: number | null;
+  /** Line total in cents. Quantity must not re-multiply this. */
   totalPriceCents: number;
+  lineTotalCents: number;
+  derivedUnitPriceCents: number;
   confidence: null;
 };
 
@@ -29,6 +33,8 @@ export type PastedExtractionPayload = {
     source: "paste";
     intake: "transcription";
     format: ParsedPasteReceipt["sourceKind"];
+    formatVersion: number;
+    quantitySemantics: "line_total";
     ownershipHints: Array<{
       name: string;
       hint: string | null;
@@ -40,14 +46,22 @@ export type PastedExtractionPayload = {
 export function pastedReceiptToExtraction(
   receipt: ParsedPasteReceipt,
 ): PastedExtractionPayload {
-  const lineItems = receipt.items.map((item) => ({
-    ocrText: item.raw,
-    name: item.description,
-    quantity: item.quantity,
-    unitPriceCents: item.quantity > 1 ? Math.trunc(item.totalCents / item.quantity) : item.totalCents,
-    totalPriceCents: item.totalCents,
-    confidence: null,
-  }));
+  const lineItems = receipt.items.map((item) => {
+    const lineTotalCents = item.totalCents;
+    const derivedUnitPriceCents =
+      item.derivedUnitPriceCents ??
+      (item.quantity > 1 ? Math.trunc(item.totalCents / item.quantity) : item.totalCents);
+    return {
+      ocrText: item.raw,
+      name: item.description,
+      quantity: item.quantity,
+      unitPriceCents: derivedUnitPriceCents,
+      totalPriceCents: lineTotalCents,
+      lineTotalCents,
+      derivedUnitPriceCents,
+      confidence: null,
+    };
+  });
   const proposed = {
     merchant: receipt.merchant,
     purchaseDate: receipt.purchaseDate,
@@ -71,6 +85,8 @@ export function pastedReceiptToExtraction(
       source: "paste",
       intake: "transcription",
       format: receipt.sourceKind,
+      formatVersion: receipt.formatVersion,
+      quantitySemantics: "line_total",
       ownershipHints: receipt.items.map((item) => ({
         name: item.description,
         hint: item.ownershipHint,

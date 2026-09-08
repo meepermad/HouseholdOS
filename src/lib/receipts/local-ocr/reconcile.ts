@@ -22,6 +22,8 @@ export type ReconciliationSummary = {
 };
 
 function lineTotal(item: Pick<ExtractedLineItem, "totalPriceCents" | "quantity" | "unitPriceCents">): number {
+  // Prefer line total. Do not treat unit price × quantity as the source of truth
+  // when totalPriceCents is already present (paste receipts use line totals).
   if (item.totalPriceCents != null) return item.totalPriceCents;
   if (item.unitPriceCents != null && item.quantity != null) {
     return Math.round(item.unitPriceCents * item.quantity);

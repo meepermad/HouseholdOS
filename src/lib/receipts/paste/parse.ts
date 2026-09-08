@@ -1,40 +1,35 @@
 import { parsePastedCents } from "./cents";
-import { OWNERSHIP_HINT_WORDS, type OwnershipHintKind } from "./format";
+import { OWNERSHIP_HINT_WORDS, PASTE_FORMAT_VERSION, type OwnershipHintKind } from "./format";
+import {
+  normalizeReceiptPasteInput,
+  splitUnescapedPipes,
+  unwrapMarkdownLine,
+} from "./normalize";
+import {
+  type PasteProblem,
+  type PasteProblemCode,
+  type PasteProblemSeverity,
+  canContinueItemized,
+  userFacingPasteError,
+} from "./problems";
 import { PASTE_MAX_CHARS, sanitizePastedReceipt } from "./sanitize";
 
 export type PasteMember = { id: string; label: string };
 
-export type PasteProblemCode =
-  | "empty"
-  | "too_large"
-  | "multiple_receipts"
-  | "missing_end"
-  | "missing_items"
-  | "missing_merchant"
-  | "missing_total"
-  | "malformed_amount"
-  | "negative_amount"
-  | "overflow_amount"
-  | "duplicate_field"
-  | "paid_by_unmatched"
-  | "totals_mismatch"
-  | "ambiguous"
-  | "html_or_script";
-
-export type PasteProblem = {
-  code: PasteProblemCode;
-  message: string;
-};
+export type { PasteProblem, PasteProblemCode, PasteProblemSeverity };
 
 export type ParsedPasteItem = {
   description: string;
+  /** Line total in cents. Quantity must not re-multiply this. */
   totalCents: number;
   quantity: number;
+  derivedUnitPriceCents: number;
   ownershipHint: string | null;
   ownershipKind: OwnershipHintKind | null;
   suggestedMembershipId: string | null;
   needsReview: boolean;
   raw: string;
+  sourceLineNumber: number;
 };
 
 export type ParsedPasteReceipt = {
@@ -50,8 +45,10 @@ export type ParsedPasteReceipt = {
   discountCents: number | null;
   items: ParsedPasteItem[];
   sourceKind: "canonical" | "quick";
+  formatVersion: number;
   originalText: string;
   extractedBlock: string;
+  normalizedText: string;
 };
 
 export type PasteParseResult =
@@ -70,18 +67,41 @@ export type PasteParseResult =
       quickCandidate?: ParsedPasteReceipt;
     };
 
-const HEADER_RE = /^householdos\s+receipt\s*$/i;
-const END_RE = /^end\s*$/i;
-const ITEMS_RE = /^items\s*:?\s*$/i;
 const FIELD_RE =
-  /^(merchant|date|paid\s*by|paidby|total|subtotal|tax|tip|fees?|discount)\s*[:\-]\s*(.+)$/i;
+  /^(merchant|date|paid\s*by|paidby|total|subtotal|tax|tip|fees?|discount|format)\s*[:\-\u2013\u2014]\s*(.+)$/i;
 
-function problem(code: PasteProblemCode, message: string): PasteProblem {
-  return { code, message };
+function problem(
+  code: PasteProblemCode,
+  message: string,
+  extra?: Omit<Partial<PasteProblem>, "code" | "message"> & {
+    severity?: PasteProblemSeverity;
+  },
+): PasteProblem {
+  const severity =
+    extra?.severity ??
+    (code === "missing_end" ||
+    code === "duplicate_field" ||
+    code === "paid_by_unmatched" ||
+    code === "totals_mismatch"
+      ? "review"
+      : "blocker");
+  return { code, message, severity, ...extra };
 }
 
 function looksLikeHtml(text: string): boolean {
   return /<\s*(script|iframe|object|embed|svg|img|html|body|style)\b/i.test(text);
+}
+
+export function isReceiptHeaderLine(line: string): boolean {
+  return /^householdos\s+receipt\s*:?\s*$/i.test(unwrapMarkdownLine(line));
+}
+
+export function isReceiptEndLine(line: string): boolean {
+  return /^end\s*:?\s*$/i.test(unwrapMarkdownLine(line));
+}
+
+export function isReceiptItemsLine(line: string): boolean {
+  return /^items\s*:?\s*$/i.test(unwrapMarkdownLine(line));
 }
 
 function normalizeDate(raw: string): string | null {
@@ -138,6 +158,11 @@ function parseOwnershipHint(
   return { ownershipHint: hint, ownershipKind: null, suggestedMembershipId: null };
 }
 
+function derivedUnitPriceCents(lineTotalCents: number, quantity: number): number {
+  if (quantity <= 1) return lineTotalCents;
+  return Math.trunc(lineTotalCents / quantity);
+}
+
 function parseAmountField(
   raw: string,
   options?: { allowNegative?: boolean },
@@ -147,18 +172,27 @@ function parseAmountField(
   if (parsed.error === "negative") {
     return {
       cents: null,
-      problem: problem("negative_amount", "A negative amount is only valid as a discount."),
+      problem: problem("negative_amount", "A negative amount is only valid as a discount.", {
+        reason: "This amount cannot be negative.",
+        suggestedAction: "Correct the amount, then try again.",
+      }),
     };
   }
   if (parsed.error === "overflow") {
     return {
       cents: null,
-      problem: problem("overflow_amount", "That amount is too large to import safely."),
+      problem: problem("overflow_amount", "That amount is too large to import safely.", {
+        reason: "This amount is larger than HouseholdOS can store.",
+        suggestedAction: "Check the total and try again.",
+      }),
     };
   }
   return {
     cents: null,
-    problem: problem("malformed_amount", "We could not read one of the dollar amounts."),
+    problem: problem("malformed_amount", "We could not read one of the dollar amounts.", {
+      reason: "This does not look like a dollar amount.",
+      suggestedAction: "Use a number like 12.34 or $12.34.",
+    }),
   };
 }
 
@@ -167,12 +201,12 @@ export function extractCanonicalBlocks(text: string): string[] {
   const blocks: string[] = [];
   let start = -1;
   for (let i = 0; i < lines.length; i++) {
-    if (HEADER_RE.test(lines[i].trim())) {
+    if (isReceiptHeaderLine(lines[i])) {
       if (start >= 0) {
         blocks.push(lines.slice(start, i).join("\n"));
       }
       start = i;
-    } else if (start >= 0 && END_RE.test(lines[i].trim())) {
+    } else if (start >= 0 && isReceiptEndLine(lines[i])) {
       blocks.push(lines.slice(start, i + 1).join("\n"));
       start = -1;
     }
@@ -183,38 +217,105 @@ export function extractCanonicalBlocks(text: string): string[] {
   return blocks;
 }
 
+function parseQuantity(raw: string): { quantity: number } | { problem: PasteProblem } {
+  const text = raw.trim();
+  if (!text) return { quantity: 1 };
+  if (/^\d+$/.test(text)) {
+    const quantity = Number.parseInt(text, 10);
+    if (!Number.isSafeInteger(quantity) || quantity < 1 || quantity > 999) {
+      return {
+        problem: problem("malformed_quantity", "We could not read the quantity on this line.", {
+          severity: "review",
+          reason: "Could not read quantity.",
+          suggestedAction: "Use a whole number from 1 to 999, or leave quantity off.",
+        }),
+      };
+    }
+    return { quantity };
+  }
+  if (/^\d+\.0+$/.test(text)) {
+    return parseQuantity(text.split(".")[0] ?? text);
+  }
+  return {
+    problem: problem("malformed_quantity", "We could not read the quantity on this line.", {
+      severity: "review",
+      reason: "Could not read quantity.",
+      suggestedAction: "Use a whole number like 1 or 2. Quantity is how many items, not a multiplier for the price.",
+    }),
+  };
+}
+
 function parseItemLine(
   raw: string,
+  lineNumber: number,
   members: readonly PasteMember[],
 ): ParsedPasteItem | { problem: PasteProblem } {
-  const parts = raw.split("|").map((p) => p.trim());
+  const parts = splitUnescapedPipes(raw);
+  const lineMeta = {
+    lineNumber,
+    originalLine: raw,
+  };
+
   if (parts.length < 2 || !parts[0]) {
     return {
+      problem: problem("ambiguous", "We couldn't read this line.", {
+        severity: "review",
+        ...lineMeta,
+        reason: "This item line is missing a name or a price.",
+        suggestedAction: "Use: Description | 4.97 | 1",
+      }),
+    };
+  }
+
+  if (parts.length > 4) {
+    return {
       problem: problem(
-        "ambiguous",
-        "We could not confidently understand part of this receipt.",
+        "too_many_delimiters",
+        "This line has too many | characters.",
+        {
+          severity: "review",
+          ...lineMeta,
+          reason: "Too many unescaped | delimiters.",
+          suggestedAction: 'If the name contains |, write it as \\| — for example: Candy \\| Special Edition | 4.99 | 1',
+        },
       ),
     };
   }
+
   const amount = parseAmountField(parts[1], { allowNegative: false });
-  if (amount.problem) return { problem: amount.problem };
+  if (amount.problem) {
+    const overflow = amount.problem.code === "overflow_amount";
+    return {
+      problem: {
+        ...amount.problem,
+        severity: overflow ? "blocker" : "review",
+        ...lineMeta,
+        reason: amount.problem.reason ?? "Could not read the line total.",
+        suggestedAction:
+          parts.length >= 3
+            ? "If the name contains |, write it as \\|. Otherwise correct the price."
+            : (amount.problem.suggestedAction ?? "Correct the price on this line."),
+      },
+    };
+  }
   if (amount.cents == null) {
-    return { problem: problem("malformed_amount", "We could not read one of the item amounts.") };
+    return {
+      problem: problem("malformed_amount", "We could not read this item amount.", {
+        severity: "review",
+        ...lineMeta,
+        reason: "Could not read the line total.",
+        suggestedAction: "Use a number like 4.97 or $4.97.",
+      }),
+    };
   }
 
   let quantity = 1;
   if (parts[2]) {
-    if (!/^\d+$/.test(parts[2])) {
-      return {
-        problem: problem("ambiguous", "We could not confidently understand part of this receipt."),
-      };
+    const parsedQty = parseQuantity(parts[2]);
+    if ("problem" in parsedQty) {
+      return { problem: { ...parsedQty.problem, ...lineMeta } };
     }
-    quantity = Number.parseInt(parts[2], 10);
-    if (!Number.isSafeInteger(quantity) || quantity < 1 || quantity > 999) {
-      return {
-        problem: problem("ambiguous", "We could not confidently understand part of this receipt."),
-      };
-    }
+    quantity = parsedQty.quantity;
   }
 
   const ownership = parseOwnershipHint(parts[3], members);
@@ -222,9 +323,11 @@ function parseItemLine(
     description: parts[0].slice(0, 200),
     totalCents: amount.cents,
     quantity,
+    derivedUnitPriceCents: derivedUnitPriceCents(amount.cents, quantity),
     ...ownership,
     needsReview: Boolean(parts[3] && !ownership.ownershipKind),
     raw,
+    sourceLineNumber: lineNumber,
   };
 }
 
@@ -238,6 +341,7 @@ type HeaderFields = {
   tipCents: number | null;
   feeCents: number | null;
   discountCents: number | null;
+  formatVersion: number | null;
 };
 
 function emptyFields(): HeaderFields {
@@ -251,6 +355,7 @@ function emptyFields(): HeaderFields {
     tipCents: null,
     feeCents: null,
     discountCents: null,
+    formatVersion: null,
   };
 }
 
@@ -259,16 +364,48 @@ function applyField(
   name: string,
   value: string,
   problems: PasteProblem[],
+  lineNumber: number,
+  originalLine: string,
 ): void {
   const key = name.replace(/\s+/g, "").toLowerCase();
   const setOnce = (current: unknown, assign: () => void) => {
     if (current != null && current !== "") {
-      problems.push(problem("duplicate_field", "This receipt lists the same field more than once."));
+      problems.push(
+        problem("duplicate_field", "This receipt lists the same field more than once.", {
+          severity: "review",
+          lineNumber,
+          originalLine,
+          reason: "This field appears twice.",
+          suggestedAction: "Keep the first value or delete the extra line.",
+        }),
+      );
       return;
     }
     assign();
   };
 
+  if (key === "format") {
+    setOnce(fields.formatVersion, () => {
+      const version = value.trim();
+      if (!version || version === "1") {
+        fields.formatVersion = PASTE_FORMAT_VERSION;
+        return;
+      }
+      problems.push(
+        problem(
+          "unknown_format",
+          "This receipt uses a format HouseholdOS does not support yet.",
+          {
+            lineNumber,
+            originalLine,
+            reason: `Unknown format ${version}.`,
+            suggestedAction: "Use Format: 1, or remove the Format line.",
+          },
+        ),
+      );
+    });
+    return;
+  }
   if (key === "merchant") {
     setOnce(fields.merchant, () => {
       fields.merchant = value.trim().slice(0, 200) || null;
@@ -278,6 +415,17 @@ function applyField(
   if (key === "date") {
     setOnce(fields.purchaseDate, () => {
       fields.purchaseDate = normalizeDate(value);
+      if (value.trim() && !fields.purchaseDate) {
+        problems.push(
+          problem("ambiguous", "We could not read the date, so it was skipped.", {
+            severity: "review",
+            lineNumber,
+            originalLine,
+            reason: "This date could not be read.",
+            suggestedAction: "Use YYYY-MM-DD, or leave the date blank.",
+          }),
+        );
+      }
     });
     return;
   }
@@ -291,25 +439,36 @@ function applyField(
   const allowNegative = key === "discount";
   const amount = parseAmountField(value, { allowNegative });
   if (amount.problem) {
-    problems.push(amount.problem);
+    const isRequiredTotal = key === "total";
+    problems.push({
+      ...amount.problem,
+      severity: isRequiredTotal ? "blocker" : "review",
+      lineNumber,
+      originalLine,
+    });
     return;
   }
-  if (key === "total") setOnce(fields.totalCents, () => {
-    fields.totalCents = amount.cents;
-  });
-  else if (key === "subtotal") setOnce(fields.subtotalCents, () => {
-    fields.subtotalCents = amount.cents;
-  });
-  else if (key === "tax") setOnce(fields.taxCents, () => {
-    fields.taxCents = amount.cents;
-  });
-  else if (key === "tip") setOnce(fields.tipCents, () => {
-    fields.tipCents = amount.cents;
-  });
-  else if (key === "fee" || key === "fees") setOnce(fields.feeCents, () => {
-    fields.feeCents = amount.cents;
-  });
-  else if (key === "discount") {
+  if (key === "total") {
+    setOnce(fields.totalCents, () => {
+      fields.totalCents = amount.cents;
+    });
+  } else if (key === "subtotal") {
+    setOnce(fields.subtotalCents, () => {
+      fields.subtotalCents = amount.cents;
+    });
+  } else if (key === "tax") {
+    setOnce(fields.taxCents, () => {
+      fields.taxCents = amount.cents;
+    });
+  } else if (key === "tip") {
+    setOnce(fields.tipCents, () => {
+      fields.tipCents = amount.cents;
+    });
+  } else if (key === "fee" || key === "fees") {
+    setOnce(fields.feeCents, () => {
+      fields.feeCents = amount.cents;
+    });
+  } else if (key === "discount") {
     const cents = amount.cents == null ? null : Math.abs(amount.cents);
     setOnce(fields.discountCents, () => {
       fields.discountCents = cents;
@@ -321,13 +480,18 @@ function parseCanonicalBlock(
   block: string,
   members: readonly PasteMember[],
   originalText: string,
+  normalizedText: string,
 ): PasteParseResult {
   const problems: PasteProblem[] = [];
   const lines = block.split("\n");
-  const hasEnd = lines.some((l) => END_RE.test(l.trim()));
+  const hasEnd = lines.some((l) => isReceiptEndLine(l));
   if (!hasEnd) {
     problems.push(
-      problem("missing_end", "We could not confidently understand part of this receipt."),
+      problem("missing_end", "This receipt is missing an END line.", {
+        severity: "review",
+        reason: "The END marker was not found.",
+        suggestedAction: "Add END as the last line of the receipt block.",
+      }),
     );
   }
 
@@ -335,27 +499,40 @@ function parseCanonicalBlock(
   const items: ParsedPasteItem[] = [];
   let inItems = false;
   let sawItems = false;
+  const blockStartInNormalized = (() => {
+    const idx = normalizedText.indexOf(block);
+    if (idx <= 0) return 0;
+    return normalizedText.slice(0, idx).split("\n").length - 1;
+  })();
 
-  for (const line of lines) {
-    const trimmed = line.trim();
-    if (!trimmed || HEADER_RE.test(trimmed) || END_RE.test(trimmed)) continue;
-    if (ITEMS_RE.test(trimmed)) {
+  for (let i = 0; i < lines.length; i++) {
+    const lineNumber = blockStartInNormalized + i + 1;
+    const trimmed = unwrapMarkdownLine(lines[i]);
+    if (!trimmed || isReceiptHeaderLine(trimmed) || isReceiptEndLine(trimmed)) continue;
+    if (isReceiptItemsLine(trimmed)) {
       inItems = true;
       sawItems = true;
       continue;
     }
     const field = trimmed.match(FIELD_RE);
     if (field && !inItems) {
-      applyField(fields, field[1], field[2], problems);
+      applyField(fields, field[1], field[2], problems, lineNumber, lines[i]);
       continue;
     }
     if (inItems) {
-      if (FIELD_RE.test(trimmed)) {
+      if (FIELD_RE.test(trimmed) && !trimmed.includes("|")) {
         inItems = false;
-        applyField(fields, trimmed.match(FIELD_RE)![1], trimmed.match(FIELD_RE)![2], problems);
+        applyField(
+          fields,
+          trimmed.match(FIELD_RE)![1],
+          trimmed.match(FIELD_RE)![2],
+          problems,
+          lineNumber,
+          lines[i],
+        );
         continue;
       }
-      const item = parseItemLine(trimmed, members);
+      const item = parseItemLine(trimmed, lineNumber, members);
       if ("problem" in item) problems.push(item.problem);
       else items.push(item);
     }
@@ -363,49 +540,67 @@ function parseCanonicalBlock(
 
   if (!sawItems) {
     problems.push(
-      problem("missing_items", "We could not confidently understand part of this receipt."),
+      problem("missing_items", "This receipt is missing an ITEMS section.", {
+        reason: "The ITEMS marker was not found.",
+        suggestedAction: "Add an ITEMS heading, then one item per line.",
+      }),
     );
   }
   if (!fields.merchant) {
-    problems.push(problem("missing_merchant", "This receipt still needs a store name."));
+    problems.push(
+      problem("missing_merchant", "This receipt still needs a store name.", {
+        reason: "Merchant is required.",
+        suggestedAction: "Add a line like Merchant: Walmart.",
+      }),
+    );
   }
   if (fields.totalCents == null) {
-    problems.push(problem("missing_total", "This receipt still needs a total."));
+    problems.push(
+      problem("missing_total", "This receipt still needs a total.", {
+        reason: "Total is required.",
+        suggestedAction: "Add a line like Total: 55.41.",
+      }),
+    );
   }
 
   const payer = fields.paidByRaw ? matchMember(fields.paidByRaw, members) : null;
   if (fields.paidByRaw && !payer) {
     problems.push(
-      problem("paid_by_unmatched", "Paid-by person could not be matched"),
+      problem("paid_by_unmatched", "Paid-by person could not be matched", {
+        severity: "review",
+        reason: "That name is not a household member.",
+        suggestedAction: "Choose who paid on the next screen.",
+      }),
     );
   }
 
+  const formatVersion = fields.formatVersion ?? PASTE_FORMAT_VERSION;
   const receipt: ParsedPasteReceipt = {
-    ...fields,
+    merchant: fields.merchant,
+    purchaseDate: fields.purchaseDate,
+    paidByRaw: fields.paidByRaw,
+    totalCents: fields.totalCents,
+    subtotalCents: fields.subtotalCents,
+    taxCents: fields.taxCents,
+    tipCents: fields.tipCents,
+    feeCents: fields.feeCents,
+    discountCents: fields.discountCents,
     items,
     payerMembershipId: payer?.id ?? null,
     sourceKind: "canonical",
+    formatVersion,
     originalText,
     extractedBlock: block.trim(),
+    normalizedText,
   };
 
-  const fatal = problems.some((p) =>
-    (
-      [
-        "malformed_amount",
-        "negative_amount",
-        "overflow_amount",
-        "missing_merchant",
-        "missing_total",
-        "missing_items",
-      ] as PasteProblemCode[]
-    ).includes(p.code),
-  );
-
+  const fatal = problems.some((p) => p.severity === "blocker");
   if (fatal) {
     return {
       ok: false,
-      error: problems[0] ?? problem("ambiguous", "We could not confidently understand part of this receipt."),
+      error:
+        problems.find((p) => p.severity === "blocker") ??
+        problem("ambiguous", "We could not confidently understand part of this receipt."),
       problems,
       receipt,
     };
@@ -417,17 +612,18 @@ function parseCanonicalBlock(
 function parseQuickFormat(
   text: string,
   members: readonly PasteMember[],
+  originalText: string,
 ): ParsedPasteReceipt | null {
   const lines = text
     .split("\n")
-    .map((l) => l.trim())
+    .map((l) => unwrapMarkdownLine(l))
     .filter(Boolean);
   if (lines.length < 2) return null;
-  if (lines.some((l) => HEADER_RE.test(l))) return null;
+  if (lines.some((l) => isReceiptHeaderLine(l))) return null;
   if (lines[0].includes("|")) return null;
   const total = parsePastedCents(lines[1]);
   if (!total.ok) return null;
-  const merchant = lines[0].replace(/^merchant\s*[:\-]\s*/i, "").trim();
+  const merchant = lines[0].replace(/^merchant\s*[:\-\u2013\u2014]\s*/i, "").trim();
   if (!merchant || merchant.length > 200) return null;
 
   const itemLines = lines.slice(2);
@@ -446,14 +642,17 @@ function parseQuickFormat(
       discountCents: null,
       items,
       sourceKind: "quick",
-      originalText: text,
+      formatVersion: PASTE_FORMAT_VERSION,
+      originalText,
       extractedBlock: text.trim(),
+      normalizedText: text,
     };
   }
 
-  for (const line of itemLines) {
+  for (let i = 0; i < itemLines.length; i++) {
+    const line = itemLines[i];
     if (!line.includes("|")) return null;
-    const item = parseItemLine(line, members);
+    const item = parseItemLine(line, i + 3, members);
     if ("problem" in item) return null;
     items.push(item);
   }
@@ -471,8 +670,10 @@ function parseQuickFormat(
     discountCents: null,
     items,
     sourceKind: "quick",
-    originalText: text,
+    formatVersion: PASTE_FORMAT_VERSION,
+    originalText,
     extractedBlock: text.trim(),
+    normalizedText: text,
   };
 }
 
@@ -494,17 +695,11 @@ export function parseHouseholdOsReceipt(
     return { ok: false, error, problems: [error], receipt: null };
   }
 
-  const text = sanitized.text;
+  const normalized = normalizeReceiptPasteInput(sanitized.text);
+  const text = normalized.text;
   const problems: PasteProblem[] = [];
-  if (looksLikeHtml(text)) {
-    problems.push(
-      problem("html_or_script", "We could not confidently understand part of this receipt."),
-    );
-  }
 
-  const headerCount = text
-    .split("\n")
-    .filter((l) => HEADER_RE.test(l.trim())).length;
+  const headerCount = text.split("\n").filter((l) => isReceiptHeaderLine(l)).length;
   if (headerCount > 1) {
     const error = problem(
       "multiple_receipts",
@@ -523,30 +718,64 @@ export function parseHouseholdOsReceipt(
   }
 
   if (blocks.length === 1) {
-    const parsed = parseCanonicalBlock(blocks[0], members, text);
+    if (looksLikeHtml(blocks[0])) {
+      problems.push(
+        problem("html_or_script", "This paste looks like a web page, not a receipt.", {
+          reason: "HTML or script tags were found.",
+          suggestedAction: "Paste the receipt text, not a web page.",
+        }),
+      );
+    }
+    const parsed = parseCanonicalBlock(blocks[0], members, raw, text);
+    const merged = [...problems, ...parsed.problems];
+    const blocker = merged.find((p) => p.severity === "blocker");
+    if (blocker) {
+      return {
+        ok: false,
+        error: blocker,
+        problems: merged,
+        receipt: parsed.receipt,
+      };
+    }
+    if (parsed.ok) {
+      return { ...parsed, problems: merged };
+    }
     return {
       ...parsed,
-      problems: [...problems, ...parsed.problems],
+      problems: merged,
+      error: parsed.error,
     };
   }
 
-  const quick = parseQuickFormat(text, members);
+  const quick = parseQuickFormat(text, members, raw);
   if (quick && (quick.items.length > 0 || quick.totalCents != null) && quick.merchant) {
     return {
       ok: false,
-      error: problem("ambiguous", "We think this is a receipt."),
+      error: problem("ambiguous", "We think this is a receipt.", { severity: "review" }),
       problems: [
         ...problems,
-        problem("ambiguous", "We think this is a receipt."),
+        problem("ambiguous", "We think this is a receipt.", { severity: "review" }),
       ],
       receipt: null,
       quickCandidate: quick,
     };
   }
 
+  if (looksLikeHtml(text)) {
+    const error = problem("html_or_script", "This paste looks like a web page, not a receipt.", {
+      reason: "HTML or script tags were found.",
+      suggestedAction: "Paste the receipt text, not a web page.",
+    });
+    return { ok: false, error, problems: [...problems, error], receipt: null };
+  }
+
   const error = problem(
     "ambiguous",
-    "We could not confidently understand part of this receipt.",
+    "We could not find a HouseholdOS receipt in that paste.",
+    {
+      reason: "No HOUSEHOLDOS RECEIPT block was found.",
+      suggestedAction: "Paste the block that starts with HOUSEHOLDOS RECEIPT and ends with END.",
+    },
   );
   return { ok: false, error, problems: [...problems, error], receipt: null };
 }
@@ -561,3 +790,5 @@ export function formatHumanDate(iso: string | null): string | null {
     year: "numeric",
   });
 }
+
+export { canContinueItemized, userFacingPasteError };

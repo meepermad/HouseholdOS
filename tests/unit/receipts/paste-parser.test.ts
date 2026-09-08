@@ -210,18 +210,21 @@ END`,
     expect(rec.unaccountedCents).toBe(2489);
     expect(rec.balanced).toBe(false);
     expect(pasteStatusCopy(result.receipt!, result.problems, rec)).toBe(
-      "Total does not match items",
+      "These numbers don't add up yet.",
     );
     expect(result.receipt?.items.map((i) => i.totalCents)).toEqual([429, 1299]);
   });
 
-  it("18-20. rejects malformed, negative, and very large amounts", () => {
+  it("18-20. rejects malformed and overflowing totals; keeps partial work for a bad item", () => {
     expect(parseHouseholdOsReceipt(`${RECEIPT_FORMAT_HEADER}\nMerchant: A\nTotal: abc\nITEMS\nX | 1\nEND`).ok).toBe(
       false,
     );
-    expect(
-      parseHouseholdOsReceipt(`${RECEIPT_FORMAT_HEADER}\nMerchant: A\nTotal: 1.00\nITEMS\nX | -2.00\nEND`).ok,
-    ).toBe(false);
+    const negativeItem = parseHouseholdOsReceipt(
+      `${RECEIPT_FORMAT_HEADER}\nMerchant: A\nTotal: 1.00\nITEMS\nX | -2.00\nEND`,
+    );
+    expect(negativeItem.receipt?.merchant).toBe("A");
+    expect(negativeItem.receipt?.items).toEqual([]);
+    expect(negativeItem.problems.some((p) => p.code === "negative_amount")).toBe(true);
     expect(
       parseHouseholdOsReceipt(`${RECEIPT_FORMAT_HEADER}\nMerchant: A\nTotal: 1000000\nITEMS\nX | 1.00\nEND`).ok,
     ).toBe(false);
@@ -348,6 +351,7 @@ Paper towels | 12.94`,
   it("does not invent totals when the example template is incomplete", () => {
     const result = parseHouseholdOsReceipt(RECEIPT_FORMAT_EXAMPLE);
     expect(result.ok).toBe(true);
-    expect(result.receipt?.totalCents).toBe(4217);
+    expect(result.receipt?.totalCents).toBe(5541);
+    expect(result.receipt?.merchant).toBe("Walmart");
   });
 });

@@ -18,6 +18,8 @@ export type TotalsReconciliation = {
 };
 
 function lineTotal(item: TotalsInput["lineItems"][number]): number {
+  // Prefer the line total. Quantity is informational and must not re-multiply
+  // a pasted HouseholdOS line total (Description | LINE TOTAL | Quantity).
   if (item.totalPriceCents !== null && item.totalPriceCents !== undefined) {
     return item.totalPriceCents;
   }

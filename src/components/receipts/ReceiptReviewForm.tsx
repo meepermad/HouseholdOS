@@ -662,7 +662,7 @@ export function ReceiptReviewForm({
                             : undefined,
                         )}
                         {line.quantity && line.quantity > 1
-                          ? ` · qty ${line.quantity}`
+                          ? ` · qty ${line.quantity} (line total)`
                           : ""}
                       </p>
                     </button>

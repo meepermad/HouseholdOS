@@ -65,11 +65,13 @@ export function applyPasteEdits(
         description,
         totalCents: cents,
         quantity,
+        derivedUnitPriceCents: quantity > 1 ? Math.trunc(cents / quantity) : cents,
         ownershipHint: null,
         ownershipKind: null,
         suggestedMembershipId: null,
         needsReview: false,
         raw: `${description} | ${cents} | ${quantity}`,
+        sourceLineNumber: items.length + 1,
       });
     }
     next.items = items;

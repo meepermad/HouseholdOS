@@ -4,6 +4,7 @@ import { ReceiptUploader } from "@/components/receipts/ReceiptUploader";
 import { ReceiptPasteFlow } from "@/components/receipts/ReceiptPasteFlow";
 import { AppBackButton } from "@/components/app-back-button";
 import { listActiveMemberOptions } from "@/lib/expenses/queries";
+import { isPasteParserDebugEnabled } from "@/lib/receipts/paste/debug";
 
 export const dynamic = "force-dynamic";
 
@@ -24,7 +25,7 @@ export default async function NewReceiptPage({
   const isPaste = captureMode === "paste";
 
   return (
-    <main className="space-y-6">
+    <main className="max-w-full space-y-6 overflow-x-hidden">
       <AppBackButton fallbackHref={`/app/${householdId}/money/receipts`} />
       <header>
         <h1 className="font-[family-name:var(--font-display)] text-2xl text-text-primary">
@@ -38,7 +39,12 @@ export default async function NewReceiptPage({
         ) : null}
       </header>
       {isPaste ? (
-        <ReceiptPasteFlow householdId={householdId} members={members} />
+        <ReceiptPasteFlow
+          householdId={householdId}
+          members={members}
+          parserDebug={isPasteParserDebugEnabled()}
+          manualHref={`/app/${householdId}/money/expenses/new`}
+        />
       ) : (
         <ReceiptUploader
           householdId={householdId}

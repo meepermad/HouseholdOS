@@ -24,7 +24,10 @@ import {
   SHARE_NEEDS_PERSON,
 } from "@/lib/receipts/errors";
 import { applyPasteEdits, type PasteEditInput } from "@/lib/receipts/paste/overrides";
-import { parseHouseholdOsReceipt } from "@/lib/receipts/paste/parse";
+import {
+  parseHouseholdOsReceipt,
+  userFacingPasteError,
+} from "@/lib/receipts/paste/parse";
 import { pastedReceiptToExtraction } from "@/lib/receipts/paste/to-extraction";
 import { listActiveMemberOptions } from "@/lib/expenses/queries";
 
@@ -234,6 +237,16 @@ export async function registerPastedReceiptAction(
 
     const members = await listActiveMemberOptions(householdId);
     const parsed = parseHouseholdOsReceipt(originalText, members);
+    if (
+      parsed.problems.some(
+        (p) => p.code === "unknown_format" || p.code === "overflow_amount" || p.code === "too_large",
+      )
+    ) {
+      return {
+        ok: false,
+        error: userFacingPasteError(parsed.problems, parsed.ok ? null : parsed.error),
+      };
+    }
     const base =
       parsed.ok
         ? parsed.receipt
@@ -243,9 +256,10 @@ export async function registerPastedReceiptAction(
     if (!base) {
       return {
         ok: false,
-        error:
-          (!parsed.ok ? parsed.error.message : null) ??
-          "We could not confidently understand part of this receipt.",
+        error: userFacingPasteError(
+          parsed.problems,
+          parsed.ok ? null : parsed.error,
+        ),
       };
     }
     const applied = applyPasteEdits(base, { ...edit, totalOnly: totalOnly || edit?.totalOnly });

@@ -18,7 +18,7 @@ export type CentsParseResult =
 
 function stripCurrencyDecor(raw: string): string {
   return raw
-    .replace(/[$€£¥]/g, "")
+    .replace(/[$€£¥\uFF04\uFE69]/g, "")
     .replace(/\s+/g, "")
     .replace(/usd/gi, "");
 }

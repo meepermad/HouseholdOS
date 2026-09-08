@@ -8,6 +8,13 @@ test.describe("receipt routes", () => {
     await expect(page).toHaveURL(/login/);
   });
 
+  test("unauthenticated paste receipt redirects to login", async ({ page }) => {
+    await page.goto(
+      "/app/00000000-0000-4000-8000-000000000001/money/receipts/new?mode=paste",
+    );
+    await expect(page).toHaveURL(/login/);
+  });
+
   test("unauthenticated receipt draft inbox redirects to login", async ({
     page,
   }) => {

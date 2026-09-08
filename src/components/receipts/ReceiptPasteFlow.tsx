@@ -1,34 +1,45 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useMemo, useRef, useState, useTransition } from "react";
 import { registerPastedReceiptAction } from "@/app/actions/receipts";
 import { formatPastedUsd } from "@/lib/receipts/paste/cents";
 import {
   CHATGPT_WORKFLOW_STEPS,
   RECEIPT_FORMAT_EXAMPLE,
   RECEIPT_FORMAT_PLACEHOLDER,
+  copyFormatExample,
 } from "@/lib/receipts/paste/format";
+import { findLineNumberInText, replacePasteLine } from "@/lib/receipts/paste/normalize";
 import {
+  canContinueItemized,
   formatHumanDate,
   parseHouseholdOsReceipt,
   type ParsedPasteReceipt,
   type PasteMember,
+  type PasteProblem,
 } from "@/lib/receipts/paste/parse";
+import { itemLineIssues } from "@/lib/receipts/paste/problems";
 import { pasteStatusCopy, reconcilePastedReceipt } from "@/lib/receipts/paste/reconcile";
 import { CurrencyAmountInput } from "@/components/ui/currency-field";
+import { PasteParserDebug } from "@/components/receipts/PasteParserDebug";
 
 type Stage = "paste" | "preview";
 
 export function ReceiptPasteFlow({
   householdId,
   members,
+  parserDebug = false,
+  manualHref,
 }: {
   householdId: string;
   members: PasteMember[];
+  parserDebug?: boolean;
+  manualHref?: string;
 }) {
   const [text, setText] = useState("");
   const [stage, setStage] = useState<Stage>("paste");
   const [receipt, setReceipt] = useState<ParsedPasteReceipt | null>(null);
+  const [problems, setProblems] = useState<PasteProblem[]>([]);
   const [status, setStatus] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [actionHref, setActionHref] = useState<string | null>(null);
@@ -38,49 +49,99 @@ export function ReceiptPasteFlow({
   const [editingAmounts, setEditingAmounts] = useState(false);
   const [payerId, setPayerId] = useState("");
   const [copied, setCopied] = useState(false);
+  const [fixDrafts, setFixDrafts] = useState<Record<string, string>>({});
   const [pending, startTransition] = useTransition();
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const parsedPreview = useMemo(
     () => (receipt ? reconcilePastedReceipt(receipt) : null),
     [receipt],
   );
+  const lineIssues = itemLineIssues(problems);
+  const continueBlocked = receipt
+    ? !canContinueItemized({
+        merchant: receipt.merchant,
+        totalCents: receipt.totalCents,
+        problems,
+      })
+    : true;
 
-  function readReceipt() {
-    setMessage(null);
-    const result = parseHouseholdOsReceipt(text, members);
-    if (result.ok && result.receipt) {
-      applyParsed(result.receipt, pasteStatusCopy(result.receipt, result.problems, reconcilePastedReceipt(result.receipt)));
+  function focusLine(originalLine: string) {
+    const area = textareaRef.current;
+    if (!area) return;
+    const lineNumber = findLineNumberInText(text, originalLine);
+    if (lineNumber == null) {
+      area.focus();
       return;
     }
-    if (result.quickCandidate) {
-      applyParsed(result.quickCandidate, "We think this is a receipt.");
-      return;
-    }
-    if (result.receipt) {
-      applyParsed(
-        result.receipt,
-        result.problems[0]?.message ?? "We could not confidently understand part of this receipt.",
-      );
-      setShowRaw(true);
-      return;
-    }
-    setMessage(!result.ok ? result.error.message : "We could not confidently understand part of this receipt.");
+    const lines = text.replace(/\r\n/g, "\n").replace(/\r/g, "\n").split("\n");
+    let start = 0;
+    for (let i = 0; i < lineNumber - 1; i++) start += (lines[i]?.length ?? 0) + 1;
+    const end = start + (lines[lineNumber - 1]?.length ?? 0);
+    area.focus();
+    area.setSelectionRange(start, end);
+    const lineHeight = Number.parseFloat(getComputedStyle(area).lineHeight) || 22;
+    area.scrollTop = Math.max(0, (lineNumber - 2) * lineHeight);
   }
 
-  function applyParsed(next: ParsedPasteReceipt, nextStatus: string) {
+  function applyParsed(
+    next: ParsedPasteReceipt,
+    nextProblems: PasteProblem[],
+    nextStatus: string,
+  ) {
     setReceipt(next);
+    setProblems(nextProblems);
     setStatus(nextStatus);
     setPayerId(next.payerMembershipId ?? members[0]?.id ?? "");
     setStage("preview");
     setEditingAmounts(false);
+    setFixDrafts({});
+  }
+
+  function readReceipt() {
+    setMessage(null);
+    const result = parseHouseholdOsReceipt(text, members);
+    if (result.quickCandidate && !result.receipt) {
+      applyParsed(result.quickCandidate, result.problems, "We think this is a receipt.");
+      return;
+    }
+    if (result.receipt) {
+      const rec = reconcilePastedReceipt(result.receipt);
+      applyParsed(
+        result.receipt,
+        result.problems,
+        pasteStatusCopy(result.receipt, result.problems, rec),
+      );
+      if (!result.ok || itemLineIssues(result.problems).length > 0) {
+        setShowRaw(true);
+      }
+      return;
+    }
+    setStage("paste");
+    setReceipt(null);
+    setProblems(result.problems);
+    setMessage(
+      result.ok ? "We could not find a HouseholdOS receipt in that paste." : result.error.message,
+    );
   }
 
   function persist(totalOnly: boolean) {
     if (!receipt) return;
+    if (
+      !totalOnly &&
+      !canContinueItemized({
+        merchant: receipt.merchant,
+        totalCents: receipt.totalCents,
+        problems,
+      })
+    ) {
+      setMessage("Fix the highlighted lines before continuing, or continue as total-only.");
+      return;
+    }
     startTransition(async () => {
       const fd = new FormData();
       fd.set("householdId", householdId);
-      fd.set("originalText", receipt.originalText);
+      fd.set("originalText", text || receipt.originalText);
       fd.set("acceptQuick", receipt.sourceKind === "quick" ? "1" : "0");
       fd.set("totalOnly", totalOnly ? "1" : "0");
       fd.set("idempotencyKey", crypto.randomUUID());
@@ -112,7 +173,7 @@ export function ReceiptPasteFlow({
 
   async function copyExample() {
     try {
-      await navigator.clipboard.writeText(RECEIPT_FORMAT_EXAMPLE);
+      await navigator.clipboard.writeText(copyFormatExample());
       setCopied(true);
       window.setTimeout(() => setCopied(false), 2000);
     } catch {
@@ -120,10 +181,31 @@ export function ReceiptPasteFlow({
     }
   }
 
+  function applyLineFix(issue: PasteProblem) {
+    if (!issue.originalLine) return;
+    const nextLine = (fixDrafts[issue.originalLine] ?? issue.originalLine).trim();
+    const nextText = replacePasteLine(text || receipt?.originalText || "", issue.originalLine, nextLine);
+    setText(nextText);
+    const result = parseHouseholdOsReceipt(nextText, members);
+    if (result.receipt) {
+      const rec = reconcilePastedReceipt(result.receipt);
+      applyParsed(
+        result.receipt,
+        result.problems,
+        pasteStatusCopy(result.receipt, result.problems, rec),
+      );
+      return;
+    }
+    setMessage(result.ok ? null : result.error.message);
+    setProblems(result.problems);
+    setStage("paste");
+  }
+
   if (stage === "preview" && receipt && parsedPreview) {
-    const paidByUnmatched = status === "Paid-by person could not be matched" || !receipt.payerMembershipId;
+    const paidByUnmatched =
+      status === "Paid-by person could not be matched" || !receipt.payerMembershipId;
     return (
-      <div className="space-y-4" data-testid="receipt-paste-preview">
+      <div className="max-w-full space-y-4 overflow-x-hidden" data-testid="receipt-paste-preview">
         <p className="text-sm font-medium text-text-primary" data-testid="receipt-paste-status">
           {status?.startsWith("Read") ? `✓ ${status}` : status}
         </p>
@@ -137,13 +219,70 @@ export function ReceiptPasteFlow({
           </p>
           <p className="mt-1 text-sm text-text-secondary">
             {receipt.items.length === 1 ? "1 item found" : `${receipt.items.length} items found`}
+            {lineIssues.length > 0
+              ? ` · ${lineIssues.length === 1 ? "1 item needs review" : `${lineIssues.length} items need review`}`
+              : ""}
           </p>
         </section>
+
+        {lineIssues.length > 0 ? (
+          <section
+            className="rounded-md border border-amber-300 bg-amber-50 p-4 text-sm dark:border-amber-800 dark:bg-amber-950/40"
+            data-testid="receipt-paste-line-issues"
+          >
+            <p className="font-medium">
+              We couldn&apos;t read {lineIssues.length === 1 ? "1 line" : `${lineIssues.length} lines`}.
+            </p>
+            <ul className="mt-3 space-y-3">
+              {lineIssues.map((issue) => (
+                <li key={`${issue.lineNumber}-${issue.originalLine}`}>
+                  <p>Line {issue.lineNumber ?? "?"}:</p>
+                  <pre className="mt-1 overflow-auto whitespace-pre-wrap break-words rounded-md bg-surface p-2 text-xs">
+                    {issue.originalLine}
+                  </pre>
+                  <p className="mt-1">Reason: {issue.reason ?? issue.message}</p>
+                  <label className="mt-2 block">
+                    Fix this line
+                    <input
+                      className="mt-1 min-h-11 w-full max-w-full rounded-md border border-border bg-surface px-3 py-2 font-mono text-base"
+                      value={fixDrafts[issue.originalLine ?? ""] ?? issue.originalLine ?? ""}
+                      onChange={(e) =>
+                        setFixDrafts((prev) => ({
+                          ...prev,
+                          [issue.originalLine ?? ""]: e.target.value,
+                        }))
+                      }
+                    />
+                  </label>
+                  <div className="mt-2 flex flex-col gap-2 sm:flex-row">
+                    <button
+                      type="button"
+                      className="min-h-11 rounded-md border border-border px-4 text-sm font-medium"
+                      onClick={() => applyLineFix(issue)}
+                    >
+                      Apply fix
+                    </button>
+                    <button
+                      type="button"
+                      className="min-h-11 rounded-md px-4 text-sm text-text-secondary"
+                      onClick={() => {
+                        setStage("paste");
+                        window.setTimeout(() => focusLine(issue.originalLine ?? ""), 0);
+                      }}
+                    >
+                      Edit text
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
 
         <ul className="space-y-2">
           {receipt.items.map((item, index) => (
             <li key={`${item.description}-${index}`} className="flex justify-between gap-3 text-sm">
-              <span>
+              <span className="min-w-0 break-words">
                 {item.description}
                 {item.quantity > 1 ? ` ×${item.quantity}` : ""}
                 {item.ownershipHint ? (
@@ -165,13 +304,16 @@ export function ReceiptPasteFlow({
                   ariaLabel={`${item.description} amount`}
                 />
               ) : (
-                <span className="tabular-nums">{formatPastedUsd(item.totalCents)}</span>
+                <span className="shrink-0 tabular-nums">{formatPastedUsd(item.totalCents)}</span>
               )}
             </li>
           ))}
         </ul>
 
-        <section className="rounded-md border border-border bg-surface p-4 text-sm" data-testid="receipt-paste-reconciliation">
+        <section
+          className="rounded-md border border-border bg-surface p-4 text-sm"
+          data-testid="receipt-paste-reconciliation"
+        >
           {parsedPreview.rows.map((row) => (
             <p key={row.label} className="flex justify-between gap-3">
               <span>{row.label}</span>
@@ -179,9 +321,12 @@ export function ReceiptPasteFlow({
             </p>
           ))}
           {!parsedPreview.balanced ? (
-            <p className="mt-3 font-medium text-text-primary">
-              These numbers don&apos;t add up yet.
-            </p>
+            <div className="mt-3 space-y-1 font-medium text-text-primary">
+              <p>These numbers don&apos;t add up yet.</p>
+              <p>Expected: {formatPastedUsd(parsedPreview.receiptTotalCents)}</p>
+              <p>Accounted for: {formatPastedUsd(parsedPreview.accountedForCents)}</p>
+              <p>Difference: {formatPastedUsd(parsedPreview.unaccountedCents)}</p>
+            </div>
           ) : null}
         </section>
 
@@ -204,10 +349,22 @@ export function ReceiptPasteFlow({
         ) : null}
 
         {showRaw ? (
-          <pre className="max-h-48 overflow-auto whitespace-pre-wrap rounded-md border border-border bg-surface p-3 text-xs">
+          <pre className="max-h-48 overflow-auto whitespace-pre-wrap break-words rounded-md border border-border bg-surface p-3 text-xs">
             {receipt.extractedBlock}
           </pre>
         ) : null}
+
+        <label className="block text-sm">
+          Pasted text
+          <textarea
+            ref={textareaRef}
+            className="mt-1 max-h-[40dvh] min-h-32 w-full max-w-full overflow-auto whitespace-pre-wrap break-words rounded-md border border-border bg-surface px-3 py-2 font-mono text-base"
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            spellCheck={false}
+            data-testid="receipt-paste-input"
+          />
+        </label>
 
         {message ? (
           <p className="text-sm text-amber-800 dark:text-amber-200" role="alert">
@@ -220,8 +377,8 @@ export function ReceiptPasteFlow({
           </p>
         ) : null}
 
-        <div className="flex flex-col gap-2">
-          {!parsedPreview.balanced ? (
+        <div className="sticky bottom-0 z-10 flex flex-col gap-2 border-t border-border bg-background/95 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+          {!parsedPreview.balanced || continueBlocked ? (
             <>
               <button
                 type="button"
@@ -234,7 +391,7 @@ export function ReceiptPasteFlow({
                 type="button"
                 className="min-h-11 rounded-md border border-border px-4 text-sm font-medium"
                 onClick={() => persist(false)}
-                disabled={pending}
+                disabled={pending || continueBlocked}
               >
                 Add adjustment
               </button>
@@ -242,7 +399,7 @@ export function ReceiptPasteFlow({
                 type="button"
                 className="min-h-11 rounded-md border border-border px-4 text-sm font-medium"
                 onClick={() => persist(true)}
-                disabled={pending}
+                disabled={pending || !receipt.merchant || receipt.totalCents == null}
               >
                 Continue as total-only expense
               </button>
@@ -252,7 +409,7 @@ export function ReceiptPasteFlow({
             type="button"
             className="min-h-11 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground"
             onClick={() => persist(false)}
-            disabled={pending}
+            disabled={pending || continueBlocked}
             data-testid="receipt-paste-continue"
           >
             {receipt.sourceKind === "quick" ? "Use this" : "Continue"}
@@ -260,12 +417,9 @@ export function ReceiptPasteFlow({
           <button
             type="button"
             className="min-h-11 rounded-md px-4 text-sm text-text-secondary"
-            onClick={() => {
-              setStage("paste");
-              setReceipt(null);
-            }}
+            onClick={() => setStage("paste")}
           >
-            Edit
+            Edit text
           </button>
         </div>
       </div>
@@ -273,25 +427,38 @@ export function ReceiptPasteFlow({
   }
 
   return (
-    <div className="space-y-4" data-testid="receipt-paste-flow">
+    <div className="max-w-full space-y-4 overflow-x-hidden" data-testid="receipt-paste-flow">
       <p className="text-sm text-text-secondary">
         Paste receipt information from ChatGPT, Live Text, Google Lens, or another
         transcription tool.
       </p>
       <textarea
-        className="min-h-64 w-full rounded-md border border-border bg-surface px-3 py-2 font-mono text-sm"
+        ref={textareaRef}
+        className="max-h-[50dvh] min-h-64 w-full max-w-full overflow-auto whitespace-pre-wrap break-words rounded-md border border-border bg-surface px-3 py-2 font-mono text-base"
         placeholder={RECEIPT_FORMAT_PLACEHOLDER}
         value={text}
         onChange={(e) => setText(e.target.value)}
         data-testid="receipt-paste-input"
         spellCheck={false}
       />
-      {message ? (
-        <p className="text-sm text-amber-800 dark:text-amber-200" role="alert">
-          {message}
-        </p>
+      {message || problems.length > 0 ? (
+        <div className="space-y-2 text-sm text-amber-800 dark:text-amber-200" role="alert">
+          {message ? <p>{message}</p> : null}
+          {lineIssues.map((issue) => (
+            <button
+              key={`${issue.lineNumber}-${issue.originalLine}`}
+              type="button"
+              className="block w-full rounded-md border border-amber-300 p-3 text-left"
+              onClick={() => focusLine(issue.originalLine ?? "")}
+            >
+              <p className="font-medium">Line {issue.lineNumber ?? "?"}</p>
+              <p className="break-words font-mono text-xs">{issue.originalLine}</p>
+              <p>{issue.reason ?? issue.message}</p>
+            </button>
+          ))}
+        </div>
       ) : null}
-      <div className="flex flex-col gap-2">
+      <div className="sticky bottom-0 z-10 flex flex-col gap-2 border-t border-border bg-background/95 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
         <button
           type="button"
           className="min-h-11 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground"
@@ -300,6 +467,30 @@ export function ReceiptPasteFlow({
         >
           Read receipt
         </button>
+        <button
+          type="button"
+          className="min-h-11 rounded-md border border-border px-4 text-sm font-medium"
+          onClick={() => void readReceipt()}
+        >
+          Try again
+        </button>
+        <button
+          type="button"
+          className="min-h-11 rounded-md border border-border px-4 text-sm font-medium"
+          onClick={() => textareaRef.current?.focus()}
+        >
+          Edit text
+        </button>
+        {manualHref ? (
+          <a
+            className="flex min-h-11 items-center justify-center rounded-md px-4 text-sm text-text-secondary"
+            href={manualHref}
+          >
+            Enter manually
+          </a>
+        ) : null}
+      </div>
+      <div className="flex flex-col gap-2">
         <button
           type="button"
           className="min-h-11 rounded-md border border-border px-4 text-sm font-medium"
@@ -317,7 +508,7 @@ export function ReceiptPasteFlow({
         </button>
       </div>
       {showExample ? (
-        <pre className="max-h-64 overflow-auto whitespace-pre-wrap rounded-md border border-border bg-surface p-3 text-xs">
+        <pre className="max-h-64 overflow-auto whitespace-pre-wrap break-words rounded-md border border-border bg-surface p-3 text-xs">
           {RECEIPT_FORMAT_EXAMPLE}
         </pre>
       ) : null}
@@ -337,6 +528,9 @@ export function ReceiptPasteFlow({
           </ol>
         ) : null}
       </div>
+      {parserDebug ? (
+        <PasteParserDebug text={text} members={members} onLoadFixture={setText} />
+      ) : null}
     </div>
   );
 }
