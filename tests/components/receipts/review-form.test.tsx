@@ -5,6 +5,7 @@ import {
   assignReceiptLineAction,
   claimReceiptLinesAction,
   markReceiptLineSharedAction,
+  updateReceiptReviewAction,
 } from "@/app/actions/receipts";
 import { ReceiptReviewForm } from "@/components/receipts/ReceiptReviewForm";
 
@@ -294,6 +295,10 @@ describe("ReceiptReviewForm assign items", () => {
     expect(screen.getByTestId("assign-items")).toHaveAttribute("type", "button");
     await user.click(screen.getByTestId("assign-items"));
     expect(screen.getByTestId("receipt-assign-panel")).toBeInTheDocument();
+    const headerFd = vi.mocked(updateReceiptReviewAction).mock.calls.at(-1)?.[1] as
+      | FormData
+      | undefined;
+    expect(headerFd?.get("lineItemsJson")).toBe("null");
   }
 
   it("keeps assignment open while assigning multiple items, then closes on Done", async () => {

@@ -263,7 +263,7 @@ export function ReceiptReviewForm({
     .filter((l) => l.id && selected.includes(l.id))
     .reduce((sum, l) => sum + (l.totalPriceCents ?? 0), 0);
 
-  function persistHeader() {
+  function persistHeader(opts?: { includeLines?: boolean }) {
     startTransition(async () => {
       const fd = new FormData();
       fd.set("householdId", householdId);
@@ -273,20 +273,22 @@ export function ReceiptReviewForm({
       fd.set("declaredTotalCents", String(declaredTotalCents));
       fd.set(
         "lineItemsJson",
-        JSON.stringify(
-          lines.map((l, i) => ({
-            sortIndex: i,
-            ocrText: l.ocrText,
-            correctedName: l.correctedName,
-            quantity: l.quantity,
-            unitPriceCents: l.unitPriceCents,
-            totalPriceCents: l.totalPriceCents,
-            classification: l.classification,
-            resourceDestination: "none",
-            reviewStatus: l.reviewStatus,
-            participantMembershipIds: l.participantMembershipIds,
-          })),
-        ),
+        opts?.includeLines === false
+          ? "null"
+          : JSON.stringify(
+              lines.map((l, i) => ({
+                sortIndex: i,
+                ocrText: l.ocrText,
+                correctedName: l.correctedName,
+                quantity: l.quantity,
+                unitPriceCents: l.unitPriceCents,
+                totalPriceCents: l.totalPriceCents,
+                classification: l.classification,
+                resourceDestination: "none",
+                reviewStatus: l.reviewStatus,
+                participantMembershipIds: l.participantMembershipIds,
+              })),
+            ),
       );
       const res = await updateReceiptReviewAction(null, fd);
       afterLineMutation(
@@ -589,7 +591,7 @@ export function ReceiptReviewForm({
             type="button"
             className="mt-3 min-h-11 w-full rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground"
             onClick={() => {
-              persistHeader();
+              persistHeader({ includeLines: false });
               setLooksRight(true);
             }}
             data-testid="receipt-looks-right"
