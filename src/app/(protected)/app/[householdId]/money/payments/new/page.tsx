@@ -1,6 +1,7 @@
 import { assertActiveMembership } from "@/lib/household-context";
 import { listActiveMemberOptions } from "@/lib/expenses/queries";
-import { listObligationBalances } from "@/lib/payments/queries";
+import { listObligationBalances, loadObligationPurchaseSources } from "@/lib/payments/queries";
+import { obligationPurchaseLabel, sourceFromMaps } from "@/lib/payments/obligation-source";
 import { SettleUpForm } from "@/components/payments/settle-up-form";
 import { AppBackButton } from "@/components/app-back-button";
 import { createClient } from "@/lib/supabase/server";
@@ -21,22 +22,32 @@ export default async function NewPaymentPage({
     listObligationBalances(householdId),
   ]);
 
+  const sources = await loadObligationPurchaseSources(
+    householdId,
+    balances.map((b) => b.expense_id),
+  );
   const obligations = balances
     .filter(
       (b) =>
         b.debtor_membership_id === ctx.membershipId &&
         b.official_outstanding_cents > 0,
     )
-    .map((b) => ({
-      id: b.obligation_id,
-      householdId: b.household_id,
-      debtorMembershipId: b.debtor_membership_id,
-      creditorMembershipId: b.creditor_membership_id,
-      currency: household?.currency ?? "USD",
-      effectiveAmountCents: b.effective_amount_cents,
-      officialOutstandingCents: b.official_outstanding_cents,
-      createdAt: b.created_at,
-    }));
+    .map((b) => {
+      const source = sourceFromMaps(b.expense_id, b.obligation_kind, sources);
+      return {
+        id: b.obligation_id,
+        householdId: b.household_id,
+        debtorMembershipId: b.debtor_membership_id,
+        creditorMembershipId: b.creditor_membership_id,
+        currency: household?.currency ?? "USD",
+        effectiveAmountCents: b.effective_amount_cents,
+        officialOutstandingCents: b.official_outstanding_cents,
+        createdAt: b.created_at,
+        sourceLabel: obligationPurchaseLabel(source),
+        expenseId: source.expenseId,
+        receiptId: source.receiptId,
+      };
+    });
 
   return (
     <main className="space-y-6">

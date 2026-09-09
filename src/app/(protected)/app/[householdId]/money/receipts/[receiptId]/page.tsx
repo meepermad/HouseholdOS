@@ -84,13 +84,11 @@ export default async function ReceiptDetailPage({
         .select("line_item_id, membership_id, quantity, claim_kind")
         .eq("receipt_id", receiptId)
         .is("retracted_at", null),
-      receipt.intake_source === "paste"
-        ? supabase
-            .from("expense_receipt_transcription_revisions")
-            .select("id, revision_number, created_at, reason, source_text, superseded_at")
-            .eq("receipt_id", receiptId)
-            .order("revision_number", { ascending: false })
-        : Promise.resolve({ data: [] }),
+      supabase
+        .from("expense_receipt_transcription_revisions")
+        .select("id, revision_number, created_at, reason, source_text, superseded_at")
+        .eq("receipt_id", receiptId)
+        .order("revision_number", { ascending: false }),
     ]);
   const revisionRows = Array.isArray(revisionResult?.data) ? revisionResult.data : [];
 

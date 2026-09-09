@@ -177,6 +177,9 @@ export function SettleUpForm({
                   <p className="font-medium tabular-nums">
                     {formatMoney(o.officialOutstandingCents)} still owed
                   </p>
+                  {o.sourceLabel ? (
+                    <p className="text-text-secondary">{o.sourceLabel}</p>
+                  ) : null}
                 </div>
               </li>
             ))}

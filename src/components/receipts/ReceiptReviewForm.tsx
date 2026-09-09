@@ -18,6 +18,7 @@ import {
 } from "@/app/actions/receipts";
 import { ReceiptRepastePanel, type TranscriptionRevisionSummary } from "@/components/receipts/ReceiptRepastePanel";
 import { CurrencyAmountInput } from "@/components/ui/currency-field";
+import { DisclosureSection } from "@/components/ui/disclosure-section";
 import { formatCentsAsUsd } from "@/lib/receipts/currency";
 import { describeReceiptReadFailure, SHARE_NEEDS_PERSON } from "@/lib/receipts/errors";
 import {
@@ -136,7 +137,10 @@ export function ReceiptReviewForm({
   const [lines, setLines] = useState(initialLines);
   const [headerOpen, setHeaderOpen] = useState(false);
   const [looksRight, setLooksRight] = useState(
-    Boolean(splitWorkflow) || status === "claiming" || status === "ready_for_review",
+    Boolean(splitWorkflow) ||
+      status === "claiming" ||
+      status === "ready_for_review" ||
+      status === "confirmed",
   );
   const [workflow, setWorkflow] = useState<Workflow>(
     startInClaimMode || status === "claiming"
@@ -617,7 +621,7 @@ export function ReceiptReviewForm({
         <p className="mt-3 text-sm text-text-secondary">
           {lines.length === 1 ? "1 item found" : `${lines.length} items found`}
         </p>
-        {pasted ? (
+        {pasted || confirmed ? (
           <ReceiptRepastePanel
             householdId={householdId}
             receiptId={receiptId}
@@ -628,6 +632,7 @@ export function ReceiptReviewForm({
             revisionCount={revisionCount}
             revisions={revisions}
             claiming={status === "claiming"}
+            intakeSource={intakeSource}
           />
         ) : null}
         {!looksRight ? (
@@ -1375,22 +1380,42 @@ export function ReceiptReviewForm({
         </div>
       ) : null}
 
-      <details className="text-sm">
-        <summary>Advanced split options</summary>
-        <div className="mt-2 space-y-2 text-text-secondary">
-          <p>
+      <DisclosureSection
+        title="Advanced"
+        description={
+          confirmed
+            ? "Re-paste a corrected receipt and extra details"
+            : "Split extras and extra details"
+        }
+        testId="receipt-advanced"
+      >
+        {confirmed ? (
+          <ReceiptRepastePanel
+            householdId={householdId}
+            receiptId={receiptId}
+            status={status}
+            expenseId={expenseId}
+            originalTranscription={originalTranscription}
+            transcriptionCorrected={transcriptionCorrected}
+            revisionCount={revisionCount}
+            revisions={revisions}
+            intakeSource={intakeSource}
+            variant="advanced"
+          />
+        ) : (
+          <p className="text-sm text-text-secondary">
             Fixed-cent, percent, and weighted splits stay in the expense editor
             after you submit, if you need them.
           </p>
-          <button
-            type="button"
-            className="min-h-11 rounded-md border border-border px-3"
-            onClick={() => setShowAdvanced((v) => !v)}
-          >
-            {showAdvanced ? "Hide technical fields" : "Show technical fields"}
-          </button>
-        </div>
-      </details>
+        )}
+        <button
+          type="button"
+          className="min-h-11 rounded-md border border-border px-3 text-sm"
+          onClick={() => setShowAdvanced((v) => !v)}
+        >
+          {showAdvanced ? "Hide technical fields" : "Show technical fields"}
+        </button>
+      </DisclosureSection>
 
       {showAdvanced ? (
         <div className="text-xs text-text-muted" data-testid="receipt-bulk-actions">

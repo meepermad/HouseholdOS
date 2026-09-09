@@ -44,6 +44,9 @@ export type ObligationForAllocation = {
   /** Official outstanding before this payment (ledger-derived). */
   officialOutstandingCents: number;
   createdAt: string;
+  sourceLabel?: string;
+  expenseId?: string | null;
+  receiptId?: string | null;
 };
 
 export type AllocationLine = {

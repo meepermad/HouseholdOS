@@ -2,10 +2,17 @@ import Link from "next/link";
 import { assertActiveMembership } from "@/lib/household-context";
 import { formatMoney } from "@/lib/expenses/display";
 import { listActiveMemberOptions } from "@/lib/expenses/queries";
-import { listObligationBalances } from "@/lib/payments/queries";
+import {
+  listObligationBalances,
+  loadObligationPurchaseSources,
+} from "@/lib/payments/queries";
 import { SettlementStatusBadge } from "@/components/ui/status-badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { AppBackButton } from "@/components/app-back-button";
+import {
+  ObligationSourceLinks,
+} from "@/components/payments/ObligationSourceLinks";
+import { sourceFromMaps } from "@/lib/payments/obligation-source";
 
 export const dynamic = "force-dynamic";
 
@@ -20,6 +27,10 @@ export default async function ReimbursementsPage({
     listObligationBalances(householdId),
     listActiveMemberOptions(householdId),
   ]);
+  const sources = await loadObligationPurchaseSources(
+    householdId,
+    rows.map((r) => r.expense_id),
+  );
   const label = (id: string) =>
     members.find((m) => m.id === id)?.label ?? id.slice(0, 8);
 
@@ -55,6 +66,7 @@ export default async function ReimbursementsPage({
         householdId={householdId}
         label={label}
         empty="You have no outstanding obligations."
+        sources={sources}
       />
       <ObligationList
         title="Owed to you"
@@ -62,6 +74,7 @@ export default async function ReimbursementsPage({
         householdId={householdId}
         label={label}
         empty="No one currently owes you an official balance."
+        sources={sources}
       />
     </main>
   );
@@ -73,12 +86,14 @@ function ObligationList({
   householdId,
   label,
   empty,
+  sources,
 }: {
   title: string;
   rows: Awaited<ReturnType<typeof listObligationBalances>>;
   householdId: string;
   label: (id: string) => string;
   empty: string;
+  sources: Awaited<ReturnType<typeof loadObligationPurchaseSources>>;
 }) {
   return (
     <section className="space-y-2">
@@ -90,24 +105,29 @@ function ObligationList({
       ) : (
         <ul className="divide-y divide-border rounded-md border border-border bg-surface">
           {rows.map((r) => (
-            <li key={r.obligation_id}>
+            <li key={r.obligation_id} className="space-y-2 px-4 py-3.5 text-sm">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span>
+                  {label(r.debtor_membership_id)} → {label(r.creditor_membership_id)}
+                  {r.obligation_kind === "refund" ? " (refund)" : ""}
+                </span>
+                <SettlementStatusBadge status={r.settlement_state} />
+              </div>
+              <p className="tabular-nums">
+                Still owed {formatMoney(r.official_outstanding_cents)}
+                {r.pending_payment_cents > 0
+                  ? ` · Waiting for confirmation ${formatMoney(r.pending_payment_cents)}`
+                  : ""}
+              </p>
+              <ObligationSourceLinks
+                householdId={householdId}
+                source={sourceFromMaps(r.expense_id, r.obligation_kind, sources)}
+              />
               <Link
                 href={`/app/${householdId}/money/reimbursements/${r.obligation_id}`}
-                className="block space-y-1.5 px-4 py-3.5 text-sm hover:bg-surface-interactive"
+                className="inline-flex min-h-11 items-center font-medium text-primary underline-offset-2 hover:underline"
               >
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <span>
-                    {label(r.debtor_membership_id)} → {label(r.creditor_membership_id)}
-                    {r.obligation_kind === "refund" ? " (refund)" : ""}
-                  </span>
-                  <SettlementStatusBadge status={r.settlement_state} />
-                </div>
-                <p className="tabular-nums">
-                  Still owed {formatMoney(r.official_outstanding_cents)}
-                  {r.pending_payment_cents > 0
-                    ? ` · Waiting for confirmation ${formatMoney(r.pending_payment_cents)}`
-                    : ""}
-                </p>
+                Balance details
               </Link>
             </li>
           ))}

@@ -73,3 +73,7 @@ export {
 export { reconcileReceiptLines } from "./line-reconcile";
 export { buildRepastePlan } from "./repaste-plan";
 export { buildRepasteDiffRows, REPASTE_CHANGE_LABELS } from "./repaste-diff";
+export {
+  householdOsPasteFromStoredReceipt,
+  preferExistingPasteText,
+} from "./to-source-text";

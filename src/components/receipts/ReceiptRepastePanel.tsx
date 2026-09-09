@@ -24,6 +24,8 @@ export type TranscriptionRevisionSummary = {
 
 type Step = "closed" | "editor" | "diff" | "history";
 
+type IntakeSource = "upload" | "camera" | "paste" | null;
+
 type Props = {
   householdId: string;
   receiptId: string;
@@ -34,21 +36,60 @@ type Props = {
   revisionCount?: number;
   revisions?: TranscriptionRevisionSummary[];
   claiming?: boolean;
+  intakeSource?: IntakeSource;
+  /** Confirmed receipts only show re-paste from Advanced. */
+  variant?: "inline" | "advanced";
 };
+
+function looksLikeHouseholdOsPaste(text: string | null | undefined) {
+  return /householdos\s+receipt/i.test(text ?? "");
+}
+
+function seedRepasteText(
+  prefill: string | undefined,
+  originalTranscription: string | null,
+  intakeSource: IntakeSource,
+) {
+  if (prefill != null) return prefill;
+  const seed = originalTranscription ?? "";
+  if (!seed.trim()) return "";
+  if (
+    intakeSource === "paste" ||
+    looksLikeHouseholdOsPaste(seed) ||
+    seed.includes("|")
+  ) {
+    return seed;
+  }
+  return "";
+}
+
+function sourceCopy(opts: {
+  intakeSource?: IntakeSource;
+  transcriptionCorrected: boolean;
+}) {
+  if (opts.intakeSource === "camera") return "Source: Camera";
+  if (opts.intakeSource === "upload") return "Source: Uploaded photo";
+  if (opts.intakeSource === "paste" || opts.intakeSource == null) {
+    return `Source: Pasted transcription${opts.transcriptionCorrected ? " · corrected" : ""}`;
+  }
+  return null;
+}
 
 export function ReceiptRepastePanel({
   householdId,
   receiptId,
   status,
-  expenseId,
   originalTranscription,
   transcriptionCorrected = false,
   revisionCount = 0,
   revisions = [],
   claiming = false,
+  intakeSource = null,
+  variant = "inline",
 }: Props) {
   const editable = isReceiptRepasteEditable(status);
   const confirmed = status === "confirmed";
+  const showRepaste = editable || (confirmed && variant === "advanced");
   const [step, setStep] = useState<Step>("closed");
   const [text, setText] = useState(originalTranscription ?? "");
   const [plan, setPlan] = useState<RepastePlan | null>(null);
@@ -68,7 +109,7 @@ export function ReceiptRepastePanel({
 
   function openEditor(prefill?: string) {
     idempotencyKeyRef.current = crypto.randomUUID();
-    setText(prefill ?? originalTranscription ?? "");
+    setText(seedRepasteText(prefill, originalTranscription, intakeSource));
     setPlan(null);
     setMessage(null);
     setAcceptedRemoved([]);
@@ -113,38 +154,49 @@ export function ReceiptRepastePanel({
         setMessage(res.error ?? "Could not apply the corrected receipt.");
         return;
       }
+      const amendmentExpenseId = res.data?.amendmentExpenseId;
+      if (amendmentExpenseId) {
+        window.location.assign(
+          `/app/${householdId}/money/expenses/${amendmentExpenseId}/edit`,
+        );
+        return;
+      }
       setStep("closed");
       setPlan(null);
       window.location.reload();
     });
   }
 
-  if (confirmed) {
+  if (confirmed && variant !== "advanced") {
+    const source = sourceCopy({ intakeSource, transcriptionCorrected });
     return (
       <div className="mt-3 space-y-2" data-testid="receipt-correct-finalized">
+        {source ? <p className="text-sm text-text-secondary">{source}</p> : null}
         <p className="text-sm text-text-secondary">
-          Source: Pasted transcription{transcriptionCorrected ? " · corrected" : ""}
+          To paste a corrected receipt, open Advanced.
         </p>
-        {expenseId ? (
-          <a
-            className="inline-flex min-h-11 items-center text-sm font-medium text-primary"
-            href={`/app/${householdId}/money/expenses/${expenseId}`}
-            data-testid="receipt-correct-receipt"
-          >
-            Correct receipt
-          </a>
-        ) : null}
       </div>
     );
   }
 
-  if (!editable) return null;
+  if (!showRepaste) return null;
 
   return (
-    <div className="mt-3 space-y-2" data-testid="receipt-repaste-panel">
-      <p className="text-sm text-text-secondary" data-testid="receipt-paste-source-label">
-        Source: Pasted transcription{transcriptionCorrected ? " · corrected" : ""}
-      </p>
+    <div
+      className={variant === "advanced" ? "space-y-2" : "mt-3 space-y-2"}
+      data-testid="receipt-repaste-panel"
+    >
+      {variant !== "advanced" ? (
+        <p className="text-sm text-text-secondary" data-testid="receipt-paste-source-label">
+          {sourceCopy({ intakeSource, transcriptionCorrected })}
+        </p>
+      ) : (
+        <p className="text-sm text-text-secondary">
+          Paste a corrected receipt. This starts a correction so the submitted
+          expense stays on record. You&apos;ll assign items on that correction
+          before it replaces the original.
+        </p>
+      )}
       {revisionCount > 1 ? (
         <p className="text-xs text-text-muted">
           {revisionCount} transcription versions
@@ -161,31 +213,52 @@ export function ReceiptRepastePanel({
             {showTranscription ? "Hide transcription" : "View transcription"}
           </button>
         ) : null}
-        <details className="text-sm">
-          <summary className="min-h-11 cursor-pointer py-2 font-medium" data-testid="receipt-more-menu">
-            More
-          </summary>
-          <div className="mt-1 flex flex-col gap-2">
-            <button
-              type="button"
-              className="min-h-11 rounded-md border border-border px-3 text-left text-sm"
-              data-testid="receipt-repaste"
-              onClick={() => openEditor()}
-            >
-              Re-paste receipt
-            </button>
-            {revisions.length > 0 ? (
+        {variant === "advanced" ? (
+          <button
+            type="button"
+            className="min-h-11 rounded-md border border-border px-3 text-left text-sm"
+            data-testid="receipt-repaste"
+            onClick={() => openEditor()}
+          >
+            Re-paste receipt
+          </button>
+        ) : (
+          <details className="text-sm">
+            <summary className="min-h-11 cursor-pointer py-2 font-medium" data-testid="receipt-more-menu">
+              More
+            </summary>
+            <div className="mt-1 flex flex-col gap-2">
               <button
                 type="button"
                 className="min-h-11 rounded-md border border-border px-3 text-left text-sm"
-                data-testid="receipt-transcription-history"
-                onClick={() => setStep("history")}
+                data-testid="receipt-repaste"
+                onClick={() => openEditor()}
               >
-                View transcription history
+                Re-paste receipt
               </button>
-            ) : null}
-          </div>
-        </details>
+              {revisions.length > 0 ? (
+                <button
+                  type="button"
+                  className="min-h-11 rounded-md border border-border px-3 text-left text-sm"
+                  data-testid="receipt-transcription-history"
+                  onClick={() => setStep("history")}
+                >
+                  View transcription history
+                </button>
+              ) : null}
+            </div>
+          </details>
+        )}
+        {variant === "advanced" && revisions.length > 0 ? (
+          <button
+            type="button"
+            className="min-h-11 rounded-md border border-border px-3 text-left text-sm"
+            data-testid="receipt-transcription-history"
+            onClick={() => setStep("history")}
+          >
+            View transcription history
+          </button>
+        ) : null}
       </div>
       {showTranscription && originalTranscription ? (
         <div className="space-y-2">
@@ -249,8 +322,9 @@ export function ReceiptRepastePanel({
         >
           <h2 className="text-base font-semibold">Correct receipt transcription</h2>
           <p className="mt-1 text-sm text-text-secondary">
-            Paste a corrected version of this receipt. You&apos;ll review the changes
-            before anything is replaced.
+            {confirmed
+              ? "Paste a corrected version of this receipt. You'll review the changes, then assign items on a correction draft so the submitted expense stays on record."
+              : "Paste a corrected version of this receipt. You'll review the changes before anything is replaced."}
           </p>
           {claiming ? (
             <p className="mt-2 text-sm text-text-secondary" data-testid="receipt-repaste-claiming-warning">

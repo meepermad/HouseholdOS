@@ -279,6 +279,70 @@ describe("ReceiptReviewForm simple flow", () => {
     expect(screen.queryByTestId("receipt-line-items")).not.toBeInTheDocument();
     expect(screen.getByTestId("receipt-confirm-expense")).toBeEnabled();
   });
+
+  it("shows Re-paste under Advanced on a confirmed pasted receipt", async () => {
+    const user = userEvent.setup();
+    render(
+      <ReceiptReviewForm
+        householdId="hh"
+        receiptId="r1"
+        merchant="Target"
+        purchaseDate="2026-09-04"
+        declaredTotalCents={9240}
+        status="confirmed"
+        splitWorkflow="equal_all"
+        payerMembershipId="m1"
+        currentMembershipId="m1"
+        members={members}
+        lineItems={lines}
+        intakeSource="paste"
+        originalTranscription="HOUSEHOLDOS RECEIPT\nMerchant: Target\nTotal: 92.40\nITEMS\nShampoo | 8.49 | 1\nEND"
+        expenseId="e1"
+      />,
+    );
+
+    expect(screen.queryByText("Advanced split options")).not.toBeInTheDocument();
+    expect(screen.getByTestId("receipt-correct-finalized")).toHaveTextContent(
+      "open Advanced",
+    );
+    expect(screen.queryByRole("button", { name: /re-paste receipt/i })).not.toBeInTheDocument();
+
+    const advanced = screen.getByTestId("receipt-advanced");
+    expect(advanced).toHaveTextContent("Advanced");
+    expect(advanced).toHaveTextContent("Re-paste a corrected receipt");
+    await user.click(screen.getByRole("button", { name: /advanced/i }));
+    expect(screen.getByRole("button", { name: /re-paste receipt/i })).toBeInTheDocument();
+  });
+
+  it("shows Re-paste under Advanced on a confirmed camera receipt", async () => {
+    const user = userEvent.setup();
+    render(
+      <ReceiptReviewForm
+        householdId="hh"
+        receiptId="r1"
+        merchant="Target"
+        purchaseDate="2026-09-04"
+        declaredTotalCents={9240}
+        status="confirmed"
+        splitWorkflow="assign_items"
+        payerMembershipId="m1"
+        currentMembershipId="m1"
+        members={members}
+        lineItems={lines}
+        intakeSource="camera"
+        originalTranscription="MILK 4.29"
+        expenseId="e1"
+      />,
+    );
+
+    expect(screen.queryByText("Advanced split options")).not.toBeInTheDocument();
+    expect(screen.getByTestId("receipt-correct-finalized")).toHaveTextContent("Camera");
+    await user.click(screen.getByRole("button", { name: /advanced/i }));
+    expect(screen.getByRole("button", { name: /re-paste receipt/i })).toBeInTheDocument();
+    expect(screen.getByTestId("receipt-repaste-panel")).toHaveTextContent(
+      "This starts a correction",
+    );
+  });
 });
 
 describe("ReceiptReviewForm assign items", () => {

@@ -66,6 +66,7 @@ export type RepastePlan = {
     newName: string;
   }>;
   canActivate: boolean;
+  canStartCorrection: boolean;
   applyBlockedReason: string | null;
   notify: boolean;
   header: {
@@ -219,15 +220,19 @@ export function buildRepastePlan(
     : `These numbers don't add up yet.\nDifference: ${formatUnaccounted(recon.unaccountedCents)}`;
 
   let applyBlockedReason: string | null = null;
-  if (finalized || !editable) {
-    applyBlockedReason = "This receipt is already submitted. Use Correct receipt instead.";
-  } else if (unconfirmedRemovals.length > 0) {
+  if (unconfirmedRemovals.length > 0) {
     applyBlockedReason = unconfirmedRemovals
       .map((row) => `${row.name} currently belongs to ${row.belongsTo}. This corrected receipt removes it.`)
       .join(" ");
   } else if (!recon.balanced && !choices.retainInvalidDraft) {
     applyBlockedReason = reconCopy;
+  } else if (!finalized && !editable) {
+    applyBlockedReason = "This receipt can no longer be re-pasted.";
   }
+
+  const canActivate = applyBlockedReason == null && recon.balanced && editable && !finalized;
+  const canStartCorrection =
+    applyBlockedReason == null && recon.balanced && finalized;
 
   const notify =
     summary.financialChanged ||
@@ -248,9 +253,11 @@ export function buildRepastePlan(
     matches,
     descriptionOnly: summary.descriptionOnly,
     financialChanged: summary.financialChanged,
-    confirmationCopy: summary.financialChanged
-      ? "This changes the receipt total or how item amounts are calculated. Review existing claims and assignments after applying it."
-      : "Only item names changed. Existing assignments can be kept.",
+    confirmationCopy: finalized
+      ? "This starts a correction so the submitted expense stays on record until you confirm the update."
+      : summary.financialChanged
+        ? "This changes the receipt total or how item amounts are calculated. Review existing claims and assignments after applying it."
+        : "Only item names changed. Existing assignments can be kept.",
     financialWarning: summary.financialChanged
       ? "This changes the receipt total or how item amounts are calculated. Review existing claims and assignments after applying it."
       : null,
@@ -261,7 +268,8 @@ export function buildRepastePlan(
     },
     claimedRemovals,
     descriptionConflicts,
-    canActivate: applyBlockedReason == null && recon.balanced,
+    canActivate,
+    canStartCorrection,
     applyBlockedReason,
     notify,
     header: {

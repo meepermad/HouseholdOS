@@ -19,10 +19,16 @@ import { listActiveMemberOptions } from "@/lib/expenses/queries";
 import { can } from "@/lib/permissions";
 import { createClient } from "@/lib/supabase/server";
 import { CommentThread } from "@/components/comments/CommentThread";
+import { ReceiptRepastePanel, type TranscriptionRevisionSummary } from "@/components/receipts/ReceiptRepastePanel";
 import { listRecordComments } from "@/lib/comments/queries";
 import { expenseWaitingCopy } from "@/lib/presentation/human-status";
 import { formatAuditEventLabel } from "@/lib/presentation/audit-events";
 import { settlementStatusCopy } from "@/lib/presentation/human-status";
+import {
+  householdOsPasteFromStoredReceipt,
+  preferExistingPasteText,
+} from "@/lib/receipts/paste/to-source-text";
+import { resolvePastedDisplayDescription } from "@/lib/receipts/paste/display-description";
 
 export const dynamic = "force-dynamic";
 
@@ -95,6 +101,101 @@ export default async function ExpenseDetailPage({
           .reduce((sum, o) => sum + o.amountCents, 0)
       : 0;
   const payerLabel = label(e.payer_membership_id);
+  const receiptLookupIds = [expenseId, e.supersedes_expense_id].filter(
+    (id): id is string => Boolean(id),
+  );
+  const { data: linkedReceipt } = await supabase
+    .from("expense_receipts")
+    .select(
+      "id, status, transcription_corrected, intake_source, merchant_corrected, purchase_date_corrected, declared_total_cents, expense_id",
+    )
+    .eq("household_id", householdId)
+    .is("deleted_at", null)
+    .in("expense_id", receiptLookupIds)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  let revisionRows: Array<{
+    id: string;
+    revision_number: number;
+    created_at: string;
+    reason: "initial_paste" | "user_repaste";
+    source_text: string;
+    superseded_at: string | null;
+  }> = [];
+  let extractionText: string | null = null;
+  let rebuiltPaste: string | null = null;
+  if (linkedReceipt) {
+    const [revisionsResult, extractionResult, linesResult] = await Promise.all([
+      supabase
+        .from("expense_receipt_transcription_revisions")
+        .select("id, revision_number, created_at, reason, source_text, superseded_at")
+        .eq("receipt_id", linkedReceipt.id)
+        .order("revision_number", { ascending: false }),
+      supabase
+        .from("expense_receipt_extractions")
+        .select("ocr_full_text, proposed")
+        .eq("receipt_id", linkedReceipt.id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+      supabase
+        .from("expense_receipt_line_items")
+        .select("corrected_name, source_text, ocr_text, quantity, total_price_cents")
+        .eq("receipt_id", linkedReceipt.id)
+        .order("sort_index"),
+    ]);
+    revisionRows = (revisionsResult.data ?? []) as typeof revisionRows;
+    const extraction = extractionResult.data as {
+      ocr_full_text?: string | null;
+      proposed?: {
+        subtotalCents?: number | null;
+        taxCents?: number | null;
+        tipCents?: number | null;
+        feeCents?: number | null;
+        discountCents?: number | null;
+      } | null;
+    } | null;
+    extractionText =
+      typeof extraction?.ocr_full_text === "string" ? extraction.ocr_full_text : null;
+    const proposed = extraction?.proposed ?? {};
+    rebuiltPaste = householdOsPasteFromStoredReceipt({
+      merchant: linkedReceipt.merchant_corrected ?? e.merchant,
+      purchaseDate: linkedReceipt.purchase_date_corrected ?? e.purchase_date,
+      totalCents: linkedReceipt.declared_total_cents ?? e.declared_total_cents,
+      subtotalCents: proposed.subtotalCents ?? null,
+      taxCents: proposed.taxCents ?? null,
+      tipCents: proposed.tipCents ?? null,
+      feeCents: proposed.feeCents ?? null,
+      discountCents: proposed.discountCents ?? null,
+      items: (linesResult.data ?? []).map((line) => ({
+        description: resolvePastedDisplayDescription({
+          correctedName: line.corrected_name,
+          sourceText: line.source_text ?? line.ocr_text,
+          ocrText: line.ocr_text,
+        }),
+        sourceText: line.source_text ?? line.ocr_text,
+        totalCents: line.total_price_cents,
+        quantity: line.quantity,
+      })),
+    });
+  }
+
+  const receiptRevisions: TranscriptionRevisionSummary[] = revisionRows.map((r) => ({
+    id: r.id,
+    revisionNumber: r.revision_number,
+    createdAt: r.created_at,
+    reason: r.reason,
+    active: r.superseded_at == null,
+    sourceText: r.source_text,
+  }));
+  const originalTranscription = preferExistingPasteText([
+    receiptRevisions.find((r) => r.active)?.sourceText,
+    receiptRevisions[0]?.sourceText,
+    extractionText,
+    rebuiltPaste,
+  ]);
   const statusDetail = expenseWaitingCopy({
     status: e.status,
     isPayer,
@@ -259,6 +360,46 @@ export default async function ExpenseDetailPage({
         </ul>
       </section>
 
+      <section className="space-y-3" data-testid="expense-receipt">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-text-muted">
+          Receipt
+        </h2>
+        {linkedReceipt ? (
+          <div className="space-y-3 rounded-md border border-border bg-surface p-4">
+            <Link
+              href={`/app/${householdId}/money/receipts/${linkedReceipt.id}`}
+              className="inline-flex min-h-11 items-center text-sm font-medium text-primary underline-offset-2 hover:underline"
+            >
+              View original receipt
+            </Link>
+            {can(ctx.roles, "expense.amend") ? (
+              <ReceiptRepastePanel
+                householdId={householdId}
+                receiptId={linkedReceipt.id}
+                status={linkedReceipt.status}
+                expenseId={expenseId}
+                originalTranscription={originalTranscription}
+                transcriptionCorrected={Boolean(linkedReceipt.transcription_corrected)}
+                revisionCount={receiptRevisions.length}
+                revisions={receiptRevisions}
+                intakeSource={
+                  linkedReceipt.intake_source === "camera" ||
+                  linkedReceipt.intake_source === "upload" ||
+                  linkedReceipt.intake_source === "paste"
+                    ? linkedReceipt.intake_source
+                    : "paste"
+                }
+                variant="advanced"
+              />
+            ) : null}
+          </div>
+        ) : (
+          <p className="text-sm text-text-secondary">
+            This expense has no linked receipt to re-paste.
+          </p>
+        )}
+      </section>
+
       {bundle.adjustments.length > 0 ? (
         <section className="space-y-2">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-text-muted">
@@ -296,9 +437,36 @@ export default async function ExpenseDetailPage({
 
       <DisclosureSection
         title="Advanced"
-        description="History, corrections, and extra details"
+        description="Re-paste a corrected receipt, history, and extra details"
         testId="expense-advanced"
+        defaultOpen={Boolean(linkedReceipt)}
       >
+        {linkedReceipt && can(ctx.roles, "expense.amend") ? (
+          <ReceiptRepastePanel
+            householdId={householdId}
+            receiptId={linkedReceipt.id}
+            status={linkedReceipt.status}
+            expenseId={expenseId}
+            originalTranscription={originalTranscription}
+            transcriptionCorrected={Boolean(linkedReceipt.transcription_corrected)}
+            revisionCount={receiptRevisions.length}
+            revisions={receiptRevisions}
+            intakeSource={
+              linkedReceipt.intake_source === "camera" ||
+              linkedReceipt.intake_source === "upload" ||
+              linkedReceipt.intake_source === "paste"
+                ? linkedReceipt.intake_source
+                : "paste"
+            }
+            variant="advanced"
+          />
+        ) : (
+          <p className="text-sm text-text-secondary">
+            {linkedReceipt
+              ? "You can view this receipt, but you cannot start a correction."
+              : "This expense has no linked receipt to re-paste."}
+          </p>
+        )}
         <dl className="grid grid-cols-2 gap-x-3 gap-y-2 text-sm">
           <dt className="text-text-muted">Paid by</dt>
           <dd>{payerLabel}</dd>

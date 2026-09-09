@@ -28,6 +28,7 @@ const CLAIM_RPCS = [
   "remind_receipt_claiming",
   "record_receipt_orphan_cleanup",
   "apply_receipt_repaste",
+  "apply_confirmed_receipt_repaste",
   "acknowledge_receipt_correction",
 ] as const;
 

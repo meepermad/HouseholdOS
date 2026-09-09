@@ -208,3 +208,8 @@ export function paymentsListHref(
 ): string {
   return `/app/${householdId}/money/payments${serializePaymentListFilters(filters)}`;
 }
+
+export function receiptsListHref(householdId: string, month?: string): string {
+  const qs = month ? `?month=${encodeURIComponent(month)}` : "";
+  return `/app/${householdId}/money/receipts${qs}`;
+}

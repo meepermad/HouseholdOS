@@ -54,6 +54,20 @@ export function MoneyPairwiseBalances({
                         : null}
                     </p>
                   ) : null}
+                  {row.purchases.length > 0 ? (
+                    <ul className="mt-2 space-y-1 text-xs text-text-muted">
+                      {row.purchases.slice(0, 3).map((purchase) => (
+                        <li key={`${purchase.label}-${purchase.amountCents}`}>
+                          {purchase.label}
+                          {" · "}
+                          {formatMoney(purchase.amountCents)}
+                        </li>
+                      ))}
+                      {row.purchases.length > 3 ? (
+                        <li>and {row.purchases.length - 3} more</li>
+                      ) : null}
+                    </ul>
+                  ) : null}
                 </div>
                 {owesThem ? (
                   <Link

@@ -2,9 +2,17 @@ import Link from "next/link";
 import { assertActiveMembership } from "@/lib/household-context";
 import { formatMoney } from "@/lib/expenses/display";
 import { getBalancesForMembership, listActiveMemberOptions } from "@/lib/expenses/queries";
-import { getSettlementBalancesForMembership, listObligationBalances } from "@/lib/payments/queries";
+import {
+  getSettlementBalancesForMembership,
+  listObligationBalances,
+  loadObligationPurchaseSources,
+} from "@/lib/payments/queries";
 import { EmptyState } from "@/components/ui/empty-state";
 import { AppBackButton } from "@/components/app-back-button";
+import {
+  ObligationSourceLinks,
+} from "@/components/payments/ObligationSourceLinks";
+import { sourceFromMaps } from "@/lib/payments/obligation-source";
 
 export const dynamic = "force-dynamic";
 
@@ -22,6 +30,10 @@ export default async function BalancesPage({
     listActiveMemberOptions(householdId),
     listObligationBalances(householdId),
   ]);
+  const sources = await loadObligationPurchaseSources(
+    householdId,
+    obligations.map((o) => o.expense_id),
+  );
 
   const label = (id: string) =>
     members.find((m) => m.id === id)?.label ?? id.slice(0, 8);
@@ -107,13 +119,47 @@ export default async function BalancesPage({
           <p className="text-sm text-text-secondary">No pairwise balances.</p>
         ) : (
           <ul className="divide-y divide-border rounded-md border border-border bg-surface">
-            {settlement.pairwise.map((p) => (
-              <li key={p.counterpartyMembershipId} className="px-4 py-3 text-sm">
-                {p.officialNetCents > 0
-                  ? `You owe ${label(p.counterpartyMembershipId)} ${formatMoney(p.officialNetCents)}`
-                  : `${label(p.counterpartyMembershipId)} owes you ${formatMoney(-p.officialNetCents)}`}
-              </li>
-            ))}
+            {settlement.pairwise.map((p) => {
+              const purchases = open.filter(
+                (o) =>
+                  (o.debtor_membership_id === ctx.membershipId &&
+                    o.creditor_membership_id === p.counterpartyMembershipId) ||
+                  (o.creditor_membership_id === ctx.membershipId &&
+                    o.debtor_membership_id === p.counterpartyMembershipId),
+              );
+              return (
+                <li key={p.counterpartyMembershipId} className="space-y-3 px-4 py-3 text-sm">
+                  <p className="font-medium">
+                    {p.officialNetCents > 0
+                      ? `You owe ${label(p.counterpartyMembershipId)} ${formatMoney(p.officialNetCents)}`
+                      : `${label(p.counterpartyMembershipId)} owes you ${formatMoney(-p.officialNetCents)}`}
+                  </p>
+                  {purchases.length > 0 ? (
+                    <ul className="space-y-3">
+                      {purchases.map((o) => (
+                        <li key={o.obligation_id} className="space-y-1">
+                          <div className="flex flex-wrap items-start justify-between gap-2">
+                            <ObligationSourceLinks
+                              householdId={householdId}
+                              source={sourceFromMaps(o.expense_id, o.obligation_kind, sources)}
+                            />
+                            <span className="tabular-nums text-text-secondary">
+                              {formatMoney(o.official_outstanding_cents)}
+                            </span>
+                          </div>
+                          <Link
+                            href={`/app/${householdId}/money/reimbursements/${o.obligation_id}`}
+                            className="text-xs font-medium text-primary underline-offset-2 hover:underline"
+                          >
+                            Balance details
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
+                </li>
+              );
+            })}
           </ul>
         )}
       </section>
@@ -135,19 +181,24 @@ export default async function BalancesPage({
         ) : (
           <ul className="divide-y divide-border rounded-md border border-border bg-surface">
             {open.map((o) => (
-              <li key={o.obligation_id}>
+              <li key={o.obligation_id} className="space-y-2 px-4 py-3.5 text-sm">
+                <div className="flex flex-wrap justify-between gap-2">
+                  <span>
+                    {label(o.debtor_membership_id)} → {label(o.creditor_membership_id)}
+                  </span>
+                  <span className="font-medium tabular-nums">
+                    {formatMoney(o.official_outstanding_cents)}
+                  </span>
+                </div>
+                <ObligationSourceLinks
+                  householdId={householdId}
+                  source={sourceFromMaps(o.expense_id, o.obligation_kind, sources)}
+                />
                 <Link
                   href={`/app/${householdId}/money/reimbursements/${o.obligation_id}`}
-                  className="block space-y-1.5 px-4 py-3.5 text-sm hover:bg-surface-interactive"
+                  className="inline-flex min-h-11 items-center text-sm font-medium text-primary underline-offset-2 hover:underline"
                 >
-                  <div className="flex flex-wrap justify-between gap-2">
-                    <span>
-                      {label(o.debtor_membership_id)} → {label(o.creditor_membership_id)}
-                    </span>
-                    <span className="font-medium tabular-nums">
-                      {formatMoney(o.official_outstanding_cents)}
-                    </span>
-                  </div>
+                  Balance details
                 </Link>
               </li>
             ))}

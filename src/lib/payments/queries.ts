@@ -9,7 +9,7 @@ import {
 export type ObligationBalanceRow = {
   obligation_id: string;
   household_id: string;
-  expense_id: string;
+  expense_id: string | null;
   debtor_membership_id: string;
   creditor_membership_id: string;
   obligation_kind: string;
@@ -320,4 +320,57 @@ export async function listActionCenterItems(
     openDisputes: openDisputes ?? [],
     refundsOwed: refunds ?? [],
   };
+}
+
+export async function loadObligationPurchaseSources(
+  householdId: string,
+  expenseIds: Array<string | null | undefined>,
+): Promise<Map<string, { merchant: string; purchaseDate: string | null; receiptId: string | null }>> {
+  const ids = [...new Set(expenseIds.filter((id): id is string => Boolean(id)))];
+  const sources = new Map<
+    string,
+    { merchant: string; purchaseDate: string | null; receiptId: string | null }
+  >();
+  if (ids.length === 0) return sources;
+
+  const supabase = await createClient();
+  const { data: expenses } = await supabase
+    .from("expenses")
+    .select("id, merchant, purchase_date, supersedes_expense_id")
+    .eq("household_id", householdId)
+    .in("id", ids);
+
+  const receiptLookupIds = new Set(ids);
+  for (const expense of expenses ?? []) {
+    if (expense.supersedes_expense_id) receiptLookupIds.add(expense.supersedes_expense_id);
+  }
+
+  const { data: receipts } = await supabase
+    .from("expense_receipts")
+    .select("id, expense_id")
+    .eq("household_id", householdId)
+    .is("deleted_at", null)
+    .in("expense_id", [...receiptLookupIds]);
+
+  const receiptByExpense = new Map<string, string>();
+  for (const receipt of receipts ?? []) {
+    if (receipt.expense_id && !receiptByExpense.has(receipt.expense_id)) {
+      receiptByExpense.set(receipt.expense_id, receipt.id);
+    }
+  }
+
+  for (const expense of expenses ?? []) {
+    const receiptId =
+      receiptByExpense.get(expense.id) ??
+      (expense.supersedes_expense_id
+        ? receiptByExpense.get(expense.supersedes_expense_id) ?? null
+        : null);
+    sources.set(expense.id, {
+      merchant: expense.merchant || "Shared purchase",
+      purchaseDate: expense.purchase_date ?? null,
+      receiptId: receiptId ?? null,
+    });
+  }
+
+  return sources;
 }

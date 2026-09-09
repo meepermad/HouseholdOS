@@ -46,7 +46,7 @@ vi.mock("@/app/actions/receipts", () => ({
 }));
 
 describe("ReceiptRepastePanel", () => {
-  it("hides re-paste after finalization and shows Correct receipt", () => {
+  it("hides re-paste in the header after finalization", () => {
     render(
       <ReceiptRepastePanel
         householdId="hh"
@@ -58,7 +58,73 @@ describe("ReceiptRepastePanel", () => {
       />,
     );
     expect(screen.queryByTestId("receipt-repaste")).not.toBeInTheDocument();
-    expect(screen.getByTestId("receipt-correct-receipt")).toHaveTextContent("Correct receipt");
+    expect(screen.getByTestId("receipt-correct-finalized")).toHaveTextContent(
+      "open Advanced",
+    );
+  });
+
+  it("shows re-paste under Advanced after the receipt is submitted", async () => {
+    const user = userEvent.setup();
+    render(
+      <ReceiptRepastePanel
+        householdId="hh"
+        receiptId="R1"
+        status="confirmed"
+        expenseId="E1"
+        originalTranscription={PASTE_FIXTURE_WALMART_TRASH}
+        variant="advanced"
+      />,
+    );
+    expect(screen.getByTestId("receipt-repaste")).toHaveTextContent("Re-paste receipt");
+    expect(screen.getByTestId("receipt-repaste-panel")).toHaveTextContent(
+      "This starts a correction",
+    );
+    await user.click(screen.getByTestId("receipt-repaste"));
+    expect(screen.getByTestId("receipt-repaste-editor")).toHaveTextContent(
+      "assign items on a correction draft",
+    );
+  });
+
+  it("lets camera receipts re-paste a correction from Advanced after submit", async () => {
+    const user = userEvent.setup();
+    render(
+      <ReceiptRepastePanel
+        householdId="hh"
+        receiptId="R1"
+        status="confirmed"
+        expenseId="E1"
+        intakeSource="camera"
+        originalTranscription="MILK 4.29  TAX 0.32"
+        variant="advanced"
+      />,
+    );
+    expect(screen.getByTestId("receipt-repaste")).toHaveTextContent("Re-paste receipt");
+    await user.click(screen.getByTestId("receipt-repaste"));
+    expect(screen.getByTestId("receipt-repaste-textarea")).toHaveValue("");
+    expect(screen.getByTestId("receipt-repaste-editor")).toHaveTextContent(
+      "assign items on a correction draft",
+    );
+  });
+
+  it("points camera receipts at Advanced instead of claiming they were pasted", () => {
+    render(
+      <ReceiptRepastePanel
+        householdId="hh"
+        receiptId="R1"
+        status="confirmed"
+        expenseId="E1"
+        intakeSource="camera"
+        originalTranscription={null}
+      />,
+    );
+    expect(screen.queryByTestId("receipt-repaste")).not.toBeInTheDocument();
+    expect(screen.getByTestId("receipt-correct-finalized")).toHaveTextContent("Camera");
+    expect(screen.getByTestId("receipt-correct-finalized")).toHaveTextContent(
+      "open Advanced",
+    );
+    expect(screen.getByTestId("receipt-correct-finalized")).not.toHaveTextContent(
+      "Pasted transcription",
+    );
   });
 
   it("opens the correction editor from More and keeps the current receipt on cancel", async () => {

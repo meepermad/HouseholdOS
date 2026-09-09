@@ -108,6 +108,18 @@ export function mapReceiptRpcError(message: string): string {
   if (m.includes("claimed_line_removal_requires_confirmation")) {
     return "This corrected receipt removes an item that already belongs to someone. Confirm that change first.";
   }
+  if (m.includes("receipt_not_confirmed") || m.includes("receipt has no linked expense")) {
+    return "This receipt is not a submitted expense yet.";
+  }
+  if (m.includes("not allowed to amend")) {
+    return "You cannot start a correction for this expense.";
+  }
+  if (m.includes("only confirmed expenses can be amended")) {
+    return "Only a submitted expense can be corrected this way.";
+  }
+  if (m.includes("correction draft is not editable")) {
+    return "That correction is no longer a draft. Open the expense and start a new correction.";
+  }
   if (m.includes("receipt_not_editable")) {
     return "This receipt can no longer be re-pasted.";
   }

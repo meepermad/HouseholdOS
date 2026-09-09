@@ -5,7 +5,9 @@ import { listActiveMemberOptions } from "@/lib/expenses/queries";
 import {
   getSettlementBalancesForMembership,
   listObligationBalances,
+  loadObligationPurchaseSources,
 } from "@/lib/payments/queries";
+import { obligationPurchaseLabel, sourceFromMaps } from "@/lib/payments/obligation-source";
 import { suggestRoutedSettlements } from "@/lib/payments/routed-suggestions";
 import { can } from "@/lib/permissions";
 import { getLaunchFeatureReadiness } from "@/lib/launch/feature-readiness";
@@ -47,6 +49,11 @@ import type { HouseholdResponsibility } from "@/types/database";
 
 export const MONEY_OVERVIEW_VERSION = 2;
 
+export type PairwiseHubPurchase = {
+  label: string;
+  amountCents: number;
+};
+
 export type PairwiseHubRow = {
   counterpartyMembershipId: string;
   displayName: string;
@@ -56,6 +63,7 @@ export type PairwiseHubRow = {
   /** Positive: you owe them; negative: they owe you. */
   youOweCents: number;
   theyOweYouCents: number;
+  purchases: PairwiseHubPurchase[];
 };
 
 export type MoneyOverview = {
@@ -482,12 +490,31 @@ export async function loadMoneyOverview(params: {
     sharedPurchaseEnabled: !isSingleMember,
   });
 
+  const sources = await loadObligationPurchaseSources(
+    householdId,
+    obligations.map((o) => o.expense_id),
+  );
   const unsettledIds = new Set(
     settlement.pairwise.map((p) => p.counterpartyMembershipId),
   );
   const pairwise: PairwiseHubRow[] = settlement.pairwise.map((p) => {
     const youOwe = Math.max(0, p.officialNetCents);
     const theyOwe = Math.max(0, -p.officialNetCents);
+    const purchases = obligations
+      .filter(
+        (o) =>
+          o.official_outstanding_cents > 0 &&
+          ((o.debtor_membership_id === membershipId &&
+            o.creditor_membership_id === p.counterpartyMembershipId) ||
+            (o.creditor_membership_id === membershipId &&
+              o.debtor_membership_id === p.counterpartyMembershipId)),
+      )
+      .map((o) => ({
+        label: obligationPurchaseLabel(
+          sourceFromMaps(o.expense_id, o.obligation_kind, sources),
+        ),
+        amountCents: o.official_outstanding_cents,
+      }));
     return {
       counterpartyMembershipId: p.counterpartyMembershipId,
       displayName: nameOf(p.counterpartyMembershipId),
@@ -496,6 +523,7 @@ export async function loadMoneyOverview(params: {
       pendingIncomingCents: p.pendingIncomingCents,
       youOweCents: youOwe,
       theyOweYouCents: theyOwe,
+      purchases,
     };
   });
   const settledHiddenCount = isSingleMember
@@ -766,7 +794,7 @@ function buildTools(params: {
             testId: "tool-add-receipt",
           },
           {
-            label: "Receipts in progress",
+            label: "Receipts",
             href: `${base}/receipts`,
             testId: "tool-receipts",
           },

@@ -316,8 +316,10 @@ describe("re-paste line reconciliation", () => {
     const plan = buildRepastePlan(current, WALMART_CORRECTED);
     expect(plan.editable).toBe(false);
     expect(plan.finalized).toBe(true);
-    expect(plan.applyBlockedReason).toMatch(/already submitted/i);
     expect(plan.canActivate).toBe(false);
+    expect(plan.canStartCorrection).toBe(true);
+    expect(plan.applyBlockedReason).toBeNull();
+    expect(plan.confirmationCopy).toMatch(/starts a correction/i);
   });
 });
 

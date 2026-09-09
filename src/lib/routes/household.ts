@@ -70,8 +70,10 @@ export const householdRoutes = {
     index: (householdId: string) => `${base(householdId)}/money`,
     expensesNew: (householdId: string) =>
       `${base(householdId)}/money/expenses/new`,
-    receipts: (householdId: string) =>
-      `${base(householdId)}/money/receipts`,
+    receipts: (householdId: string, month?: string) => {
+      const path = `${base(householdId)}/money/receipts`;
+      return month ? `${path}?month=${encodeURIComponent(month)}` : path;
+    },
     receiptNew: (householdId: string) =>
       `${base(householdId)}/money/receipts/new`,
     receiptPaste: (householdId: string) =>

@@ -37,6 +37,7 @@ import {
 import { isReceiptRepasteEditable } from "@/lib/receipts/paste/display-description";
 import { buildCurrentRepasteSnapshot } from "@/lib/receipts/paste/snapshot";
 import { listActiveMemberOptions } from "@/lib/expenses/queries";
+import { can } from "@/lib/permissions";
 
 async function db(householdId: string) {
   const ctx = await assertActiveMembership(householdId);
@@ -976,10 +977,10 @@ export async function previewRepasteReceiptAction(
     const { supabase } = await db(householdId);
     const loaded = await loadReceiptRepasteSnapshot(supabase, householdId, receiptId);
     if (!loaded.ok) return { ok: false, error: loaded.error };
-    if (!isReceiptRepasteEditable(loaded.snapshot.status)) {
+    if (!isReceiptRepasteEditable(loaded.snapshot.status) && loaded.snapshot.status !== "confirmed") {
       return {
         ok: false,
-        error: "This receipt is already submitted. Use Correct receipt instead.",
+        error: "This receipt can no longer be re-pasted.",
       };
     }
     const parsed = parseHouseholdOsReceipt(originalText, loaded.members);
@@ -1007,14 +1008,18 @@ export async function applyRepasteReceiptAction(
     const originalText = String(formData.get("originalText") ?? "");
     const idempotencyKey =
       String(formData.get("idempotencyKey") ?? "").trim() || randomUUID();
-    const { supabase } = await db(householdId);
+    const { ctx, supabase } = await db(householdId);
     const loaded = await loadReceiptRepasteSnapshot(supabase, householdId, receiptId);
     if (!loaded.ok) return { ok: false, error: loaded.error };
-    if (!isReceiptRepasteEditable(loaded.snapshot.status)) {
+    const confirmed = loaded.snapshot.status === "confirmed";
+    if (!isReceiptRepasteEditable(loaded.snapshot.status) && !confirmed) {
       return {
         ok: false,
-        error: "This receipt is already submitted. Use Correct receipt instead.",
+        error: "This receipt can no longer be re-pasted.",
       };
+    }
+    if (confirmed && !can(ctx.roles, "expense.amend")) {
+      return { ok: false, error: "Not allowed to amend expenses." };
     }
     const parsed = parseHouseholdOsReceipt(originalText, loaded.members);
     if (!parsed.ok || !parsed.receipt) {
@@ -1028,25 +1033,52 @@ export async function applyRepasteReceiptAction(
     if (plan.applyBlockedReason) {
       return { ok: false, error: plan.applyBlockedReason };
     }
+    if (confirmed && !plan.canStartCorrection) {
+      return { ok: false, error: "Could not start a correction from this receipt." };
+    }
     const payload = serializeRepasteApplyPayload(
       plan,
       choices.acceptedRemovedClaimLineIds,
     );
+    const parsedPayload = {
+      merchant: parsed.receipt.merchant,
+      purchaseDate: parsed.receipt.purchaseDate,
+      totalCents: parsed.receipt.totalCents,
+      items: parsed.receipt.items.map((item) => ({
+        description: item.description,
+        totalCents: item.totalCents,
+        quantity: item.quantity,
+        raw: item.raw,
+      })),
+    };
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any).rpc("apply_receipt_repaste", {
+    const client = supabase as any;
+    if (confirmed) {
+      const { data, error } = await client.rpc("apply_confirmed_receipt_repaste", {
+        p_receipt_id: receiptId,
+        p_source_text: originalText.slice(0, 50_000),
+        p_parsed_payload: parsedPayload,
+        p_plan: payload,
+        p_idempotency_key: idempotencyKey,
+        p_reason: "user_repaste",
+      });
+      if (error) return { ok: false, error: mapReceiptRpcError(error.message) };
+      const amendmentExpenseId = String(data ?? "");
+      if (!amendmentExpenseId) {
+        return { ok: false, error: "Could not start a correction. Try again." };
+      }
+      invalidate(householdId, receiptId);
+      revalidatePath(`/app/${householdId}/money/expenses`);
+      return {
+        ok: true,
+        message: "Correction started from the corrected receipt.",
+        data: { receiptId, amendmentExpenseId },
+      };
+    }
+    const { data, error } = await client.rpc("apply_receipt_repaste", {
       p_receipt_id: receiptId,
       p_source_text: originalText.slice(0, 50_000),
-      p_parsed_payload: {
-        merchant: parsed.receipt.merchant,
-        purchaseDate: parsed.receipt.purchaseDate,
-        totalCents: parsed.receipt.totalCents,
-        items: parsed.receipt.items.map((item) => ({
-          description: item.description,
-          totalCents: item.totalCents,
-          quantity: item.quantity,
-          raw: item.raw,
-        })),
-      },
+      p_parsed_payload: parsedPayload,
       p_plan: payload,
       p_idempotency_key: idempotencyKey,
       p_reason: "user_repaste",

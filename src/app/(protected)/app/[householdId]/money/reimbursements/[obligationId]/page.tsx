@@ -4,7 +4,9 @@ import { assertActiveMembership } from "@/lib/household-context";
 import { formatMoney } from "@/lib/expenses/display";
 import { formatAuditEventLabel } from "@/lib/presentation/audit-events";
 import { listActiveMemberOptions } from "@/lib/expenses/queries";
-import { getObligationBalance } from "@/lib/payments/queries";
+import { getObligationBalance, loadObligationPurchaseSources } from "@/lib/payments/queries";
+import { ObligationSourceLinks } from "@/components/payments/ObligationSourceLinks";
+import { sourceFromMaps } from "@/lib/payments/obligation-source";
 import { SettlementStatusBadge } from "@/components/ui/status-badge";
 import { AppBackButton } from "@/components/app-back-button";
 import { ActionForm } from "@/components/action-form";
@@ -56,6 +58,10 @@ export default async function ObligationDetailPage({
     ]);
 
   const isCreditor = ctx.membershipId === balance.creditor_membership_id;
+  const sources = await loadObligationPurchaseSources(householdId, [
+    balance.expense_id,
+  ]);
+  const source = sourceFromMaps(balance.expense_id, balance.obligation_kind, sources);
 
   return (
     <main className="space-y-6">
@@ -73,12 +79,7 @@ export default async function ObligationDetailPage({
             ? "A correction means this money should go the other way."
             : "From a shared purchase."}
         </p>
-        <Link
-          href={`/app/${householdId}/money/expenses/${balance.expense_id}`}
-          className="text-sm underline"
-        >
-          Source expense
-        </Link>
+        <ObligationSourceLinks householdId={householdId} source={source} />
       </header>
 
       <section
