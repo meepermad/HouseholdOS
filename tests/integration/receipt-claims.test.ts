@@ -27,7 +27,8 @@ const CLAIM_RPCS = [
   "apply_remaining_receipt_lines",
   "remind_receipt_claiming",
   "record_receipt_orphan_cleanup",
-  "mark_receipt_ocr_outcome",
+  "apply_receipt_repaste",
+  "acknowledge_receipt_correction",
 ] as const;
 
 describe.skipIf(!hasSupabase)("receipt claim RPCs", () => {

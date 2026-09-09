@@ -160,6 +160,10 @@ const DETAILED_FALLBACKS: Record<string, (actor: string) => PushContent> = {
     title: "A receipt still needs your items",
     body: "Select anything that belongs to you.",
   }),
+  "receipt.updated": () => ({
+    title: "Receipt was updated",
+    body: "A pasted receipt was corrected. Review your items if anything looks different.",
+  }),
   // Calendar fallbacks stay privacy-safe: never include the event title,
   // description, location, or guest details in push copy.
   "calendar.event_created": (actor) => ({

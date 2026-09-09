@@ -31,6 +31,9 @@ vi.mock("@/app/actions/receipts", () => ({
   finishReceiptClaimingAction: vi.fn(async () => ({ ok: true })),
   finalizeReceiptClaimsAction: vi.fn(async () => ({ ok: true })),
   remindReceiptClaimingAction: vi.fn(async () => ({ ok: true })),
+  previewRepasteReceiptAction: vi.fn(async () => ({ ok: true, previewJson: "{}" })),
+  applyRepasteReceiptAction: vi.fn(async () => ({ ok: true })),
+  acknowledgeReceiptCorrectionAction: vi.fn(async () => ({ ok: true })),
 }));
 
 const members = [

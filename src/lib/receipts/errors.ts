@@ -96,7 +96,21 @@ export function mapReceiptRpcError(message: string): string {
   if (m.includes("claim_overclaim")) {
     return "That would claim more than is left on this item.";
   }
-  if (m.includes("claim_finalized")) return "This receipt is already submitted.";
+  if (m.includes("claim_finalized") || m.includes("receipt_already_confirmed")) {
+    return "This receipt is already submitted.";
+  }
+  if (m.includes("claim_needs_review") || m.includes("receipt_claim_review_required")) {
+    return "A claim needs review before you can continue.";
+  }
+  if (m.includes("receipt_financial_review_required")) {
+    return "Review the updated amounts before submitting.";
+  }
+  if (m.includes("claimed_line_removal_requires_confirmation")) {
+    return "This corrected receipt removes an item that already belongs to someone. Confirm that change first.";
+  }
+  if (m.includes("receipt_not_editable")) {
+    return "This receipt can no longer be re-pasted.";
+  }
   if (m.includes("claim_not_open")) return "This receipt is not open for claiming.";
   if (m.includes("not authenticated") || m.includes("jwt")) {
     return "Your session expired. Sign in again, then you can add this receipt.";

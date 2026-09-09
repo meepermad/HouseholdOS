@@ -29,6 +29,13 @@ import {
   userFacingPasteError,
 } from "@/lib/receipts/paste/parse";
 import { pastedReceiptToExtraction } from "@/lib/receipts/paste/to-extraction";
+import {
+  buildRepastePlan,
+  serializeRepasteApplyPayload,
+  type DescriptionChoice,
+} from "@/lib/receipts/paste/repaste-plan";
+import { isReceiptRepasteEditable } from "@/lib/receipts/paste/display-description";
+import { buildCurrentRepasteSnapshot } from "@/lib/receipts/paste/snapshot";
 import { listActiveMemberOptions } from "@/lib/expenses/queries";
 
 async function db(householdId: string) {
@@ -832,6 +839,246 @@ export async function deleteReceiptAliasAction(
     if (error) return { ok: false, error: error.message };
     invalidate(householdId);
     return { ok: true, message: "Alias deleted." };
+  } catch (e) {
+    return { ok: false, error: toPublicErrorMessage(e) };
+  }
+}
+
+export type RepastePreviewActionResult =
+  | { ok: true; previewJson: string }
+  | { ok: false; error: string };
+
+async function loadReceiptRepasteSnapshot(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  supabase: any,
+  householdId: string,
+  receiptId: string,
+) {
+  const members = await listActiveMemberOptions(householdId);
+  const [{ data: receipt }, { data: lines }, { data: claimRows }, { data: extraction }] =
+    await Promise.all([
+      supabase
+        .from("expense_receipts")
+        .select(
+          "id, status, merchant_corrected, purchase_date_corrected, declared_total_cents, intake_source, expense_id",
+        )
+        .eq("id", receiptId)
+        .eq("household_id", householdId)
+        .maybeSingle(),
+      supabase
+        .from("expense_receipt_line_items")
+        .select(
+          "id, sort_index, ocr_text, corrected_name, source_text, quantity, total_price_cents, classification, participant_membership_ids, description_edited_by_user",
+        )
+        .eq("receipt_id", receiptId)
+        .order("sort_index"),
+      supabase
+        .from("expense_receipt_line_claims")
+        .select("line_item_id, membership_id, quantity, claim_kind")
+        .eq("receipt_id", receiptId)
+        .is("retracted_at", null),
+      supabase
+        .from("expense_receipt_extractions")
+        .select("proposed")
+        .eq("receipt_id", receiptId)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+    ]);
+  if (!receipt) return { ok: false as const, error: "Receipt not found." };
+  const proposed = (extraction?.proposed ?? {}) as {
+    subtotalCents?: number | null;
+    taxCents?: number | null;
+    tipCents?: number | null;
+    feeCents?: number | null;
+    discountCents?: number | null;
+  };
+  const snapshot = buildCurrentRepasteSnapshot({
+    receiptId,
+    status: receipt.status,
+    merchant: receipt.merchant_corrected,
+    purchaseDate: receipt.purchase_date_corrected,
+    totalCents: receipt.declared_total_cents,
+    subtotalCents: proposed.subtotalCents ?? null,
+    taxCents: proposed.taxCents ?? null,
+    tipCents: proposed.tipCents ?? null,
+    feeCents: proposed.feeCents ?? null,
+    discountCents: proposed.discountCents ?? null,
+    members,
+    lines: (lines ?? []).map(
+      (l: {
+        id: string;
+        sort_index: number;
+        ocr_text: string | null;
+        corrected_name: string | null;
+        source_text: string | null;
+        quantity: number | null;
+        total_price_cents: number | null;
+        classification: string | null;
+        participant_membership_ids: string[] | null;
+        description_edited_by_user: boolean | null;
+      }) => ({
+        id: l.id,
+        sortIndex: l.sort_index,
+        ocrText: l.ocr_text,
+        correctedName: l.corrected_name,
+        sourceText: l.source_text,
+        quantity: l.quantity,
+        totalPriceCents: l.total_price_cents,
+        classification: l.classification,
+        participantMembershipIds: l.participant_membership_ids,
+        descriptionEditedByUser: l.description_edited_by_user,
+      }),
+    ),
+    claims: (claimRows ?? []).map(
+      (c: {
+        line_item_id: string;
+        membership_id: string;
+        quantity: number;
+        claim_kind: "mine" | "assigned" | "shared" | "household" | "excluded" | "quantity";
+      }) => ({
+        lineItemId: c.line_item_id,
+        membershipId: c.membership_id,
+        quantity: Number(c.quantity) || 1,
+        kind: c.claim_kind,
+      }),
+    ),
+  });
+  return { ok: true as const, snapshot, members };
+}
+
+function parseRepasteChoices(formData: FormData): {
+  acceptedRemovedClaimLineIds: string[];
+  descriptionChoices: Record<string, DescriptionChoice>;
+} {
+  const acceptedRemovedClaimLineIds = String(formData.get("acceptedRemovedLineIds") ?? "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  let descriptionChoices: Record<string, DescriptionChoice> = {};
+  const raw = String(formData.get("descriptionChoicesJson") ?? "").trim();
+  if (raw) {
+    try {
+      descriptionChoices = JSON.parse(raw) as Record<string, DescriptionChoice>;
+    } catch {
+      descriptionChoices = {};
+    }
+  }
+  return { acceptedRemovedClaimLineIds, descriptionChoices };
+}
+
+export async function previewRepasteReceiptAction(
+  _prev: RepastePreviewActionResult | null,
+  formData: FormData,
+): Promise<RepastePreviewActionResult> {
+  try {
+    const householdId = String(formData.get("householdId") ?? "");
+    const receiptId = String(formData.get("receiptId") ?? "");
+    const originalText = String(formData.get("originalText") ?? "");
+    const { supabase } = await db(householdId);
+    const loaded = await loadReceiptRepasteSnapshot(supabase, householdId, receiptId);
+    if (!loaded.ok) return { ok: false, error: loaded.error };
+    if (!isReceiptRepasteEditable(loaded.snapshot.status)) {
+      return {
+        ok: false,
+        error: "This receipt is already submitted. Use Correct receipt instead.",
+      };
+    }
+    const parsed = parseHouseholdOsReceipt(originalText, loaded.members);
+    if (!parsed.ok || !parsed.receipt) {
+      return {
+        ok: false,
+        error: userFacingPasteError(parsed.problems, parsed.ok ? null : parsed.error),
+      };
+    }
+    const choices = parseRepasteChoices(formData);
+    const plan = buildRepastePlan(loaded.snapshot, parsed.receipt, choices);
+    return { ok: true, previewJson: JSON.stringify(plan) };
+  } catch (e) {
+    return { ok: false, error: toPublicErrorMessage(e) };
+  }
+}
+
+export async function applyRepasteReceiptAction(
+  _prev: ActionResult | null,
+  formData: FormData,
+): Promise<ActionResult> {
+  try {
+    const householdId = String(formData.get("householdId") ?? "");
+    const receiptId = String(formData.get("receiptId") ?? "");
+    const originalText = String(formData.get("originalText") ?? "");
+    const idempotencyKey =
+      String(formData.get("idempotencyKey") ?? "").trim() || randomUUID();
+    const { supabase } = await db(householdId);
+    const loaded = await loadReceiptRepasteSnapshot(supabase, householdId, receiptId);
+    if (!loaded.ok) return { ok: false, error: loaded.error };
+    if (!isReceiptRepasteEditable(loaded.snapshot.status)) {
+      return {
+        ok: false,
+        error: "This receipt is already submitted. Use Correct receipt instead.",
+      };
+    }
+    const parsed = parseHouseholdOsReceipt(originalText, loaded.members);
+    if (!parsed.ok || !parsed.receipt) {
+      return {
+        ok: false,
+        error: userFacingPasteError(parsed.problems, parsed.ok ? null : parsed.error),
+      };
+    }
+    const choices = parseRepasteChoices(formData);
+    const plan = buildRepastePlan(loaded.snapshot, parsed.receipt, choices);
+    if (plan.applyBlockedReason) {
+      return { ok: false, error: plan.applyBlockedReason };
+    }
+    const payload = serializeRepasteApplyPayload(
+      plan,
+      choices.acceptedRemovedClaimLineIds,
+    );
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data, error } = await (supabase as any).rpc("apply_receipt_repaste", {
+      p_receipt_id: receiptId,
+      p_source_text: originalText.slice(0, 50_000),
+      p_parsed_payload: {
+        merchant: parsed.receipt.merchant,
+        purchaseDate: parsed.receipt.purchaseDate,
+        totalCents: parsed.receipt.totalCents,
+        items: parsed.receipt.items.map((item) => ({
+          description: item.description,
+          totalCents: item.totalCents,
+          quantity: item.quantity,
+          raw: item.raw,
+        })),
+      },
+      p_plan: payload,
+      p_idempotency_key: idempotencyKey,
+      p_reason: "user_repaste",
+    });
+    if (error) return { ok: false, error: mapReceiptRpcError(error.message) };
+    if (data && String(data) !== receiptId) {
+      return { ok: false, error: "Could not update this receipt. Try again." };
+    }
+    invalidate(householdId, receiptId);
+    return { ok: true, message: "Corrected receipt applied.", data: { receiptId } };
+  } catch (e) {
+    return { ok: false, error: toPublicErrorMessage(e) };
+  }
+}
+
+export async function acknowledgeReceiptCorrectionAction(
+  _prev: ActionResult | null,
+  formData: FormData,
+): Promise<ActionResult> {
+  try {
+    const householdId = String(formData.get("householdId") ?? "");
+    const receiptId = String(formData.get("receiptId") ?? "");
+    const { supabase } = await db(householdId);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase as any).rpc("acknowledge_receipt_correction", {
+      p_receipt_id: receiptId,
+    });
+    if (error) return { ok: false, error: mapReceiptRpcError(error.message) };
+    invalidate(householdId, receiptId);
+    return { ok: true, message: "Correction reviewed." };
   } catch (e) {
     return { ok: false, error: toPublicErrorMessage(e) };
   }

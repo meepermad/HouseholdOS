@@ -54,6 +54,14 @@ describe.skipIf(!hasSupabase)("receipts RLS authorization matrix", () => {
       .limit(0);
     expect(extractionsErr).toBeNull();
 
+    const { error: revisionsErr } = await admin
+      .from("expense_receipt_transcription_revisions")
+      .select("id")
+      .limit(0);
+    if (revisionsErr) {
+      expect(revisionsErr.message.toLowerCase()).not.toMatch(/does not exist/);
+    }
+
     const { error: wrongNameErr } = await admin
       .from("expense_receipt_extracted")
       .select("id")

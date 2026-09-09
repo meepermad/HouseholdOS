@@ -14,7 +14,9 @@ import {
   setReceiptSplitWorkflowAction,
   unclaimReceiptLineAction,
   updateReceiptReviewAction,
+  acknowledgeReceiptCorrectionAction,
 } from "@/app/actions/receipts";
+import { ReceiptRepastePanel, type TranscriptionRevisionSummary } from "@/components/receipts/ReceiptRepastePanel";
 import { CurrencyAmountInput } from "@/components/ui/currency-field";
 import { formatCentsAsUsd } from "@/lib/receipts/currency";
 import { describeReceiptReadFailure, SHARE_NEEDS_PERSON } from "@/lib/receipts/errors";
@@ -43,6 +45,9 @@ export type ReviewLineItem = {
   resourceDestination: ResourceDestination;
   reviewStatus: string;
   participantMembershipIds: string[];
+  sourceText?: string;
+  descriptionEditedByUser?: boolean;
+  claimReviewRequired?: boolean;
 };
 
 export type ReviewMember = { id: string; label: string };
@@ -82,6 +87,11 @@ type Props = {
   startInClaimMode?: boolean;
   intakeSource?: "upload" | "camera" | "paste" | null;
   originalTranscription?: string | null;
+  transcriptionCorrected?: boolean;
+  revisionCount?: number;
+  revisions?: TranscriptionRevisionSummary[];
+  financialReviewRequired?: boolean;
+  expenseId?: string | null;
 };
 
 type Workflow = "choose" | "equal_all" | "assign_items" | "claiming" | "review";
@@ -113,6 +123,11 @@ export function ReceiptReviewForm({
   startInClaimMode = false,
   intakeSource = null,
   originalTranscription = null,
+  transcriptionCorrected = false,
+  revisionCount = 0,
+  revisions = [],
+  financialReviewRequired = false,
+  expenseId = null,
 }: Props) {
   const [merchant, setMerchant] = useState(initialMerchant);
   const [purchaseDate, setPurchaseDate] = useState(initialDate);
@@ -142,7 +157,6 @@ export function ReceiptReviewForm({
   const [assignOpen, setAssignOpen] = useState(splitWorkflow === "assign_items");
   const [localClaims, setLocalClaims] = useState(claims);
   const [showAdvanced, setShowAdvanced] = useState(false);
-  const [showOriginal, setShowOriginal] = useState(false);
   const pasted = intakeSource === "paste";
   const [message, setMessage] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -277,9 +291,13 @@ export function ReceiptReviewForm({
           ? "null"
           : JSON.stringify(
               lines.map((l, i) => ({
+                id: l.id,
                 sortIndex: i,
-                ocrText: l.ocrText,
+                ocrText: l.sourceText ?? l.ocrText,
+                sourceText: l.sourceText ?? l.ocrText,
                 correctedName: l.correctedName,
+                displayDescription: l.correctedName,
+                descriptionEditedByUser: Boolean(l.descriptionEditedByUser),
                 quantity: l.quantity,
                 unitPriceCents: l.unitPriceCents,
                 totalPriceCents: l.totalPriceCents,
@@ -390,17 +408,21 @@ export function ReceiptReviewForm({
         "lineItemsJson",
         JSON.stringify(
           lines.map((l, i) => ({
-            sortIndex: i,
-            ocrText: l.ocrText,
-            correctedName: l.correctedName,
-            quantity: l.quantity,
-            unitPriceCents: l.unitPriceCents,
-            totalPriceCents: l.totalPriceCents,
-            classification: l.classification,
-            resourceDestination: "none",
-            reviewStatus: l.reviewStatus,
-            participantMembershipIds: l.participantMembershipIds,
-          })),
+                id: l.id,
+                sortIndex: i,
+                ocrText: l.sourceText ?? l.ocrText,
+                sourceText: l.sourceText ?? l.ocrText,
+                correctedName: l.correctedName,
+                displayDescription: l.correctedName,
+                descriptionEditedByUser: Boolean(l.descriptionEditedByUser),
+                quantity: l.quantity,
+                unitPriceCents: l.unitPriceCents,
+                totalPriceCents: l.totalPriceCents,
+                classification: l.classification,
+                resourceDestination: "none",
+                reviewStatus: l.reviewStatus,
+                participantMembershipIds: l.participantMembershipIds,
+              })),
         ),
       );
       const saved = await updateReceiptReviewAction(null, header);
@@ -444,6 +466,35 @@ export function ReceiptReviewForm({
 
   return (
     <div className="space-y-6 pb-[calc(6rem+env(safe-area-inset-bottom))]" data-testid="receipt-review">
+      {financialReviewRequired && canCoordinate && !confirmed ? (
+        <div
+          className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm"
+          data-testid="receipt-financial-review"
+          role="status"
+        >
+          <p>Review the updated amounts before submitting.</p>
+          <button
+            type="button"
+            className="mt-2 min-h-11 rounded-md border border-border bg-surface px-3"
+            data-testid="receipt-acknowledge-correction"
+            disabled={pending}
+            onClick={() => {
+              startTransition(async () => {
+                const fd = new FormData();
+                fd.set("householdId", householdId);
+                fd.set("receiptId", receiptId);
+                const res = await acknowledgeReceiptCorrectionAction(null, fd);
+                refreshAfter(
+                  res.ok,
+                  res.ok ? "Correction reviewed." : res.error ?? "Could not save.",
+                );
+              });
+            }}
+          >
+            I reviewed the amounts
+          </button>
+        </div>
+      ) : null}
       {duplicateOutcome && duplicateOutcome !== "none" ? (
         <div
           className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm"
@@ -530,7 +581,7 @@ export function ReceiptReviewForm({
               type="button"
               className="min-h-11 rounded-md border border-border px-3 text-sm"
               onClick={() => {
-                persistHeader();
+                persistHeader({ includeLines: false });
                 setHeaderOpen(false);
               }}
             >
@@ -567,24 +618,17 @@ export function ReceiptReviewForm({
           {lines.length === 1 ? "1 item found" : `${lines.length} items found`}
         </p>
         {pasted ? (
-          <div className="mt-3 space-y-2" data-testid="receipt-paste-source">
-            <p className="text-sm text-text-secondary">Source: Pasted transcription</p>
-            {originalTranscription ? (
-              <button
-                type="button"
-                className="text-sm font-medium text-primary"
-                onClick={() => setShowOriginal((v) => !v)}
-                data-testid="receipt-view-original"
-              >
-                {showOriginal ? "Hide original transcription" : "View original transcription"}
-              </button>
-            ) : null}
-            {showOriginal && originalTranscription ? (
-              <pre className="max-h-56 overflow-auto whitespace-pre-wrap rounded-md border border-border bg-background p-3 text-xs">
-                {originalTranscription}
-              </pre>
-            ) : null}
-          </div>
+          <ReceiptRepastePanel
+            householdId={householdId}
+            receiptId={receiptId}
+            status={status}
+            expenseId={expenseId}
+            originalTranscription={originalTranscription}
+            transcriptionCorrected={transcriptionCorrected}
+            revisionCount={revisionCount}
+            revisions={revisions}
+            claiming={status === "claiming"}
+          />
         ) : null}
         {!looksRight ? (
           <button
@@ -788,6 +832,7 @@ export function ReceiptReviewForm({
                         {line.quantity && line.quantity > 1
                           ? ` · qty ${line.quantity} (line total)`
                           : ""}
+                        {line.claimReviewRequired ? " · Claim needs review" : ""}
                       </p>
                     </button>
                   </div>
@@ -805,7 +850,11 @@ export function ReceiptReviewForm({
                             setLines((prev) =>
                               prev.map((l, i) =>
                                 i === index
-                                  ? { ...l, correctedName: e.target.value }
+                                  ? {
+                                      ...l,
+                                      correctedName: e.target.value,
+                                      descriptionEditedByUser: true,
+                                    }
                                   : l,
                               ),
                             )

@@ -12,6 +12,8 @@ import { describeReceiptOcrStatus } from "@/lib/receipts/adapters";
 import type { LineItemClassification, ResourceDestination } from "@/lib/receipts/types";
 import { listActiveMemberOptions } from "@/lib/expenses/queries";
 import { receiptReviewFormKey } from "@/lib/receipts/review-identity";
+import { mapPersistedLineToReview } from "@/lib/receipts/paste/review-lines";
+import type { TranscriptionRevisionSummary } from "@/components/receipts/ReceiptRepastePanel";
 
 export const dynamic = "force-dynamic";
 
@@ -52,7 +54,7 @@ export default async function ReceiptDetailPage({
     );
   }
 
-  const [{ data: lines }, { data: dup }, { data: extraction }, { data: inviteRows }, { data: claimRows }] =
+  const [{ data: lines }, { data: dup }, { data: extraction }, { data: inviteRows }, { data: claimRows }, { data: revisionRows }] =
     await Promise.all([
       supabase
         .from("expense_receipt_line_items")
@@ -82,6 +84,11 @@ export default async function ReceiptDetailPage({
         .select("line_item_id, membership_id, quantity, claim_kind")
         .eq("receipt_id", receiptId)
         .is("retracted_at", null),
+      supabase
+        .from("expense_receipt_transcription_revisions")
+        .select("id, revision_number, created_at, reason, source_text, superseded_at")
+        .eq("receipt_id", receiptId)
+        .order("revision_number", { ascending: false }),
     ]);
 
   const proposed = (extraction?.proposed ?? {}) as {
@@ -95,12 +102,18 @@ export default async function ReceiptDetailPage({
     typeof proposed.discountCents === "number" ? proposed.discountCents : null;
 
   const ocr = describeReceiptOcrStatus();
+  const pasted =
+    receipt.intake_source === "paste" ||
+    receipt.file_name?.startsWith("pasted-receipt") ||
+    receipt.mime_type === "text/plain" ||
+    (extraction?.processing_meta as { source?: string } | null)?.source === "paste";
   const reviewLines: ReviewLineItem[] = (lines ?? []).map(
     (l: {
       id: string;
       sort_index: number;
       ocr_text: string | null;
       corrected_name: string | null;
+      source_text?: string | null;
       quantity: number | null;
       unit_price_cents: number | null;
       total_price_cents: number | null;
@@ -108,19 +121,46 @@ export default async function ReceiptDetailPage({
       resource_destination: string;
       review_status: string;
       participant_membership_ids: string[] | null;
-    }) => ({
-      id: l.id,
-      sortIndex: l.sort_index,
-      ocrText: l.ocr_text ?? "",
-      correctedName: l.corrected_name ?? l.ocr_text ?? "",
-      quantity: l.quantity,
-      unitPriceCents: l.unit_price_cents,
-      totalPriceCents: l.total_price_cents,
-      classification: l.classification as LineItemClassification,
-      resourceDestination: l.resource_destination as ResourceDestination,
-      reviewStatus: l.review_status,
-      participantMembershipIds: l.participant_membership_ids ?? [],
-    }),
+      description_edited_by_user?: boolean | null;
+      description_source?: string | null;
+      claim_review_required?: boolean | null;
+    }) => {
+      const mapped = mapPersistedLineToReview(
+        {
+          id: l.id,
+          sortIndex: l.sort_index,
+          ocr_text: l.ocr_text,
+          corrected_name: l.corrected_name,
+          source_text: l.source_text,
+          quantity: l.quantity,
+          unit_price_cents: l.unit_price_cents,
+          total_price_cents: l.total_price_cents,
+          classification: l.classification,
+          participant_membership_ids: l.participant_membership_ids,
+          description_edited_by_user: l.description_edited_by_user,
+          description_source: l.description_source,
+          claim_review_required: l.claim_review_required,
+          review_status: l.review_status,
+        },
+        pasted,
+      );
+      return {
+        id: l.id,
+        sortIndex: l.sort_index,
+        ocrText: mapped.sourceText,
+        sourceText: mapped.sourceText,
+        correctedName: mapped.correctedName,
+        quantity: l.quantity,
+        unitPriceCents: l.unit_price_cents,
+        totalPriceCents: l.total_price_cents,
+        classification: l.classification as LineItemClassification,
+        resourceDestination: l.resource_destination as ResourceDestination,
+        reviewStatus: l.review_status,
+        participantMembershipIds: l.participant_membership_ids ?? [],
+        descriptionEditedByUser: mapped.descriptionEditedByUser,
+        claimReviewRequired: mapped.claimReviewRequired,
+      };
+    },
   );
 
   if (reviewLines.length === 0) {
@@ -243,19 +283,31 @@ export default async function ReceiptDetailPage({
         ocrOutcome={receipt.ocr_outcome ?? null}
         lastError={receipt.last_error ?? null}
         startInClaimMode={claim === "1" || receipt.status === "claiming"}
-        intakeSource={
-          receipt.intake_source === "paste" ||
-          receipt.file_name?.startsWith("pasted-receipt") ||
-          receipt.mime_type === "text/plain" ||
-          (extraction?.processing_meta as { source?: string } | null)?.source === "paste"
-            ? "paste"
-            : receipt.intake_source === "camera"
-              ? "camera"
-              : "upload"
-        }
+        intakeSource={pasted ? "paste" : receipt.intake_source === "camera" ? "camera" : "upload"}
         originalTranscription={
-          typeof extraction?.ocr_full_text === "string" ? extraction.ocr_full_text : null
+          (revisionRows ?? []).find((r: { superseded_at: string | null }) => r.superseded_at == null)
+            ?.source_text ??
+          (typeof extraction?.ocr_full_text === "string" ? extraction.ocr_full_text : null)
         }
+        transcriptionCorrected={Boolean(receipt.transcription_corrected)}
+        revisionCount={(revisionRows ?? []).length}
+        revisions={((revisionRows ?? []) as Array<{
+          id: string;
+          revision_number: number;
+          created_at: string;
+          reason: "initial_paste" | "user_repaste";
+          source_text: string;
+          superseded_at: string | null;
+        }>).map((r): TranscriptionRevisionSummary => ({
+          id: r.id,
+          revisionNumber: r.revision_number,
+          createdAt: r.created_at,
+          reason: r.reason,
+          active: r.superseded_at == null,
+          sourceText: r.source_text,
+        }))}
+        financialReviewRequired={Boolean(receipt.financial_review_required)}
+        expenseId={receipt.expense_id ?? null}
       />
     </main>
   );

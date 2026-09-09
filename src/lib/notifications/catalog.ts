@@ -229,6 +229,7 @@ export const EVENT_RECEIPT_CLAIM_COMPLETED = "receipt.claim_completed" as const;
 export const EVENT_RECEIPT_READY_FOR_PAYER_REVIEW =
   "receipt.ready_for_payer_review" as const;
 export const EVENT_RECEIPT_CLAIM_REMINDER = "receipt.claim_reminder" as const;
+export const EVENT_RECEIPT_UPDATED = "receipt.updated" as const;
 
 export const EVENT_SETTLEMENT_INTERMEDIARY_APPROVAL_REQUIRED =
   "settlement.intermediary_approval_required" as const;
@@ -575,6 +576,17 @@ export const NOTIFICATION_CATALOG: Readonly<Record<string, CatalogEntry>> = {
     deepLinkPattern: RECEIPT_CLAIM_LINK,
     digestAllowed: false,
     actionOriented: true,
+    privacy: "generic_ok",
+    active: true,
+  }),
+  [EVENT_RECEIPT_UPDATED]: entry({
+    eventType: EVENT_RECEIPT_UPDATED,
+    category: "expenses",
+    defaultUrgency: "normal",
+    recipientRule: "explicit",
+    deepLinkPattern: RECEIPT_REVIEW_LINK,
+    digestAllowed: true,
+    actionOriented: false,
     privacy: "generic_ok",
     active: true,
   }),

@@ -45,6 +45,75 @@ Clover Valley Mini Chocolate Chips, 10 oz | 3.75 | 1
 END
 `;
 
+/** Spec fixture: human-readable names must survive review → expense. */
+export const PASTE_FIXTURE_ALDI_AUG20 = `HOUSEHOLDOS RECEIPT
+
+Merchant: ALDI
+Date: 2026-08-20
+Total: 31.92
+Subtotal: 31.01
+Tax: 0.91
+
+ITEMS
+85/15 Ground Beef | 16.10 | 1
+French Green Beans | 5.98 | 2
+Yellow Onions | 2.39 | 1
+Powdered Sugar | 1.85 | 1
+Refried Beans | 0.99 | 1
+Fajita Tortillas, 20 count | 3.70 | 2
+
+END
+`;
+
+export const PASTE_FIXTURE_ALDI_AUG20_CORRECTED = `HOUSEHOLDOS RECEIPT
+
+Merchant: ALDI
+Date: 2026-08-20
+Total: 31.92
+Subtotal: 31.01
+Tax: 0.91
+
+ITEMS
+85/15 Ground Beef | 16.10 | 1
+French-Style Green Beans | 5.98 | 2
+Yellow Onions, 3 lb Bag | 2.39 | 1
+Powdered Sugar | 1.85 | 1
+Refried Beans | 0.99 | 1
+Fajita Tortillas, 20 count | 3.70 | 2
+
+END
+`;
+
+export const PASTE_FIXTURE_WALMART_TRASH = `HOUSEHOLDOS RECEIPT
+
+Merchant: Walmart
+Date: 2026-08-11
+Total: 48.71
+Subtotal: 44.44
+Tax: 4.27
+
+ITEMS
+Mainstays 13.2-Gallon Step Trash Can | 34.46 | 1
+Great Value 14.5-Gallon Trash Bags | 9.98 | 1
+
+END
+`;
+
+export const PASTE_FIXTURE_WALMART_TRASH_CORRECTED = `HOUSEHOLDOS RECEIPT
+
+Merchant: Walmart
+Date: 2026-08-11
+Total: 48.71
+Subtotal: 44.44
+Tax: 4.27
+
+ITEMS
+Mainstays 13.2-Gallon Step Trash Can, Black | 34.46 | 1
+Great Value 14.5-Gallon Trash Bags, 20 Count | 9.98 | 1
+
+END
+`;
+
 export const PASTE_FIXTURE_ALDI = `HOUSEHOLDOS RECEIPT
 
 Merchant: ALDI

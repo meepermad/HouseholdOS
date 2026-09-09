@@ -1,9 +1,13 @@
 import { createHash } from "node:crypto";
+import { pastedLinePersistenceFields } from "./display-description";
 import type { ParsedPasteReceipt } from "./parse";
 
 export type PastedExtractionLine = {
   ocrText: string;
   name: string;
+  displayDescription: string;
+  sourceText: string;
+  descriptionSource: "pasted";
   quantity: number;
   /** Derived unit price; never treat this as the line total. */
   unitPriceCents: number | null;
@@ -51,9 +55,13 @@ export function pastedReceiptToExtraction(
     const derivedUnitPriceCents =
       item.derivedUnitPriceCents ??
       (item.quantity > 1 ? Math.trunc(item.totalCents / item.quantity) : item.totalCents);
+    const fields = pastedLinePersistenceFields(item);
     return {
-      ocrText: item.raw,
-      name: item.description,
+      ocrText: fields.sourceText,
+      name: fields.displayDescription,
+      displayDescription: fields.displayDescription,
+      sourceText: fields.sourceText,
+      descriptionSource: fields.descriptionSource,
       quantity: item.quantity,
       unitPriceCents: derivedUnitPriceCents,
       totalPriceCents: lineTotalCents,

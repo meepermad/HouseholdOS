@@ -8,9 +8,13 @@ export {
   copyFormatExample,
   PASTE_DEV_FIXTURES,
   PASTE_FIXTURE_ALDI,
+  PASTE_FIXTURE_ALDI_AUG20,
+  PASTE_FIXTURE_ALDI_AUG20_CORRECTED,
   PASTE_FIXTURE_DOLLAR_GENERAL,
   PASTE_FIXTURE_PUNCTUATION,
   PASTE_FIXTURE_WALMART,
+  PASTE_FIXTURE_WALMART_TRASH,
+  PASTE_FIXTURE_WALMART_TRASH_CORRECTED,
   PASTE_FIXTURES,
   pasteFixtureById,
 } from "./fixtures";
@@ -60,3 +64,12 @@ export {
 } from "./reconcile";
 export { PASTE_MAX_CHARS, escapePastedText, sanitizePastedReceipt } from "./sanitize";
 export { hashPastedText, pastedReceiptToExtraction } from "./to-extraction";
+export {
+  displayDescriptionFromPastedSource,
+  isReceiptRepasteEditable,
+  pastedLinePersistenceFields,
+  resolvePastedDisplayDescription,
+} from "./display-description";
+export { reconcileReceiptLines } from "./line-reconcile";
+export { buildRepastePlan } from "./repaste-plan";
+export { buildRepasteDiffRows, REPASTE_CHANGE_LABELS } from "./repaste-diff";

@@ -31,6 +31,9 @@ vi.mock("@/app/actions/receipts", () => ({
   finalizeReceiptClaimsAction: vi.fn(async () => ({ ok: true })),
   remindReceiptClaimingAction: vi.fn(async () => ({ ok: true })),
   markReceiptOcrOutcomeAction: vi.fn(async () => ({ ok: true })),
+  previewRepasteReceiptAction: vi.fn(async () => ({ ok: true, previewJson: "{}" })),
+  applyRepasteReceiptAction: vi.fn(async () => ({ ok: true })),
+  acknowledgeReceiptCorrectionAction: vi.fn(async () => ({ ok: true })),
 }));
 
 vi.mock("@/lib/receipts/client/tesseract-session", () => ({
