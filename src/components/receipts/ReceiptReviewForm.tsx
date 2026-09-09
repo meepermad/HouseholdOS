@@ -289,7 +289,10 @@ export function ReceiptReviewForm({
         ),
       );
       const res = await updateReceiptReviewAction(null, fd);
-      refreshAfter(res.ok, res.ok ? undefined : res.error ?? "Could not save.");
+      afterLineMutation(
+        res.ok,
+        res.ok ? undefined : res.error ?? "Could not save.",
+      );
     });
   }
 

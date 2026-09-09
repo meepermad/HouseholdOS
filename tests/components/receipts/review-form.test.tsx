@@ -300,12 +300,7 @@ describe("ReceiptReviewForm assign items", () => {
     const user = userEvent.setup();
     renderAssignForm();
     await openAssignment(user);
-    await waitFor(() => {
-      expect(routerMocks.refresh).toHaveBeenCalled();
-    });
-    routerMocks.refresh.mockClear();
-    routerMocks.push.mockClear();
-
+    expect(routerMocks.refresh).not.toHaveBeenCalled();
     expect(screen.getByTestId("receipt-review").querySelector("form")).toBeNull();
 
     await user.click(screen.getByTestId("assign-line-l1"));
