@@ -1,10 +1,20 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  assignReceiptLineAction,
+  claimReceiptLinesAction,
+  markReceiptLineSharedAction,
+} from "@/app/actions/receipts";
 import { ReceiptReviewForm } from "@/components/receipts/ReceiptReviewForm";
 
+const routerMocks = vi.hoisted(() => ({
+  refresh: vi.fn(),
+  push: vi.fn(),
+}));
+
 vi.mock("next/navigation", () => ({
-  useRouter: () => ({ refresh: vi.fn(), push: vi.fn() }),
+  useRouter: () => routerMocks,
 }));
 
 vi.mock("@/app/actions/receipts", () => ({
@@ -57,6 +67,53 @@ const lines = [
     participantMembershipIds: [],
   },
 ];
+
+const assignLines = [
+  ...lines,
+  {
+    id: "l3",
+    sortIndex: 2,
+    ocrText: "BREAD",
+    correctedName: "Bread",
+    quantity: 1,
+    unitPriceCents: 399,
+    totalPriceCents: 399,
+    classification: "needs_review" as const,
+    resourceDestination: "none" as const,
+    reviewStatus: "pending",
+    participantMembershipIds: [],
+  },
+  {
+    id: "l4",
+    sortIndex: 3,
+    ocrText: "BAG",
+    correctedName: "Bag fee",
+    quantity: 1,
+    unitPriceCents: 10,
+    totalPriceCents: 10,
+    classification: "needs_review" as const,
+    resourceDestination: "none" as const,
+    reviewStatus: "pending",
+    participantMembershipIds: [],
+  },
+];
+
+function renderAssignForm() {
+  return render(
+    <ReceiptReviewForm
+      householdId="hh"
+      receiptId="r1"
+      merchant="Target"
+      purchaseDate="2026-09-04"
+      declaredTotalCents={9240}
+      status="needs_review"
+      payerMembershipId="m1"
+      currentMembershipId="m1"
+      members={members}
+      lineItems={assignLines}
+    />,
+  );
+}
 
 describe("ReceiptReviewForm simple flow", () => {
   it("asks how to split after Looks right, without cents or allocation jargon", async () => {
@@ -218,4 +275,216 @@ describe("ReceiptReviewForm simple flow", () => {
     expect(screen.queryByTestId("receipt-line-items")).not.toBeInTheDocument();
     expect(screen.getByTestId("receipt-confirm-expense")).toBeEnabled();
   });
+});
+
+describe("ReceiptReviewForm assign items", () => {
+  beforeEach(() => {
+    routerMocks.refresh.mockClear();
+    routerMocks.push.mockClear();
+    vi.mocked(claimReceiptLinesAction).mockReset();
+    vi.mocked(claimReceiptLinesAction).mockResolvedValue({ ok: true });
+    vi.mocked(markReceiptLineSharedAction).mockReset();
+    vi.mocked(markReceiptLineSharedAction).mockResolvedValue({ ok: true });
+    vi.mocked(assignReceiptLineAction).mockReset();
+    vi.mocked(assignReceiptLineAction).mockResolvedValue({ ok: true });
+  });
+
+  async function openAssignment(user: ReturnType<typeof userEvent.setup>) {
+    await user.click(screen.getByTestId("receipt-looks-right"));
+    expect(screen.getByTestId("assign-items")).toHaveAttribute("type", "button");
+    await user.click(screen.getByTestId("assign-items"));
+    expect(screen.getByTestId("receipt-assign-panel")).toBeInTheDocument();
+  }
+
+  it("keeps assignment open while assigning multiple items, then closes on Done", async () => {
+    const user = userEvent.setup();
+    renderAssignForm();
+    await openAssignment(user);
+    await waitFor(() => {
+      expect(routerMocks.refresh).toHaveBeenCalled();
+    });
+    routerMocks.refresh.mockClear();
+    routerMocks.push.mockClear();
+
+    expect(screen.getByTestId("receipt-review").querySelector("form")).toBeNull();
+
+    await user.click(screen.getByTestId("assign-line-l1"));
+    expect(screen.getByTestId("receipt-assign-row")).toBeInTheDocument();
+    expect(screen.getByTestId("assign-mine")).toHaveAttribute("type", "button");
+    expect(screen.getByTestId("assign-shared")).toHaveAttribute("type", "button");
+    expect(screen.getByTestId("assign-exclude")).toHaveAttribute("type", "button");
+    expect(screen.getByTestId("receipt-assign-done")).toHaveAttribute("type", "button");
+    expect(screen.getByTestId("receipt-assign-cancel")).toHaveAttribute("type", "button");
+
+    await user.click(screen.getByTestId("assign-mine"));
+    await waitFor(() => {
+      expect(screen.getByTestId("assign-line-status-l1")).toHaveTextContent("Yours");
+    });
+    expect(screen.getByTestId("receipt-assign-panel")).toBeInTheDocument();
+    expect(screen.getByTestId("receipt-assign-row")).toBeInTheDocument();
+    expect(routerMocks.refresh).not.toHaveBeenCalled();
+    expect(routerMocks.push).not.toHaveBeenCalled();
+
+    await user.click(screen.getByTestId("assign-line-l2"));
+    await user.click(screen.getByTestId("assign-shared"));
+    await waitFor(() => {
+      expect(screen.getByTestId("assign-line-status-l2")).toHaveTextContent(
+        "Shared with everyone",
+      );
+    });
+    expect(screen.getByTestId("receipt-assign-panel")).toBeInTheDocument();
+
+    await user.click(screen.getByTestId("assign-line-l3"));
+    await user.selectOptions(screen.getByTestId("assign-someone-else"), "m2");
+    await waitFor(() => {
+      expect(screen.getByTestId("assign-line-status-l3")).toHaveTextContent("Andrew's");
+    });
+    expect(screen.getByTestId("receipt-assign-panel")).toBeInTheDocument();
+    expect(screen.getByTestId("assign-someone-else")).toBeInTheDocument();
+
+    await user.click(screen.getByTestId("assign-line-l4"));
+    await user.click(screen.getByTestId("assign-exclude"));
+    await waitFor(() => {
+      expect(screen.getByTestId("assign-line-status-l4")).toHaveTextContent(
+        "Not reimbursed",
+      );
+    });
+    expect(screen.getByTestId("receipt-assign-panel")).toBeInTheDocument();
+
+    await user.click(screen.getByTestId("receipt-assign-done"));
+    expect(screen.queryByTestId("receipt-assign-panel")).not.toBeInTheDocument();
+    expect(screen.getByTestId("receipt-final-review")).toBeInTheDocument();
+    expect(claimReceiptLinesAction).toHaveBeenCalled();
+    expect(markReceiptLineSharedAction).toHaveBeenCalled();
+    expect(assignReceiptLineAction).toHaveBeenCalled();
+  });
+
+  it("closes assignment on Cancel and returns to split choice", async () => {
+    const user = userEvent.setup();
+    renderAssignForm();
+    await openAssignment(user);
+    await user.click(screen.getByTestId("receipt-assign-cancel"));
+    expect(screen.queryByTestId("receipt-assign-panel")).not.toBeInTheDocument();
+    expect(screen.getByTestId("receipt-split-choice")).toBeInTheDocument();
+  });
+
+  it("does not close on Escape or outside click", async () => {
+    const user = userEvent.setup();
+    renderAssignForm();
+    await openAssignment(user);
+    await user.click(screen.getByTestId("assign-line-l1"));
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(screen.getByTestId("receipt-assign-panel")).toBeInTheDocument();
+    expect(screen.getByTestId("receipt-assign-row")).toBeInTheDocument();
+    await user.click(document.body);
+    expect(screen.getByTestId("receipt-assign-panel")).toBeInTheDocument();
+    expect(screen.getByTestId("receipt-assign-row")).toBeInTheDocument();
+  });
+
+  it("keeps assignment open when a line mutation fails", async () => {
+    const user = userEvent.setup();
+    vi.mocked(claimReceiptLinesAction).mockResolvedValueOnce({
+      ok: false,
+      error: "Could not claim.",
+    });
+    renderAssignForm();
+    await openAssignment(user);
+    await user.click(screen.getByTestId("assign-line-l1"));
+    await user.click(screen.getByTestId("assign-mine"));
+    await waitFor(() => {
+      expect(screen.getByText("Could not claim.")).toBeInTheDocument();
+    });
+    expect(screen.getByTestId("receipt-assign-panel")).toBeInTheDocument();
+    expect(screen.getByTestId("receipt-assign-row")).toBeInTheDocument();
+    expect(screen.getByTestId("assign-line-status-l1")).not.toHaveTextContent("Yours");
+  });
+
+  it("keeps assignment open after a receipt prop refresh", async () => {
+    const user = userEvent.setup();
+    const { rerender } = renderAssignForm();
+    await openAssignment(user);
+    await user.click(screen.getByTestId("assign-line-l1"));
+    await user.click(screen.getByTestId("assign-mine"));
+    await waitFor(() => {
+      expect(screen.getByTestId("assign-line-status-l1")).toHaveTextContent("Yours");
+    });
+    rerender(
+      <ReceiptReviewForm
+        householdId="hh"
+        receiptId="r1"
+        merchant="Target"
+        purchaseDate="2026-09-04"
+        declaredTotalCents={9240}
+        status="needs_review"
+        splitWorkflow="assign_items"
+        payerMembershipId="m1"
+        currentMembershipId="m1"
+        members={members}
+        lineItems={assignLines.map((line) =>
+          line.id === "l1"
+            ? {
+                ...line,
+                classification: "personal_purchaser" as const,
+              }
+            : line,
+        )}
+        claims={[
+          {
+            lineItemId: "l1",
+            membershipId: "m1",
+            quantity: 1,
+            kind: "mine",
+          },
+        ]}
+      />,
+    );
+    expect(screen.getByTestId("receipt-assign-panel")).toBeInTheDocument();
+    expect(screen.getByTestId("receipt-assign-row")).toBeInTheDocument();
+    expect(screen.getByTestId("assign-line-status-l1")).toHaveTextContent("Yours");
+  });
+
+  it("ignores a duplicate Mine click while the first mutation is pending", async () => {
+    const user = userEvent.setup();
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    vi.mocked(claimReceiptLinesAction).mockImplementationOnce(async () => {
+      await gate;
+      return { ok: true };
+    });
+    renderAssignForm();
+    await openAssignment(user);
+    await user.click(screen.getByTestId("assign-line-l1"));
+    await user.click(screen.getByTestId("assign-mine"));
+    expect(screen.getByTestId("assign-mine")).toBeDisabled();
+    await user.click(screen.getByTestId("assign-mine"));
+    release();
+    await waitFor(() => {
+      expect(screen.getByTestId("assign-line-status-l1")).toHaveTextContent("Yours");
+    });
+    expect(claimReceiptLinesAction).toHaveBeenCalledTimes(1);
+    expect(screen.getByTestId("receipt-assign-panel")).toBeInTheDocument();
+  });
+
+  it.each([390, 430])(
+    "keeps assignment open after Mine at %ipx width",
+    async (width) => {
+      Object.defineProperty(window, "innerWidth", {
+        configurable: true,
+        writable: true,
+        value: width,
+      });
+      const user = userEvent.setup();
+      renderAssignForm();
+      await openAssignment(user);
+      await user.click(screen.getByTestId("assign-line-l1"));
+      await user.click(screen.getByTestId("assign-mine"));
+      await waitFor(() => {
+        expect(screen.getByTestId("assign-line-status-l1")).toHaveTextContent("Yours");
+      });
+      expect(screen.getByTestId("receipt-assign-panel")).toBeInTheDocument();
+      expect(screen.getByTestId("receipt-assign-done")).toBeInTheDocument();
+    },
+  );
 });

@@ -11,6 +11,7 @@ import {
 import { describeReceiptOcrStatus } from "@/lib/receipts/adapters";
 import type { LineItemClassification, ResourceDestination } from "@/lib/receipts/types";
 import { listActiveMemberOptions } from "@/lib/expenses/queries";
+import { receiptReviewFormKey } from "@/lib/receipts/review-identity";
 
 export const dynamic = "force-dynamic";
 
@@ -216,11 +217,7 @@ export default async function ReceiptDetailPage({
         </p>
       )}
       <ReceiptReviewForm
-        key={`${receiptId}:${receipt.status}:${claimList
-          .map((c) => `${c.lineItemId}:${c.membershipId}:${c.quantity}:${c.kind}`)
-          .join("|")}:${reviewLines
-          .map((l) => `${l.id}:${l.classification}:${l.totalPriceCents}`)
-          .join("|")}`}
+        key={receiptReviewFormKey(receiptId)}
         householdId={householdId}
         receiptId={receiptId}
         merchant={receipt.merchant_corrected ?? ""}

@@ -18,10 +18,18 @@ import {
 import { CurrencyAmountInput } from "@/components/ui/currency-field";
 import { formatCentsAsUsd } from "@/lib/receipts/currency";
 import { describeReceiptReadFailure, SHARE_NEEDS_PERSON } from "@/lib/receipts/errors";
-import { ownershipLabel, classificationToSimpleOwnership } from "@/lib/receipts/ownership";
+import {
+  ownershipLabel,
+  classificationToSimpleOwnership,
+  simpleOwnershipToClassification,
+} from "@/lib/receipts/ownership";
 import { previewReceiptSplit, type PreviewLine } from "@/lib/receipts/split-preview";
 import { remainingQuantity, type LineClaim } from "@/lib/receipts/claims";
-import type { LineItemClassification, ResourceDestination } from "@/lib/receipts/types";
+import type {
+  LineItemClassification,
+  LineOwnershipKind,
+  ResourceDestination,
+} from "@/lib/receipts/types";
 
 export type ReviewLineItem = {
   id?: string;
@@ -131,6 +139,8 @@ export function ReceiptReviewForm({
   );
   const [selected, setSelected] = useState<string[]>([]);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [assignOpen, setAssignOpen] = useState(splitWorkflow === "assign_items");
+  const [localClaims, setLocalClaims] = useState(claims);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [showOriginal, setShowOriginal] = useState(false);
   const pasted = intakeSource === "paste";
@@ -146,6 +156,59 @@ export function ReceiptReviewForm({
     if (ok) router.refresh();
   }
 
+  /** Per-line assignment must not refresh/remount; that closed the assignment UI. */
+  function afterLineMutation(ok: boolean, nextMessage?: string) {
+    if (nextMessage) setMessage(nextMessage);
+  }
+
+  function applyLineOwnership(
+    lineId: string,
+    kind: LineOwnershipKind,
+    membershipIds: string[] = [],
+  ) {
+    const mapped = simpleOwnershipToClassification({
+      kind,
+      membershipIds,
+      currentMembershipId,
+      payerMembershipId,
+    });
+    setLines((prev) =>
+      prev.map((l) =>
+        l.id === lineId
+          ? {
+              ...l,
+              classification: mapped.classification,
+              participantMembershipIds: mapped.participantMembershipIds,
+            }
+          : l,
+      ),
+    );
+  }
+
+  function mutateLineOwnership(opts: {
+    lineId: string;
+    previous: ReviewLineItem;
+    optimistic: () => void;
+    run: () => Promise<{ ok: boolean; error?: string }>;
+    success: string;
+    failure: string;
+  }) {
+    const claimsSnapshot = localClaims;
+    opts.optimistic();
+    startTransition(async () => {
+      const res = await opts.run();
+      if (!res.ok) {
+        setLines((prev) =>
+          prev.map((l) => (l.id === opts.lineId ? opts.previous : l)),
+        );
+        setLocalClaims(claimsSnapshot);
+        afterLineMutation(false, res.error ?? opts.failure);
+        return;
+      }
+      afterLineMutation(true, opts.success);
+    });
+  }
+
   const previewLines: PreviewLine[] = useMemo(
     () =>
       lines.map((l, i) => ({
@@ -155,7 +218,7 @@ export function ReceiptReviewForm({
         classification: l.classification,
         participantMembershipIds: l.participantMembershipIds,
         quantity: l.quantity,
-        claims: claims
+        claims: localClaims
           .filter((c) => c.lineItemId === l.id)
           .map((c) => ({
             membershipId: c.membershipId,
@@ -163,7 +226,7 @@ export function ReceiptReviewForm({
             kind: c.kind,
           })),
       })),
-    [lines, claims],
+    [lines, localClaims],
   );
 
   const preview = useMemo(
@@ -239,6 +302,7 @@ export function ReceiptReviewForm({
     } catch {
       // ignore
     }
+    setAssignOpen(next === "assign_items");
     setWorkflow(next);
     startTransition(async () => {
       const fd = new FormData();
@@ -257,7 +321,7 @@ export function ReceiptReviewForm({
     if (ids.length === 0) return;
     const quantities = ids.map((id) => {
       const line = lines.find((l) => l.id === id);
-      const lineClaims = claims
+      const lineClaims = localClaims
         .filter((c) => c.lineItemId === id)
         .map((c) => ({
           membershipId: c.membershipId,
@@ -274,8 +338,28 @@ export function ReceiptReviewForm({
       fd.set("quantities", quantities.join(","));
       fd.set("idempotencyKey", crypto.randomUUID());
       const res = await claimReceiptLinesAction(null, fd);
-      refreshAfter(res.ok, res.ok ? "Claimed." : res.error ?? "Could not claim.");
-      if (res.ok) setSelected([]);
+      afterLineMutation(res.ok, res.ok ? "Claimed." : res.error ?? "Could not claim.");
+      if (res.ok) {
+        for (let i = 0; i < ids.length; i += 1) {
+          applyLineOwnership(ids[i]!, "mine");
+        }
+        setLocalClaims((prev) => [
+          ...prev.filter(
+            (c) =>
+              !(
+                ids.includes(c.lineItemId) &&
+                c.membershipId === currentMembershipId
+              ),
+          ),
+          ...ids.map((lineId, i) => ({
+            lineItemId: lineId,
+            membershipId: currentMembershipId,
+            quantity: quantities[i] ?? 1,
+            kind: "mine" as const,
+          })),
+        ]);
+        setSelected([]);
+      }
     });
   }
 
@@ -580,8 +664,11 @@ export function ReceiptReviewForm({
         </section>
       ) : null}
 
-      {looksRight && (workflow === "assign_items" || claimMode) && !confirmed ? (
-        <section className="space-y-3">
+      {looksRight && (assignOpen || claimMode) && !confirmed ? (
+        <section
+          className="space-y-3"
+          data-testid={claimMode ? "receipt-claim-panel" : "receipt-assign-panel"}
+        >
           {claimMode ? (
             <div>
               <h2 className="text-lg font-semibold">
@@ -606,6 +693,34 @@ export function ReceiptReviewForm({
             <h2 className="text-lg font-semibold">Who should pay for these items?</h2>
           )}
 
+          {!claimMode ? (
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                className="min-h-11 rounded-md border border-border px-3 text-sm"
+                data-testid="receipt-assign-cancel"
+                onClick={() => {
+                  setExpandedId(null);
+                  setAssignOpen(false);
+                  setWorkflow("choose");
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="min-h-11 rounded-md bg-primary px-3 text-sm font-semibold text-primary-foreground"
+                data-testid="receipt-assign-done"
+                onClick={() => {
+                  setExpandedId(null);
+                  setAssignOpen(false);
+                }}
+              >
+                Done
+              </button>
+            </div>
+          ) : null}
+
           <ul className="space-y-2" data-testid="receipt-line-items">
             {lines.map((line, index) => {
               const id = line.id ?? `tmp-${index}`;
@@ -618,7 +733,7 @@ export function ReceiptReviewForm({
               const checked = Boolean(line.id && selected.includes(line.id));
               return (
                 <li
-                  key={id}
+                  key={line.id ?? id}
                   className={`rounded-md border p-3 ${
                     checked
                       ? "border-primary bg-primary/5 ring-1 ring-primary"
@@ -644,6 +759,7 @@ export function ReceiptReviewForm({
                     <button
                       type="button"
                       className="min-h-11 flex-1 text-left"
+                      data-testid={line.id ? `assign-line-${line.id}` : `assign-line-tmp-${index}`}
                       onClick={() => setExpandedId(expandedId === id ? null : id)}
                     >
                       <div className="flex items-start justify-between gap-3">
@@ -654,7 +770,10 @@ export function ReceiptReviewForm({
                           {formatCentsAsUsd(line.totalPriceCents ?? 0)}
                         </span>
                       </div>
-                      <p className="text-sm text-text-secondary">
+                      <p
+                        className="text-sm text-text-secondary"
+                        data-testid={line.id ? `assign-line-status-${line.id}` : undefined}
+                      >
                         {ownershipLabel(
                           ownership.kind,
                           ownership.membershipIds[0]
@@ -668,7 +787,10 @@ export function ReceiptReviewForm({
                     </button>
                   </div>
                   {expandedId === id ? (
-                    <div className="mt-3 space-y-3 border-t border-border pt-3">
+                    <div
+                      className="mt-3 space-y-3 border-t border-border pt-3"
+                      data-testid="receipt-assign-row"
+                    >
                       <label className="block text-sm">
                         Item
                         <input
@@ -727,7 +849,7 @@ export function ReceiptReviewForm({
                           <p className="text-sm text-text-secondary">
                             {remainingQuantity(
                               line.quantity,
-                              claims
+                              localClaims
                                 .filter((c) => c.lineItemId === line.id)
                                 .map((c) => ({
                                   membershipId: c.membershipId,
@@ -755,6 +877,7 @@ export function ReceiptReviewForm({
                           </label>
                           <button
                             type="button"
+                            disabled={pending}
                             className="min-h-11 rounded-md border border-border px-3 text-sm"
                             onClick={() => {
                               const fd = new FormData();
@@ -767,7 +890,7 @@ export function ReceiptReviewForm({
                               fd.set("idempotencyKey", crypto.randomUUID());
                               startTransition(async () => {
                                 const res = await claimReceiptLinesAction(null, fd);
-                                refreshAfter(
+                                afterLineMutation(
                                   res.ok,
                                   res.ok ? "Quantity claimed." : res.error ?? "Could not claim.",
                                 );
@@ -781,19 +904,42 @@ export function ReceiptReviewForm({
                       <div className="flex flex-wrap gap-2">
                         <button
                           type="button"
+                          disabled={pending}
                           className="min-h-11 rounded-md border border-border px-3 text-sm"
+                          data-testid="assign-mine"
                           onClick={() => {
                             if (!line.id) return;
-                            const fd = new FormData();
-                            fd.set("householdId", householdId);
-                            fd.set("lineIds", line.id);
-                            fd.set("idempotencyKey", crypto.randomUUID());
-                            startTransition(async () => {
-                              const res = await claimReceiptLinesAction(null, fd);
-                              refreshAfter(
-                                res.ok,
-                                res.ok ? "Marked as yours." : res.error ?? "Could not claim.",
-                              );
+                            const lineId = line.id;
+                            mutateLineOwnership({
+                              lineId,
+                              previous: line,
+                              optimistic: () => {
+                                applyLineOwnership(lineId, "mine");
+                                setLocalClaims((prev) => [
+                                  ...prev.filter(
+                                    (c) =>
+                                      !(
+                                        c.lineItemId === lineId &&
+                                        c.membershipId === currentMembershipId
+                                      ),
+                                  ),
+                                  {
+                                    lineItemId: lineId,
+                                    membershipId: currentMembershipId,
+                                    quantity: 1,
+                                    kind: "mine",
+                                  },
+                                ]);
+                              },
+                              run: async () => {
+                                const fd = new FormData();
+                                fd.set("householdId", householdId);
+                                fd.set("lineIds", lineId);
+                                fd.set("idempotencyKey", crypto.randomUUID());
+                                return claimReceiptLinesAction(null, fd);
+                              },
+                              success: "Marked as yours.",
+                              failure: "Could not claim.",
                             });
                           }}
                         >
@@ -801,20 +947,24 @@ export function ReceiptReviewForm({
                         </button>
                         <button
                           type="button"
+                          disabled={pending}
                           className="min-h-11 rounded-md border border-border px-3 text-sm"
+                          data-testid="assign-shared"
                           onClick={() => {
                             if (!line.id) return;
-                            const fd = new FormData();
-                            fd.set("householdId", householdId);
-                            fd.set("lineId", line.id);
-                            startTransition(async () => {
-                              const res = await markReceiptLineSharedAction(null, fd);
-                              refreshAfter(
-                                res.ok,
-                                res.ok
-                                  ? "Shared with everyone."
-                                  : res.error ?? "Could not share.",
-                              );
+                            const lineId = line.id;
+                            mutateLineOwnership({
+                              lineId,
+                              previous: line,
+                              optimistic: () => applyLineOwnership(lineId, "household"),
+                              run: async () => {
+                                const fd = new FormData();
+                                fd.set("householdId", householdId);
+                                fd.set("lineId", lineId);
+                                return markReceiptLineSharedAction(null, fd);
+                              },
+                              success: "Shared with everyone.",
+                              failure: "Could not share.",
                             });
                           }}
                         >
@@ -822,18 +972,24 @@ export function ReceiptReviewForm({
                         </button>
                         <button
                           type="button"
+                          disabled={pending}
                           className="min-h-11 rounded-md border border-border px-3 text-sm"
+                          data-testid="assign-unclaimed"
                           onClick={() => {
                             if (!line.id) return;
-                            const fd = new FormData();
-                            fd.set("householdId", householdId);
-                            fd.set("lineId", line.id);
-                            startTransition(async () => {
-                              const res = await unclaimReceiptLineAction(null, fd);
-                              refreshAfter(
-                                res.ok,
-                                res.ok ? "Unclaimed." : res.error ?? "Could not unclaim.",
-                              );
+                            const lineId = line.id;
+                            mutateLineOwnership({
+                              lineId,
+                              previous: line,
+                              optimistic: () => applyLineOwnership(lineId, "unclaimed"),
+                              run: async () => {
+                                const fd = new FormData();
+                                fd.set("householdId", householdId);
+                                fd.set("lineId", lineId);
+                                return unclaimReceiptLineAction(null, fd);
+                              },
+                              success: "Unclaimed.",
+                              failure: "Could not unclaim.",
                             });
                           }}
                         >
@@ -842,22 +998,26 @@ export function ReceiptReviewForm({
                         {canCoordinate ? (
                           <button
                             type="button"
+                            disabled={pending}
                             className="min-h-11 rounded-md border border-border px-3 text-sm"
+                            data-testid="assign-exclude"
                             onClick={() => {
                               if (!line.id) return;
-                              const fd = new FormData();
-                              fd.set("householdId", householdId);
-                              fd.set("lineId", line.id);
-                              fd.set("membershipId", currentMembershipId);
-                              fd.set("excluded", "1");
-                              startTransition(async () => {
-                                const res = await assignReceiptLineAction(null, fd);
-                                refreshAfter(
-                                  res.ok,
-                                  res.ok
-                                    ? "Not part of reimbursement."
-                                    : res.error ?? "Could not exclude.",
-                                );
+                              const lineId = line.id;
+                              mutateLineOwnership({
+                                lineId,
+                                previous: line,
+                                optimistic: () => applyLineOwnership(lineId, "excluded"),
+                                run: async () => {
+                                  const fd = new FormData();
+                                  fd.set("householdId", householdId);
+                                  fd.set("lineId", lineId);
+                                  fd.set("membershipId", currentMembershipId);
+                                  fd.set("excluded", "1");
+                                  return assignReceiptLineAction(null, fd);
+                                },
+                                success: "Not part of reimbursement.",
+                                failure: "Could not exclude.",
                               });
                             }}
                           >
@@ -906,7 +1066,9 @@ export function ReceiptReviewForm({
                           </ul>
                           <button
                             type="button"
+                            disabled={pending}
                             className="min-h-11 rounded-md border border-border px-3 text-sm"
+                            data-testid="assign-save-shared"
                             onClick={() => {
                               const ids =
                                 sharedPick[line.id!] ??
@@ -917,16 +1079,21 @@ export function ReceiptReviewForm({
                                 setMessage(SHARE_NEEDS_PERSON);
                                 return;
                               }
-                              const fd = new FormData();
-                              fd.set("householdId", householdId);
-                              fd.set("lineId", line.id!);
-                              fd.set("membershipIds", ids.join(","));
-                              startTransition(async () => {
-                                const res = await markReceiptLineSharedAction(null, fd);
-                                refreshAfter(
-                                  res.ok,
-                                  res.ok ? "Shared." : res.error ?? "Could not share.",
-                                );
+                              const lineId = line.id!;
+                              mutateLineOwnership({
+                                lineId,
+                                previous: line,
+                                optimistic: () =>
+                                  applyLineOwnership(lineId, "shared", ids),
+                                run: async () => {
+                                  const fd = new FormData();
+                                  fd.set("householdId", householdId);
+                                  fd.set("lineId", lineId);
+                                  fd.set("membershipIds", ids.join(","));
+                                  return markReceiptLineSharedAction(null, fd);
+                                },
+                                success: "Shared.",
+                                failure: "Could not share.",
                               });
                             }}
                           >
@@ -939,19 +1106,29 @@ export function ReceiptReviewForm({
                           Belongs to
                           <select
                             className="mt-1 min-h-11 w-full rounded-md border border-border px-3 py-2"
+                            data-testid="assign-someone-else"
                             value={line.participantMembershipIds[0] ?? ""}
+                            disabled={pending}
                             onChange={(e) => {
                               if (!line.id || !e.target.value) return;
-                              const fd = new FormData();
-                              fd.set("householdId", householdId);
-                              fd.set("lineId", line.id);
-                              fd.set("membershipId", e.target.value);
-                              startTransition(async () => {
-                                const res = await assignReceiptLineAction(null, fd);
-                                refreshAfter(
-                                  res.ok,
-                                  res.ok ? "Assigned." : res.error ?? "Could not assign.",
-                                );
+                              const lineId = line.id;
+                              const membershipId = e.target.value;
+                              mutateLineOwnership({
+                                lineId,
+                                previous: line,
+                                optimistic: () =>
+                                  applyLineOwnership(lineId, "someone_else", [
+                                    membershipId,
+                                  ]),
+                                run: async () => {
+                                  const fd = new FormData();
+                                  fd.set("householdId", householdId);
+                                  fd.set("lineId", lineId);
+                                  fd.set("membershipId", membershipId);
+                                  return assignReceiptLineAction(null, fd);
+                                },
+                                success: "Assigned.",
+                                failure: "Could not assign.",
                               });
                             }}
                           >
@@ -993,6 +1170,7 @@ export function ReceiptReviewForm({
             type="button"
             className="mt-2 min-h-11 rounded-md border border-border bg-surface px-3 text-sm"
             onClick={() => {
+              setAssignOpen(true);
               const first = lines.find((l) => l.classification === "needs_review");
               if (first) setExpandedId(first.id ?? `tmp-${lines.indexOf(first)}`);
             }}
@@ -1007,16 +1185,27 @@ export function ReceiptReviewForm({
                   type="button"
                   className="min-h-11 rounded-md border border-border bg-surface px-3 text-sm"
                   onClick={() => {
-                    const fd = new FormData();
-                    fd.set("householdId", householdId);
-                    fd.set("receiptId", receiptId);
-                    fd.set("remainingAction", action);
+                    const remainingIds = lines
+                      .filter((l) => l.id && l.classification === "needs_review")
+                      .map((l) => l.id!);
+                    const previousLines = lines;
                     startTransition(async () => {
+                      const fd = new FormData();
+                      fd.set("householdId", householdId);
+                      fd.set("receiptId", receiptId);
+                      fd.set("remainingAction", action);
                       const res = await applyRemainingReceiptLinesAction(null, fd);
-                      refreshAfter(
-                        res.ok,
-                        res.ok ? "Updated remaining items." : res.error ?? "Failed.",
-                      );
+                      if (!res.ok) {
+                        setLines(previousLines);
+                        afterLineMutation(false, res.error ?? "Failed.");
+                        return;
+                      }
+                      for (const lineId of remainingIds) {
+                        if (action === "mine") applyLineOwnership(lineId, "mine");
+                        else if (action === "exclude") applyLineOwnership(lineId, "excluded");
+                        else applyLineOwnership(lineId, "household");
+                      }
+                      afterLineMutation(true, "Updated remaining items.");
                     });
                   }}
                 >
