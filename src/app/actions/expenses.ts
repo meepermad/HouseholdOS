@@ -9,6 +9,7 @@ import {
   extractBlockingPaymentId,
   mapPaymentError,
 } from "@/lib/payments/errors";
+import { itemTagToWrite } from "@/lib/expenses/apply-item-tag";
 import { can } from "@/lib/permissions";
 import {
   buildConfirmationSnapshot,
@@ -18,6 +19,8 @@ import {
 import {
   amendExpenseSchema,
   confirmExpenseSchema,
+  parseMembershipIds,
+  retagExpenseItemSchema,
   createExpenseDraftSchema,
   deleteExpenseAdjustmentSchema,
   deleteExpenseItemSchema,
@@ -710,4 +713,222 @@ export async function createExpenseAmendmentAction(
     if (error && typeof error === "object" && "digest" in error) throw error;
     return { ok: false, error: toPublicErrorMessage(error) };
   }
+}
+
+export async function retagConfirmedExpenseItemAction(
+  _prev: ActionResult | null,
+  formData: FormData,
+): Promise<ActionResult> {
+  try {
+    const parsed = retagExpenseItemSchema.safeParse({
+      householdId: formData.get("householdId"),
+      expenseId: formData.get("expenseId"),
+      itemId: formData.get("itemId"),
+      allocationMode: formData.get("allocationMode"),
+      personalMembershipId: formData.get("personalMembershipId") || null,
+      membershipIdsJson: formData.get("membershipIdsJson") || "",
+      idempotencyKey: formData.get("idempotencyKey"),
+    });
+    if (!parsed.success) {
+      return {
+        ok: false,
+        error: humanizeExpenseValidationError(
+          parsed.error,
+          "Could not change who this item is tagged to.",
+        ),
+      };
+    }
+
+    const ctx = await assertActiveMembership(parsed.data.householdId);
+    if (!can(ctx.roles, "expense.amend")) {
+      return { ok: false, error: "Not allowed to change a submitted expense." };
+    }
+
+    const { createClient } = await import("@/lib/supabase/server");
+    const supabase = await createClient();
+    const original = await loadExpenseBundle(supabase, parsed.data.expenseId);
+    if (!original || original.expense.household_id !== parsed.data.householdId) {
+      return { ok: false, error: "Expense not found." };
+    }
+    if (original.expense.status !== "confirmed") {
+      return { ok: false, error: "Only a submitted expense can be retagged this way." };
+    }
+
+    const sourceItem = original.items.find((item) => item.id === parsed.data.itemId);
+    if (!sourceItem) return { ok: false, error: "Item not found." };
+
+    const write = itemTagToWrite({
+      allocationMode: parsed.data.allocationMode,
+      personalMembershipId: parsed.data.personalMembershipId,
+      membershipIds: parseMembershipIds(parsed.data.membershipIdsJson),
+      payerMembershipId: original.expense.payer_membership_id,
+    });
+    if (write.allocationMode === "personal" && !write.personalMembershipId) {
+      return { ok: false, error: "Choose who this item belongs to." };
+    }
+    if (write.allocationMode === "equal_selected" && write.participants.length === 0) {
+      return { ok: false, error: "Choose at least one person to share this with." };
+    }
+
+    let amendmentId = await findDraftAmendmentExpenseId(
+      supabase,
+      parsed.data.expenseId,
+    );
+    if (!amendmentId) {
+      const { data, error } = await supabase.rpc("create_expense_amendment", {
+        p_expense_id: parsed.data.expenseId,
+        p_reason: `Changed who pays for ${sourceItem.description}`,
+      });
+      if (error || !data) {
+        amendmentId = await findDraftAmendmentExpenseId(
+          supabase,
+          parsed.data.expenseId,
+        );
+        if (!amendmentId) {
+          return { ok: false, error: "Could not start a correction for that item." };
+        }
+      } else {
+        amendmentId =
+          typeof data === "object" && data && "id" in data
+            ? String((data as { id: string }).id)
+            : String(data);
+      }
+    }
+
+    const draft = await loadExpenseBundle(supabase, amendmentId);
+    if (!draft || draft.expense.household_id !== parsed.data.householdId) {
+      return { ok: false, error: "Correction draft not found." };
+    }
+    if (draft.items.length !== original.items.length) {
+      return {
+        ok: false,
+        error:
+          "A larger correction is already in progress. Finish that first, then retag.",
+      };
+    }
+    const draftItem = draft.items.find(
+      (item) => item.display_order === sourceItem.display_order,
+    );
+    if (!draftItem) return { ok: false, error: "Could not find that item on the correction." };
+
+    const { error: itemError } = await supabase
+      .from("expense_items")
+      .update({
+        allocation_mode: write.allocationMode,
+        personal_membership_id: write.personalMembershipId,
+        classification: write.classification,
+      })
+      .eq("id", draftItem.id)
+      .eq("expense_id", amendmentId);
+    if (itemError) return { ok: false, error: "Could not update that item." };
+
+    await supabase.from("expense_item_allocations").delete().eq("item_id", draftItem.id);
+    if (write.participants.length > 0) {
+      const { error: allocError } = await supabase.from("expense_item_allocations").insert(
+        write.participants.map((p) => ({
+          item_id: draftItem.id,
+          expense_id: amendmentId,
+          household_id: parsed.data.householdId,
+          membership_id: p.membershipId,
+          amount_cents: 0,
+        })),
+      );
+      if (allocError) return { ok: false, error: "Could not save who is tagged." };
+    }
+
+    await syncLinkedReceiptLineTag(supabase, {
+      householdId: parsed.data.householdId,
+      expenseId: parsed.data.expenseId,
+      displayOrder: sourceItem.display_order,
+      description: sourceItem.description,
+      classification: write.classification,
+      participantMembershipIds: write.participants.map((p) => p.membershipId),
+    });
+
+    const fresh = await loadExpenseBundle(supabase, amendmentId);
+    if (!fresh) return { ok: false, error: "Correction draft not found." };
+    const calc = recalculateBundle(fresh);
+    if (!calc.ok) return { ok: false, error: calc.message };
+
+    const { error: confirmError } = await supabase.rpc("confirm_expense_amendment", {
+      p_amendment_expense_id: amendmentId,
+      p_idempotency_key: parsed.data.idempotencyKey,
+      p_snapshot: buildConfirmationSnapshot(calc),
+    });
+    if (confirmError) {
+      const paymentId = extractBlockingPaymentId(confirmError.message);
+      if (paymentId) {
+        return {
+          ok: false,
+          error: mapPaymentError(confirmError.message).publicMessage,
+          actionHref: `/app/${parsed.data.householdId}/money/payments/${paymentId}`,
+          actionLabel: "Open blocking payment",
+        };
+      }
+      return { ok: false, error: "Could not apply that change." };
+    }
+
+    revalidatePath(moneyPath(parsed.data.householdId));
+    redirect(moneyPath(parsed.data.householdId, `/expenses/${amendmentId}`));
+  } catch (error) {
+    if (error && typeof error === "object" && "digest" in error) throw error;
+    return { ok: false, error: toPublicErrorMessage(error) };
+  }
+}
+
+async function findDraftAmendmentExpenseId(
+  supabase: Awaited<ReturnType<typeof import("@/lib/supabase/server").createClient>>,
+  originalExpenseId: string,
+): Promise<string | null> {
+  const { data } = await supabase
+    .from("expense_amendments")
+    .select("amendment_expense_id")
+    .eq("original_expense_id", originalExpenseId)
+    .eq("status", "draft")
+    .maybeSingle();
+  return data?.amendment_expense_id ?? null;
+}
+
+async function syncLinkedReceiptLineTag(
+  supabase: Awaited<ReturnType<typeof import("@/lib/supabase/server").createClient>>,
+  input: {
+    householdId: string;
+    expenseId: string;
+    displayOrder: number;
+    description: string;
+    classification: string;
+    participantMembershipIds: string[];
+  },
+) {
+  const { data: receipt } = await supabase
+    .from("expense_receipts")
+    .select("id")
+    .eq("household_id", input.householdId)
+    .eq("expense_id", input.expenseId)
+    .is("deleted_at", null)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (!receipt) return;
+
+  const { data: lines } = await supabase
+    .from("expense_receipt_line_items")
+    .select("id, sort_index, corrected_name")
+    .eq("receipt_id", receipt.id)
+    .order("sort_index");
+  const match =
+    (lines ?? []).find((line) => line.sort_index === input.displayOrder) ??
+    (lines ?? []).find((line) => line.corrected_name === input.description);
+  if (!match) return;
+
+  await supabase
+    .from("expense_receipt_line_items")
+    .update({
+      classification: input.classification,
+      participant_membership_ids:
+        input.classification === "shared_household" || input.classification === "excluded"
+          ? []
+          : input.participantMembershipIds,
+    })
+    .eq("id", match.id);
 }

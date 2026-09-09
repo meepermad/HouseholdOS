@@ -36,6 +36,10 @@ vi.mock("@/app/actions/receipts", () => ({
   acknowledgeReceiptCorrectionAction: vi.fn(async () => ({ ok: true })),
 }));
 
+vi.mock("@/app/actions/expenses", () => ({
+  retagConfirmedExpenseItemAction: vi.fn(async () => ({ ok: true })),
+}));
+
 const members = [
   { id: "m1", label: "Atem" },
   { id: "m2", label: "Andrew" },
@@ -298,10 +302,26 @@ describe("ReceiptReviewForm simple flow", () => {
         intakeSource="paste"
         originalTranscription="HOUSEHOLDOS RECEIPT\nMerchant: Target\nTotal: 92.40\nITEMS\nShampoo | 8.49 | 1\nEND"
         expenseId="e1"
+        retagExpenseId="e1"
+        confirmedRetagByLineId={{
+          l1: {
+            itemId: "i1",
+            allocationMode: "equal_all",
+            personalMembershipId: null,
+            selectedIds: ["m1", "m2"],
+          },
+        }}
       />,
     );
 
     expect(screen.queryByText("Advanced split options")).not.toBeInTheDocument();
+    expect(screen.getByTestId("receipt-item-breakdown")).toHaveTextContent("Target");
+    expect(screen.getByTestId("receipt-item-breakdown")).toHaveTextContent("Shampoo");
+    expect(screen.getByTestId("receipt-item-breakdown")).toHaveTextContent("Soda");
+    expect(screen.getByTestId("receipt-item-breakdown")).toHaveTextContent(
+      "Tagged: Everyone",
+    );
+    expect(screen.getByTestId("expense-item-retag")).toBeInTheDocument();
     expect(screen.getByTestId("receipt-correct-finalized")).toHaveTextContent(
       "open Advanced",
     );
@@ -421,6 +441,14 @@ describe("ReceiptReviewForm assign items", () => {
     await user.click(screen.getByTestId("receipt-assign-done"));
     expect(screen.queryByTestId("receipt-assign-panel")).not.toBeInTheDocument();
     expect(screen.getByTestId("receipt-final-review")).toBeInTheDocument();
+    expect(screen.getByTestId("receipt-item-breakdown")).toHaveTextContent("Shampoo");
+    expect(screen.getByTestId("receipt-item-breakdown")).toHaveTextContent("Bread");
+    expect(screen.getByTestId("receipt-item-breakdown")).toHaveTextContent(
+      "Tagged: Atem",
+    );
+    expect(screen.getByTestId("receipt-item-breakdown")).toHaveTextContent(
+      "Tagged: Andrew",
+    );
     expect(claimReceiptLinesAction).toHaveBeenCalled();
     expect(markReceiptLineSharedAction).toHaveBeenCalled();
     expect(assignReceiptLineAction).toHaveBeenCalled();

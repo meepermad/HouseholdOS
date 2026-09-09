@@ -16,9 +16,12 @@ import {
   updateReceiptReviewAction,
   acknowledgeReceiptCorrectionAction,
 } from "@/app/actions/receipts";
+import { PurchaseItemBreakdown } from "@/components/money/PurchaseItemBreakdown";
+import { ExpenseItemRetag } from "@/components/expenses/ExpenseItemRetag";
 import { ReceiptRepastePanel, type TranscriptionRevisionSummary } from "@/components/receipts/ReceiptRepastePanel";
 import { CurrencyAmountInput } from "@/components/ui/currency-field";
 import { DisclosureSection } from "@/components/ui/disclosure-section";
+import { formatTaggedPeople } from "@/lib/money/purchase-breakdown";
 import { formatCentsAsUsd } from "@/lib/receipts/currency";
 import { describeReceiptReadFailure, SHARE_NEEDS_PERSON } from "@/lib/receipts/errors";
 import {
@@ -93,6 +96,16 @@ type Props = {
   revisions?: TranscriptionRevisionSummary[];
   financialReviewRequired?: boolean;
   expenseId?: string | null;
+  retagExpenseId?: string | null;
+  confirmedRetagByLineId?: Record<
+    string,
+    {
+      itemId: string;
+      allocationMode: string;
+      personalMembershipId: string | null;
+      selectedIds: string[];
+    }
+  >;
 };
 
 type Workflow = "choose" | "equal_all" | "assign_items" | "claiming" | "review";
@@ -129,6 +142,8 @@ export function ReceiptReviewForm({
   revisions = [],
   financialReviewRequired = false,
   expenseId = null,
+  retagExpenseId = null,
+  confirmedRetagByLineId = {},
 }: Props) {
   const [merchant, setMerchant] = useState(initialMerchant);
   const [purchaseDate, setPurchaseDate] = useState(initialDate);
@@ -1280,16 +1295,69 @@ export function ReceiptReviewForm({
         </section>
       ) : null}
 
-      {looksRight && (workflow !== "choose" || status === "ready_for_review") ? (
+      {looksRight &&
+      (workflow !== "choose" || status === "ready_for_review" || confirmed) ? (
         <section className="space-y-3" data-testid="receipt-final-review">
           <h2 className="text-lg font-semibold">Who owes what?</h2>
           <div className="rounded-md border border-border bg-surface p-4 text-sm" data-testid="receipt-reconciliation">
-            <p className="font-medium">{merchant || "Receipt"}</p>
             <p className="text-text-secondary">
               Paid by {nameOf(members, payerMembershipId)} · Total{" "}
               {formatCentsAsUsd(declaredTotalCents)}
             </p>
-            <ul className="mt-3 space-y-2">
+            <div className="mt-4">
+              <PurchaseItemBreakdown
+                merchant={merchant || "Receipt"}
+                items={preview.items.map((line) => {
+                  const liveExpenseId = retagExpenseId ?? expenseId;
+                  const retag = confirmed && liveExpenseId ? confirmedRetagByLineId[line.id] : null;
+                  return {
+                    id: line.id,
+                    name: line.name,
+                    totalCents: line.totalCents,
+                    tagged: formatTaggedPeople({
+                      names: line.taggedMembershipIds.map((id) => nameOf(members, id)),
+                      everyone: line.everyone,
+                      excluded: line.excluded,
+                      unassigned: line.unassigned,
+                    }),
+                    shares: line.shares.map((share) => ({
+                      membershipId: share.membershipId,
+                      name: nameOf(members, share.membershipId),
+                      amountCents: share.amountCents,
+                    })),
+                    action:
+                      retag && liveExpenseId ? (
+                        <ExpenseItemRetag
+                          householdId={householdId}
+                          expenseId={liveExpenseId}
+                          itemId={retag.itemId}
+                          allocationMode={retag.allocationMode}
+                          personalMembershipId={retag.personalMembershipId}
+                          selectedIds={retag.selectedIds}
+                          members={members}
+                          currentMembershipId={currentMembershipId}
+                        />
+                      ) : null,
+                  };
+                })}
+                adjustments={preview.adjustments.map((line) => ({
+                  id: line.id,
+                  name: line.name,
+                  totalCents: line.totalCents,
+                  tagged: formatTaggedPeople({
+                    names: line.taggedMembershipIds.map((id) => nameOf(members, id)),
+                    everyone: line.everyone,
+                  }),
+                  shares: line.shares.map((share) => ({
+                    membershipId: share.membershipId,
+                    name: nameOf(members, share.membershipId),
+                    amountCents: share.amountCents,
+                  })),
+                }))}
+                testId="receipt-item-breakdown"
+              />
+            </div>
+            <ul className="mt-4 space-y-2">
               {preview.members.map((row) => (
                 <li key={row.membershipId} className="flex justify-between gap-3">
                   <span>
@@ -1305,17 +1373,6 @@ export function ReceiptReviewForm({
             {preview.householdSharedCents > 0 ? (
               <p className="mt-2 text-text-secondary">
                 Shared household {formatCentsAsUsd(preview.householdSharedCents)}
-              </p>
-            ) : null}
-            {preview.taxCents > 0 ? (
-              <p className="mt-2 text-text-secondary">
-                Tax: {formatCentsAsUsd(preview.taxCents)} · Distributed proportionally
-              </p>
-            ) : null}
-            {preview.discountCents > 0 ? (
-              <p className="text-text-secondary">
-                Discount: {formatCentsAsUsd(preview.discountCents)} · Distributed
-                proportionally
               </p>
             ) : null}
             <div className="mt-3 space-y-1 border-t border-border pt-3 font-medium">

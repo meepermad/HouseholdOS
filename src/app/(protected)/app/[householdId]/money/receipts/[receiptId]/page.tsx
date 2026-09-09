@@ -11,6 +11,7 @@ import {
 import { describeReceiptOcrStatus } from "@/lib/receipts/adapters";
 import type { LineItemClassification, ResourceDestination } from "@/lib/receipts/types";
 import { listActiveMemberOptions } from "@/lib/expenses/queries";
+import { loadExpenseBundle } from "@/lib/expenses/load-bundle";
 import { receiptReviewFormKey } from "@/lib/receipts/review-identity";
 import { mapPersistedLineToReview } from "@/lib/receipts/paste/review-lines";
 import type { TranscriptionRevisionSummary } from "@/components/receipts/ReceiptRepastePanel";
@@ -207,6 +208,51 @@ export default async function ReceiptDetailPage({
     return sum + Math.round(((line.totalPriceCents ?? 0) * c.quantity) / qty);
   }, 0);
 
+  let confirmedRetagByLineId: Record<
+    string,
+    {
+      itemId: string;
+      allocationMode: string;
+      personalMembershipId: string | null;
+      selectedIds: string[];
+    }
+  > = {};
+  let retagExpenseId: string | null = null;
+  if (receipt.status === "confirmed" && receipt.expense_id) {
+    const typed = await import("@/lib/supabase/server").then((m) => m.createClient());
+    retagExpenseId = receipt.expense_id as string;
+    const { data: live } = await supabase
+      .from("expenses")
+      .select("id, superseded_by_expense_id")
+      .eq("id", retagExpenseId)
+      .maybeSingle();
+    const liveExpenseId =
+      (live?.superseded_by_expense_id as string | null) ??
+      (receipt.expense_id as string);
+    retagExpenseId = liveExpenseId;
+    const bundle = await loadExpenseBundle(typed, liveExpenseId);
+    if (bundle) {
+      confirmedRetagByLineId = Object.fromEntries(
+        reviewLines.flatMap((line) => {
+          if (!line.id) return [];
+          const item = bundle.items.find((row) => row.display_order === line.sortIndex);
+          if (!item) return [];
+          return [
+            [
+              line.id,
+              {
+                itemId: item.id,
+                allocationMode: item.allocation_mode,
+                personalMembershipId: item.personal_membership_id,
+                selectedIds: item.allocations.map((a) => a.membership_id),
+              },
+            ],
+          ];
+        }),
+      );
+    }
+  }
+
   return (
     <main className="space-y-6">
       <AppBackButton fallbackHref={`/app/${householdId}/money/receipts`} />
@@ -309,6 +355,8 @@ export default async function ReceiptDetailPage({
         }))}
         financialReviewRequired={Boolean(receipt.financial_review_required)}
         expenseId={receipt.expense_id ?? null}
+        retagExpenseId={retagExpenseId}
+        confirmedRetagByLineId={confirmedRetagByLineId}
       />
     </main>
   );

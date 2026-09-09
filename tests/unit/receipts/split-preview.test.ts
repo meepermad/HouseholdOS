@@ -35,4 +35,61 @@ describe("previewReceiptSplit equal-selected", () => {
       }),
     ).not.toThrow();
   });
+
+  it("lists each purchased item with who is tagged and their share", () => {
+    const preview = previewReceiptSplit({
+      merchant: "Target",
+      payerMembershipId: payer,
+      eligibleMembershipIds: [payer, other],
+      declaredTotalCents: 1100,
+      taxCents: 100,
+      tipCents: null,
+      lines: [
+        {
+          id: "milk",
+          name: "Milk",
+          totalCents: 400,
+          classification: "personal_other",
+          participantMembershipIds: [other],
+          quantity: 1,
+        },
+        {
+          id: "bread",
+          name: "Bread",
+          totalCents: 600,
+          classification: "shared_selected",
+          participantMembershipIds: [payer, other],
+          quantity: 1,
+        },
+      ],
+    });
+
+    expect(preview.items).toEqual([
+      {
+        id: "milk",
+        name: "Milk",
+        totalCents: 400,
+        taggedMembershipIds: [other],
+        everyone: false,
+        excluded: false,
+        unassigned: false,
+        shares: [{ membershipId: other, amountCents: 400 }],
+      },
+      {
+        id: "bread",
+        name: "Bread",
+        totalCents: 600,
+        taggedMembershipIds: [payer, other],
+        everyone: false,
+        excluded: false,
+        unassigned: false,
+        shares: [
+          { membershipId: payer, amountCents: 300 },
+          { membershipId: other, amountCents: 300 },
+        ],
+      },
+    ]);
+    expect(preview.adjustments[0]?.name).toMatch(/tax/i);
+    expect(preview.adjustments[0]?.shares).toHaveLength(2);
+  });
 });

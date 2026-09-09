@@ -7,6 +7,8 @@ import { assertActiveMembership } from "@/lib/household-context";
 import { formatMoney } from "@/lib/expenses/display";
 import { loadExpenseBundle, recalculateBundle } from "@/lib/expenses/load-bundle";
 import { listActiveMemberOptions } from "@/lib/expenses/queries";
+import { PurchaseItemBreakdown } from "@/components/money/PurchaseItemBreakdown";
+import { allocatedRowsToBreakdown } from "@/lib/money/purchase-breakdown";
 import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -57,35 +59,32 @@ export default async function ReviewExpensePage({
         <dd>{formatMoney(e.declared_total_cents)}</dd>
       </dl>
 
-      <section className="space-y-2">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-text-muted">
-          Items
-        </h2>
-        <ul className="space-y-1 text-sm">
-          {bundle.items.map((item) => (
-            <li key={item.id} className="flex justify-between">
-              <span>{item.description}</span>
-              <span>{formatMoney(item.total_cents)}</span>
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      {bundle.adjustments.length > 0 ? (
-        <section className="space-y-2">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-text-muted">
-            Tax, tip, and fees
-          </h2>
-          <ul className="space-y-1 text-sm">
-            {bundle.adjustments.map((adj) => (
-              <li key={adj.id} className="flex justify-between">
-                <span>{adj.description}</span>
-                <span>{formatMoney(adj.amount_cents)}</span>
-              </li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
+      <PurchaseItemBreakdown
+        merchant={e.merchant}
+        items={allocatedRowsToBreakdown(
+          bundle.items.map((item) => ({
+            id: item.id,
+            name: item.description,
+            totalCents: item.total_cents,
+            allocationMode: item.allocation_mode,
+            personalMembershipId: item.personal_membership_id,
+            allocations: item.allocations,
+          })),
+          (id) => members.find((m) => m.id === id)?.label ?? id.slice(0, 8),
+        )}
+        adjustments={allocatedRowsToBreakdown(
+          bundle.adjustments.map((adj) => ({
+            id: adj.id,
+            name: adj.description,
+            totalCents: adj.amount_cents,
+            allocationMode: adj.allocation_mode,
+            personalMembershipId: adj.assigned_membership_id,
+            allocations: adj.allocations,
+          })),
+          (id) => members.find((m) => m.id === id)?.label ?? id.slice(0, 8),
+        )}
+        testId="expense-review-item-breakdown"
+      />
 
       <ReconciliationSummary
         calc={calc}

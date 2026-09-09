@@ -168,6 +168,8 @@ export function humanizeExpenseValidationError(
       return "Add a short description.";
     case "personalMembershipId":
       return "Choose who this item belongs to.";
+    case "membershipIdsJson":
+      return "Choose at least one person to share this with.";
     default:
       return fallback;
   }
@@ -198,6 +200,50 @@ export const amendExpenseSchema = z.object({
   expenseId: z.string().uuid(),
   reason: z.string().trim().min(1).max(2000),
 });
+
+export const retagExpenseItemSchema = z
+  .object({
+    householdId: z.string().uuid(),
+    expenseId: z.string().uuid(),
+    itemId: z.string().uuid(),
+    allocationMode: z.enum(["personal", "equal_all", "equal_selected", "excluded"]),
+    personalMembershipId: z.string().uuid().optional().nullable(),
+    membershipIdsJson: z.string().optional().or(z.literal("")),
+    idempotencyKey: z.string().min(8).max(128),
+  })
+  .superRefine((value, ctx) => {
+    if (value.allocationMode === "personal" && !value.personalMembershipId) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["personalMembershipId"],
+        message: "Choose who this item belongs to.",
+      });
+    }
+    if (value.allocationMode === "equal_selected") {
+      const ids = parseMembershipIds(value.membershipIdsJson);
+      if (ids.length === 0) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["membershipIdsJson"],
+          message: "Choose at least one person to share this with.",
+        });
+      }
+    }
+  });
+
+export function parseMembershipIds(raw: string | null | undefined): string[] {
+  if (!raw || !raw.trim()) return [];
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter((id): id is string => typeof id === "string" && id.length > 0);
+  } catch {
+    return raw
+      .split(",")
+      .map((id) => id.trim())
+      .filter(Boolean);
+  }
+}
 
 export const reorderExpenseItemsSchema = z.object({
   householdId: z.string().uuid(),

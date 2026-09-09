@@ -7,13 +7,12 @@ import {
   voidExpenseAction,
 } from "@/app/actions/expenses";
 import { assertActiveMembership } from "@/lib/household-context";
-import {
-  adjustmentTypeLabel,
-  formatMoney,
-  itemAllocationLabel,
-} from "@/lib/expenses/display";
+import { formatMoney, itemAllocationLabel } from "@/lib/expenses/display";
 import { ExpenseStatusBadge } from "@/components/ui/status-badge";
 import { DisclosureSection } from "@/components/ui/disclosure-section";
+import { PurchaseItemBreakdown } from "@/components/money/PurchaseItemBreakdown";
+import { ExpenseItemRetag } from "@/components/expenses/ExpenseItemRetag";
+import { allocatedRowsToBreakdown } from "@/lib/money/purchase-breakdown";
 import { loadExpenseBundle, recalculateBundle } from "@/lib/expenses/load-bundle";
 import { listActiveMemberOptions } from "@/lib/expenses/queries";
 import { can } from "@/lib/permissions";
@@ -202,6 +201,20 @@ export default async function ExpenseDetailPage({
     payerLabel,
   });
 
+  const canRetag =
+    e.status === "confirmed" && can(ctx.roles, "expense.amend");
+  const itemBreakdown = allocatedRowsToBreakdown(
+    bundle.items.map((item) => ({
+      id: item.id,
+      name: item.description,
+      totalCents: item.total_cents,
+      allocationMode: item.allocation_mode,
+      personalMembershipId: item.personal_membership_id,
+      allocations: item.allocations,
+    })),
+    label,
+  );
+
   return (
     <main className="space-y-6">
       <header className="space-y-1">
@@ -287,6 +300,46 @@ export default async function ExpenseDetailPage({
         </section>
       ) : null}
 
+      <section className="space-y-2" data-testid="expense-purchase-breakdown">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-text-muted">
+          What was purchased
+        </h2>
+        <PurchaseItemBreakdown
+          merchant={e.merchant || "Receipt"}
+          items={itemBreakdown.map((line) => {
+            const item = bundle.items.find((row) => row.id === line.id);
+            if (!item || !canRetag) return line;
+            return {
+              ...line,
+              action: (
+                <ExpenseItemRetag
+                  householdId={householdId}
+                  expenseId={expenseId}
+                  itemId={item.id}
+                  allocationMode={item.allocation_mode}
+                  personalMembershipId={item.personal_membership_id}
+                  selectedIds={item.allocations.map((a) => a.membership_id)}
+                  members={members}
+                  currentMembershipId={ctx.membershipId}
+                />
+              ),
+            };
+          })}
+          adjustments={allocatedRowsToBreakdown(
+            bundle.adjustments.map((adj) => ({
+              id: adj.id,
+              name: adj.description,
+              totalCents: adj.amount_cents,
+              allocationMode: adj.allocation_mode,
+              personalMembershipId: adj.assigned_membership_id,
+              allocations: adj.allocations,
+            })),
+            label,
+          )}
+          testId="expense-item-breakdown"
+        />
+      </section>
+
       <section className="space-y-2" data-testid="obligation-breakdown">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-text-muted">
           Who owes what
@@ -331,35 +384,6 @@ export default async function ExpenseDetailPage({
         )}
       </section>
 
-      <section className="space-y-2">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-text-muted">
-          Items
-        </h2>
-        <ul className="space-y-3">
-          {bundle.items.map((item) => (
-            <li key={item.id} className="rounded-md border border-border bg-surface p-4 text-sm">
-              <div className="flex justify-between font-medium">
-                <span>{item.description}</span>
-                <span>{formatMoney(item.total_cents)}</span>
-              </div>
-              <ul className="mt-2 space-y-0.5 text-xs">
-                {item.allocations
-                  .filter((a) => a.amount_cents !== 0)
-                  .map((a) => (
-                    <li key={a.membership_id} className="flex justify-between">
-                      <span>{label(a.membership_id)}</span>
-                      <span>{formatMoney(a.amount_cents)}</span>
-                    </li>
-                  ))}
-                {item.allocation_mode === "excluded" ? (
-                  <li className="text-text-muted">Not part of the split</li>
-                ) : null}
-              </ul>
-            </li>
-          ))}
-        </ul>
-      </section>
-
       <section className="space-y-3" data-testid="expense-receipt">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-text-muted">
           Receipt
@@ -399,29 +423,6 @@ export default async function ExpenseDetailPage({
           </p>
         )}
       </section>
-
-      {bundle.adjustments.length > 0 ? (
-        <section className="space-y-2">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-text-muted">
-            Tax, tip, and fees
-          </h2>
-          <ul className="space-y-2">
-            {bundle.adjustments.map((adj) => (
-              <li key={adj.id} className="rounded-md border border-border bg-surface p-4 text-sm">
-                <div className="flex justify-between font-medium">
-                  <span>
-                    {adj.description}{" "}
-                    <span className="text-xs font-normal text-text-muted">
-                      ({adjustmentTypeLabel(adj.adjustment_type)})
-                    </span>
-                  </span>
-                  <span>{formatMoney(adj.amount_cents)}</span>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
 
       <section className="space-y-2">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-text-muted">

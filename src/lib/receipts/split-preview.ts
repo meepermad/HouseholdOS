@@ -31,6 +31,17 @@ export type MemberShareRow = {
   owesPayerCents: number;
 };
 
+export type SplitBreakdownLine = {
+  id: string;
+  name: string;
+  totalCents: number;
+  taggedMembershipIds: string[];
+  everyone: boolean;
+  excluded: boolean;
+  unassigned: boolean;
+  shares: Array<{ membershipId: string; amountCents: number }>;
+};
+
 export type SplitPreview = {
   merchant: string;
   payerMembershipId: string;
@@ -48,7 +59,64 @@ export type SplitPreview = {
   discountCents: number;
   balanced: boolean;
   remainderCents: number;
+  items: SplitBreakdownLine[];
+  adjustments: SplitBreakdownLine[];
 };
+
+function taggedForLine(
+  line: PreviewLine,
+  payerMembershipId: string,
+  eligibleMembershipIds: readonly string[],
+): Pick<
+  SplitBreakdownLine,
+  "taggedMembershipIds" | "everyone" | "excluded" | "unassigned"
+> {
+  switch (line.classification) {
+    case "excluded":
+      return {
+        taggedMembershipIds: [],
+        everyone: false,
+        excluded: true,
+        unassigned: false,
+      };
+    case "needs_review":
+      return {
+        taggedMembershipIds: [],
+        everyone: false,
+        excluded: false,
+        unassigned: true,
+      };
+    case "shared_household":
+      return {
+        taggedMembershipIds: [...eligibleMembershipIds],
+        everyone: true,
+        excluded: false,
+        unassigned: false,
+      };
+    case "personal_purchaser":
+      return {
+        taggedMembershipIds: [payerMembershipId],
+        everyone: false,
+        excluded: false,
+        unassigned: false,
+      };
+    case "personal_other":
+    case "shared_selected":
+      return {
+        taggedMembershipIds: [...line.participantMembershipIds],
+        everyone: false,
+        excluded: false,
+        unassigned: line.participantMembershipIds.length === 0,
+      };
+    default:
+      return {
+        taggedMembershipIds: [],
+        everyone: false,
+        excluded: false,
+        unassigned: true,
+      };
+  }
+}
 
 function quantityToFixedParticipants(
   line: PreviewLine,
@@ -282,6 +350,69 @@ export function previewReceiptSplit(input: {
   const allocatedSum = memberRows.reduce((sum, m) => sum + m.totalCents, 0);
   const remainderCents = input.declaredTotalCents - allocatedSum;
 
+  const splitMemberIds = input.splitEverything?.membershipIds ?? [];
+  const itemBreakdown: SplitBreakdownLine[] = input.lines.map((line) => {
+    if (input.splitEverything && splitMemberIds.length > 0) {
+      const everyone =
+        splitMemberIds.length === input.eligibleMembershipIds.length &&
+        splitMemberIds.every((id) => input.eligibleMembershipIds.includes(id));
+      return {
+        id: line.id,
+        name: line.name,
+        totalCents: line.totalCents,
+        taggedMembershipIds: [...splitMemberIds],
+        everyone,
+        excluded: false,
+        unassigned: false,
+        shares: splitEvenlyDeterministic(line.totalCents, splitMemberIds),
+      };
+    }
+    const tagged = taggedForLine(
+      line,
+      input.payerMembershipId,
+      input.eligibleMembershipIds,
+    );
+    const allocated =
+      calc.ok
+        ? calc.lines.find((row) => row.sourceType === "item" && row.sourceId === line.id)
+        : undefined;
+    return {
+      id: line.id,
+      name: line.name,
+      totalCents: line.totalCents,
+      ...tagged,
+      shares: (allocated?.allocations ?? [])
+        .filter((alloc) => alloc.amountCents !== 0)
+        .map((alloc) => ({
+          membershipId: alloc.membershipId,
+          amountCents: alloc.amountCents,
+        })),
+    };
+  });
+
+  const adjustmentBreakdown: SplitBreakdownLine[] =
+    calc.ok && !input.splitEverything
+      ? calc.lines
+          .filter((row) => row.sourceType === "adjustment")
+          .map((row) => ({
+            id: row.sourceId,
+            name: row.description,
+            totalCents: row.totalCents,
+            taggedMembershipIds: row.allocations
+              .filter((alloc) => alloc.amountCents !== 0)
+              .map((alloc) => alloc.membershipId),
+            everyone: true,
+            excluded: false,
+            unassigned: false,
+            shares: row.allocations
+              .filter((alloc) => alloc.amountCents !== 0)
+              .map((alloc) => ({
+                membershipId: alloc.membershipId,
+                amountCents: alloc.amountCents,
+              })),
+          }))
+      : [];
+
   return {
     merchant: input.merchant,
     payerMembershipId: input.payerMembershipId,
@@ -303,5 +434,7 @@ export function previewReceiptSplit(input: {
     discountCents: Math.abs(adjustments.find((a) => a.type === "discount")?.amountCents ?? 0),
     balanced: calc.ok ? remainderCents === 0 || Math.abs(remainderCents) <= 1 : false,
     remainderCents,
+    items: itemBreakdown,
+    adjustments: adjustmentBreakdown,
   };
 }
