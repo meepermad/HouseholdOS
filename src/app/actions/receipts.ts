@@ -867,9 +867,7 @@ async function loadReceiptRepasteSnapshot(
         .maybeSingle(),
       supabase
         .from("expense_receipt_line_items")
-        .select(
-          "id, sort_index, ocr_text, corrected_name, source_text, quantity, total_price_cents, classification, participant_membership_ids, description_edited_by_user",
-        )
+        .select("*")
         .eq("receipt_id", receiptId)
         .order("sort_index"),
       supabase

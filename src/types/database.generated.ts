@@ -2984,10 +2984,13 @@ export type Database = {
       expense_receipt_line_items: {
         Row: {
           category: string | null
+          claim_review_required: boolean
           classification: string
           confidence: number | null
           corrected_name: string | null
           created_at: string
+          description_edited_by_user: boolean
+          description_source: string
           destination_applied_at: string | null
           destination_apply_error: string | null
           destination_apply_status: string
@@ -3002,16 +3005,20 @@ export type Database = {
           resource_destination: string
           review_status: string
           sort_index: number
+          source_text: string | null
           total_price_cents: number | null
           unit_price_cents: number | null
           updated_at: string
         }
         Insert: {
           category?: string | null
+          claim_review_required?: boolean
           classification?: string
           confidence?: number | null
           corrected_name?: string | null
           created_at?: string
+          description_edited_by_user?: boolean
+          description_source?: string
           destination_applied_at?: string | null
           destination_apply_error?: string | null
           destination_apply_status?: string
@@ -3026,16 +3033,20 @@ export type Database = {
           resource_destination?: string
           review_status?: string
           sort_index?: number
+          source_text?: string | null
           total_price_cents?: number | null
           unit_price_cents?: number | null
           updated_at?: string
         }
         Update: {
           category?: string | null
+          claim_review_required?: boolean
           classification?: string
           confidence?: number | null
           corrected_name?: string | null
           created_at?: string
+          description_edited_by_user?: boolean
+          description_source?: string
           destination_applied_at?: string | null
           destination_apply_error?: string | null
           destination_apply_status?: string
@@ -3050,6 +3061,7 @@ export type Database = {
           resource_destination?: string
           review_status?: string
           sort_index?: number
+          source_text?: string | null
           total_price_cents?: number | null
           unit_price_cents?: number | null
           updated_at?: string
@@ -3099,8 +3111,66 @@ export type Database = {
           },
         ]
       }
+      expense_receipt_transcription_revisions: {
+        Row: {
+          became_active_at: string
+          created_at: string
+          created_by: string | null
+          household_id: string
+          id: string
+          parsed_payload: Json
+          reason: string
+          receipt_id: string
+          revision_number: number
+          source_text: string
+          superseded_at: string | null
+        }
+        Insert: {
+          became_active_at?: string
+          created_at?: string
+          created_by?: string | null
+          household_id: string
+          id?: string
+          parsed_payload?: Json
+          reason: string
+          receipt_id: string
+          revision_number: number
+          source_text: string
+          superseded_at?: string | null
+        }
+        Update: {
+          became_active_at?: string
+          created_at?: string
+          created_by?: string | null
+          household_id?: string
+          id?: string
+          parsed_payload?: Json
+          reason?: string
+          receipt_id?: string
+          revision_number?: number
+          source_text?: string
+          superseded_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expense_receipt_transcription_revi_receipt_id_household_id_fkey"
+            columns: ["receipt_id", "household_id"]
+            isOneToOne: false
+            referencedRelation: "expense_receipts"
+            referencedColumns: ["id", "household_id"]
+          },
+          {
+            foreignKeyName: "expense_receipt_transcription_revisions_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "household_memberships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       expense_receipts: {
         Row: {
+          active_transcription_revision_id: string | null
           claim_wait_mode: string | null
           confirm_idempotency_key: string | null
           created_at: string
@@ -3111,9 +3181,11 @@ export type Database = {
           extraction_mode: string | null
           file_hash: string | null
           file_name: string
+          financial_review_required: boolean
           household_id: string
           id: string
           intake_source: string
+          last_repaste_idempotency_key: string | null
           last_split_workflow: string | null
           merchant_corrected: string | null
           mime_type: string
@@ -3128,11 +3200,13 @@ export type Database = {
           split_workflow: string | null
           status: string
           storage_path: string
+          transcription_corrected: boolean
           unsynced_client_draft: boolean
           updated_at: string
           uploaded_by_membership_id: string
         }
         Insert: {
+          active_transcription_revision_id?: string | null
           claim_wait_mode?: string | null
           confirm_idempotency_key?: string | null
           created_at?: string
@@ -3143,9 +3217,11 @@ export type Database = {
           extraction_mode?: string | null
           file_hash?: string | null
           file_name: string
+          financial_review_required?: boolean
           household_id: string
           id?: string
           intake_source?: string
+          last_repaste_idempotency_key?: string | null
           last_split_workflow?: string | null
           merchant_corrected?: string | null
           mime_type: string
@@ -3160,11 +3236,13 @@ export type Database = {
           split_workflow?: string | null
           status?: string
           storage_path: string
+          transcription_corrected?: boolean
           unsynced_client_draft?: boolean
           updated_at?: string
           uploaded_by_membership_id: string
         }
         Update: {
+          active_transcription_revision_id?: string | null
           claim_wait_mode?: string | null
           confirm_idempotency_key?: string | null
           created_at?: string
@@ -3175,9 +3253,11 @@ export type Database = {
           extraction_mode?: string | null
           file_hash?: string | null
           file_name?: string
+          financial_review_required?: boolean
           household_id?: string
           id?: string
           intake_source?: string
+          last_repaste_idempotency_key?: string | null
           last_split_workflow?: string | null
           merchant_corrected?: string | null
           mime_type?: string
@@ -3192,6 +3272,7 @@ export type Database = {
           split_workflow?: string | null
           status?: string
           storage_path?: string
+          transcription_corrected?: boolean
           unsynced_client_draft?: boolean
           updated_at?: string
           uploaded_by_membership_id?: string
@@ -15042,11 +15123,26 @@ export type Database = {
         Args: { p_line_item_id: string }
         Returns: number
       }
+      _receipt_insert_transcription_revision: {
+        Args: {
+          p_created_by: string
+          p_household_id: string
+          p_parsed_payload: Json
+          p_reason: string
+          p_receipt_id: string
+          p_source_text: string
+        }
+        Returns: string
+      }
       _receipt_invite_user_ids: {
         Args: { p_receipt_id: string }
         Returns: string[]
       }
       _receipt_line_quantity: { Args: { p_quantity: number }; Returns: number }
+      _receipt_pasted_display_name: {
+        Args: { p_name: string; p_source: string }
+        Returns: string
+      }
       _recommendation_base_weight: { Args: { p_key: string }; Returns: number }
       _recommendation_mode_mult: {
         Args: { p_key: string; p_mode: string }
@@ -15250,6 +15346,10 @@ export type Database = {
         Args: { p_comment?: string; p_version_id: string }
         Returns: string
       }
+      acknowledge_receipt_correction: {
+        Args: { p_receipt_id: string }
+        Returns: undefined
+      }
       activate_governance_version: {
         Args: {
           p_document_id: string
@@ -15337,6 +15437,17 @@ export type Database = {
       apply_receipt_line_destinations: {
         Args: { p_receipt_id: string }
         Returns: undefined
+      }
+      apply_receipt_repaste: {
+        Args: {
+          p_idempotency_key: string
+          p_parsed_payload: Json
+          p_plan: Json
+          p_reason?: string
+          p_receipt_id: string
+          p_source_text: string
+        }
+        Returns: string
       }
       apply_remaining_receipt_lines: {
         Args: { p_action: string; p_receipt_id: string }
