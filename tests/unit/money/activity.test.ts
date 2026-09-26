@@ -10,7 +10,7 @@ describe("activity formatting", () => {
     expect(formatActivityDescription("payment_submitted", { member: "Andrew" })).toBe(
       "Payment submitted to Andrew",
     );
-    expect(activityStatusLabel("payment_submitted")).toBe("Waiting for confirmation");
+    expect(activityStatusLabel("payment_submitted")).toBe("Payment reported as sent");
   });
 
   it("sorts newest first", () => {

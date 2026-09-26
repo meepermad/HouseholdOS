@@ -44,6 +44,7 @@ import {
 } from "@/lib/money/create-actions";
 import { selectPrimaryActions, type PrimaryAction } from "@/lib/money/primary-actions";
 import { shiftMonth } from "@/lib/money/list-filters";
+import { describePaymentRecord } from "@/lib/payments/narrative";
 import type { MemberBalanceSummary, PairwiseBalance } from "@/lib/payments/types";
 import type { HouseholdResponsibility } from "@/types/database";
 
@@ -250,7 +251,7 @@ export async function loadMoneyOverview(params: {
     supabase
       .from("payments")
       .select(
-        "id, total_amount_cents, status, submitted_at, confirmed_at, created_at, sender_membership_id, recipient_membership_id",
+        "id, total_amount_cents, status, submitted_at, confirmed_at, created_at, sender_membership_id, recipient_membership_id, created_by_membership_id",
       )
       .eq("household_id", householdId)
       .order("created_at", { ascending: false })
@@ -650,6 +651,7 @@ function buildActivityFeed(params: {
     created_at: string;
     sender_membership_id: string;
     recipient_membership_id: string;
+    created_by_membership_id: string;
   }>;
   disputes: Array<{
     id: string;
@@ -704,7 +706,15 @@ function buildActivityFeed(params: {
     items.push({
       id: `payment-${p.id}`,
       kind,
-      description: formatActivityDescription(kind, { member: other }),
+      description: describePaymentRecord({
+        status: p.status,
+        amountCents: p.total_amount_cents,
+        senderName: params.nameOf(p.sender_membership_id),
+        recipientName: params.nameOf(p.recipient_membership_id),
+        senderMembershipId: p.sender_membership_id,
+        recipientMembershipId: p.recipient_membership_id,
+        createdByMembershipId: p.created_by_membership_id,
+      }),
       amountCents: p.total_amount_cents,
       secondary: other,
       date: (p.confirmed_at || p.submitted_at || p.created_at).slice(0, 10),

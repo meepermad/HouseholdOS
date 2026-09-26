@@ -1,4 +1,8 @@
-import { humanStatusLabel } from "@/lib/presentation/human-status";
+import {
+  humanStatusLabel,
+  paymentStatusCopy,
+  settlementStatusCopy,
+} from "@/lib/presentation/human-status";
 
 const tone: Record<string, string> = {
   draft: "bg-surface-secondary text-text-secondary border-border",
@@ -41,9 +45,31 @@ export function ExpenseStatusBadge({ status }: { status: string }) {
 }
 
 export function PaymentStatusBadge({ status }: { status: string }) {
-  return <ExpenseStatusBadge status={status} />;
+  const label = paymentStatusCopy(status).label;
+  const classes =
+    tone[status] ?? "bg-surface-secondary text-text-secondary border-border";
+  return (
+    <span
+      className={`inline-flex items-center rounded-md border px-2.5 py-1 text-xs font-medium ${classes}`}
+      data-status={status}
+    >
+      <span className="sr-only">Status: </span>
+      {label}
+    </span>
+  );
 }
 
 export function SettlementStatusBadge({ status }: { status: string }) {
-  return <ExpenseStatusBadge status={status} />;
+  const label = settlementStatusCopy(status).label;
+  const classes =
+    tone[status] ?? "bg-surface-secondary text-text-secondary border-border";
+  return (
+    <span
+      className={`inline-flex items-center rounded-md border px-2.5 py-1 text-xs font-medium ${classes}`}
+      data-status={status}
+    >
+      <span className="sr-only">Status: </span>
+      {label}
+    </span>
+  );
 }

@@ -85,11 +85,11 @@ export function activityStatusLabel(kind: ActivityKind, rawStatus?: string | nul
     case "receipt_reviewed":
       return "Reviewed";
     case "payment_submitted":
-      return "Waiting for confirmation";
+      return "Payment reported as sent";
     case "payment_confirmed":
-      return "Confirmed";
+      return "Payment received";
     case "payment_reversed":
-      return "Reversed";
+      return "Payment corrected";
     case "opening_balance_confirmed":
       return "Confirmed";
     case "routed_proposed":

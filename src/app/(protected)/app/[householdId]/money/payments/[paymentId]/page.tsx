@@ -7,10 +7,14 @@ import { getPaymentDetail } from "@/lib/payments/queries";
 import { PaymentStatusBadge } from "@/components/ui/status-badge";
 import { AppBackButton } from "@/components/app-back-button";
 import {
+  AssociatePayerReportForm,
   CancelPaymentButton,
   IncomingPaymentActions,
   ReversePaymentForm,
 } from "@/components/payments/payment-actions";
+import { describePaymentRecord } from "@/lib/payments/narrative";
+import { loadObligationPurchaseSources } from "@/lib/payments/queries";
+import { obligationPurchaseLabel, sourceFromMaps } from "@/lib/payments/obligation-source";
 import { ActionForm } from "@/components/action-form";
 import { openDisputeAction } from "@/app/actions/payments";
 import { createClient } from "@/lib/supabase/server";
@@ -44,11 +48,28 @@ export default async function PaymentDetailPage({
     obligationIds.length > 0
       ? await supabase
           .from("reimbursement_obligations")
-          .select("id, expense_id")
+          .select("id, expense_id, obligation_kind")
           .in("id", obligationIds)
-      : { data: [] as { id: string; expense_id: string }[] };
+      : { data: [] as { id: string; expense_id: string | null; obligation_kind: string }[] };
 
-  const expenseByObl = new Map((obls ?? []).map((o) => [o.id, o.expense_id]));
+  const expenseByObl = new Map(
+    (obls ?? []).map((o) => [o.id, { expenseId: o.expense_id, kind: o.obligation_kind }]),
+  );
+  const sources = await loadObligationPurchaseSources(
+    householdId,
+    [...expenseByObl.values()].map((row) => row.expenseId),
+  );
+  const narrative = describePaymentRecord({
+    status: payment.status,
+    amountCents: payment.total_amount_cents,
+    senderName: label(payment.sender_membership_id),
+    recipientName: label(payment.recipient_membership_id),
+    senderMembershipId: payment.sender_membership_id,
+    recipientMembershipId: payment.recipient_membership_id,
+    createdByMembershipId: payment.created_by_membership_id,
+  });
+  const recipientRecorded =
+    payment.created_by_membership_id !== payment.sender_membership_id;
 
   return (
     <main className="space-y-6">
@@ -60,10 +81,9 @@ export default async function PaymentDetailPage({
           </h1>
           <PaymentStatusBadge status={payment.status} />
         </div>
-        <p className="text-sm text-text-secondary">
-          {label(payment.sender_membership_id)} → {label(payment.recipient_membership_id)}
-          {" · "}
-          Recorded as {paymentMethodLabel(payment.external_method)}
+        <p className="text-sm text-text-secondary" data-testid="payment-narrative">
+          {narrative} Recorded as {paymentMethodLabel(payment.external_method)}. HouseholdOS
+          does not verify the outside payment.
         </p>
       </header>
 
@@ -116,14 +136,20 @@ export default async function PaymentDetailPage({
                 href={`/app/${householdId}/money/reimbursements/${a.obligation_id}`}
                 className="underline"
               >
-                What this payment covers
+                {obligationPurchaseLabel(
+                  sourceFromMaps(
+                    expenseByObl.get(a.obligation_id)?.expenseId ?? null,
+                    expenseByObl.get(a.obligation_id)?.kind ?? "reimbursement",
+                    sources,
+                  ),
+                )}
               </Link>
               <span className="tabular-nums">{formatMoney(a.amount_cents)}</span>
             </li>
           ))}
         </ul>
         <div className="flex flex-wrap gap-2 text-sm">
-          {[...new Set([...expenseByObl.values()])].map((expenseId) => (
+          {[...new Set([...expenseByObl.values()].map((row) => row.expenseId).filter(Boolean))].map((expenseId) => (
             <Link
               key={expenseId}
               href={`/app/${householdId}/money/expenses/${expenseId}`}
@@ -144,14 +170,24 @@ export default async function PaymentDetailPage({
       {payment.status === "confirmed" && isRecipient ? (
         <ReversePaymentForm householdId={householdId} paymentId={paymentId} />
       ) : null}
+      {payment.status === "confirmed" && isSender ? (
+        <AssociatePayerReportForm householdId={householdId} paymentId={paymentId} />
+      ) : null}
 
       <ActionForm action={openDisputeAction} pendingLabel="Opening dispute…">
         <input type="hidden" name="householdId" value={householdId} />
         <input type="hidden" name="paymentId" value={paymentId} />
         <input type="hidden" name="disputeType" value="payment_not_received" />
         <label className="block text-sm font-medium" htmlFor="dispute-reason">
-          Open dispute
+          Report a problem
         </label>
+        <p className="text-xs text-text-muted">
+          Reporting a problem does not undo the balance. A correction is recorded separately
+          and the original payment stays in the history.
+          {recipientRecorded && isSender
+            ? ` ${label(payment.created_by_membership_id)} recorded this receipt.`
+            : ""}
+        </p>
         <textarea
           id="dispute-reason"
           name="reason"
@@ -162,7 +198,7 @@ export default async function PaymentDetailPage({
           type="submit"
           className="mt-2 inline-flex min-h-11 items-center rounded-md border border-border px-4 text-sm font-semibold"
         >
-          Open dispute
+          Report a problem
         </button>
       </ActionForm>
     </main>

@@ -35,24 +35,24 @@ const EXPENSE_STATUS: Record<string, StatusExplanation> = {
 
 const PAYMENT_STATUS: Record<string, StatusExplanation> = {
   submitted: {
-    label: "Waiting for confirmation",
-    detail: "The recipient still needs to confirm they received this.",
+    label: "Payment reported as sent",
+    detail: "The person who was paid can acknowledge this, or record the receipt themselves.",
   },
   confirmed: {
-    label: "Confirmed",
-    detail: "The recipient confirmed they received this payment.",
+    label: "Payment received",
+    detail: "The person who was paid has acknowledged this payment.",
   },
   rejected: {
-    label: "Not received",
+    label: "Payment not received",
     detail: "The recipient said they did not get this payment.",
   },
   cancelled: {
-    label: "Cancelled",
+    label: "Payment cancelled",
     detail: "This payment record was withdrawn.",
   },
   reversed: {
-    label: "Reversed",
-    detail: "A confirmed payment was undone.",
+    label: "Payment corrected",
+    detail: "A recorded payment was reversed. The original record is still in the history.",
   },
 };
 
@@ -66,7 +66,7 @@ const SETTLEMENT_STATUS: Record<string, StatusExplanation> = {
     detail: "Some of this balance has been paid.",
   },
   settled: {
-    label: "Paid",
+    label: "Fully settled",
     detail: "This balance is settled.",
   },
 };

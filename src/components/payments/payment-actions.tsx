@@ -1,7 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import { ActionForm } from "@/components/action-form";
 import {
+  associatePayerReportAction,
   cancelPaymentAction,
   confirmPaymentAction,
   rejectPaymentAction,
@@ -29,7 +31,7 @@ export function IncomingPaymentActions({
           className="inline-flex min-h-11 w-full items-center justify-center rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground"
           data-testid="confirm-receipt"
         >
-          Confirm received
+          Confirm payment received
         </button>
       </ActionForm>
 
@@ -82,6 +84,46 @@ export function CancelPaymentButton({
         data-testid="cancel-payment"
       >
         Cancel submitted payment
+      </button>
+    </ActionForm>
+  );
+}
+
+export function AssociatePayerReportForm({
+  householdId,
+  paymentId,
+}: {
+  householdId: string;
+  paymentId: string;
+}) {
+  const [key] = useState(() =>
+    typeof crypto !== "undefined" && "randomUUID" in crypto
+      ? crypto.randomUUID()
+      : `assoc-${paymentId}`,
+  );
+  return (
+    <ActionForm action={associatePayerReportAction} pendingLabel="Saving your note…" actionCategory="financial">
+      <input type="hidden" name="householdId" value={householdId} />
+      <input type="hidden" name="paymentId" value={paymentId} />
+      <input type="hidden" name="idempotencyKey" value={key} />
+      <p className="text-sm text-text-secondary">
+        This receipt is already recorded. Adding your note does not create another settlement.
+      </p>
+      <label className="mt-2 block text-sm font-medium" htmlFor="payer-note">
+        Your note (optional)
+      </label>
+      <textarea
+        id="payer-note"
+        name="note"
+        className="mt-1 min-h-20 w-full rounded-md border border-border bg-surface px-3 py-2"
+        maxLength={500}
+      />
+      <button
+        type="submit"
+        className="mt-2 inline-flex min-h-11 items-center rounded-md border border-border px-4 text-sm font-semibold"
+        data-testid="associate-payer-report"
+      >
+        Associate your report
       </button>
     </ActionForm>
   );

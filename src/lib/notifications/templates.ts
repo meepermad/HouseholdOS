@@ -85,12 +85,12 @@ const GENERIC_BY_CATEGORY: Record<
 
 const DETAILED_FALLBACKS: Record<string, (actor: string) => PushContent> = {
   "payment.awaiting_confirmation": (actor) => ({
-    title: "Payment awaiting confirmation",
-    body: `${actor} recorded a payment for your review.`,
+    title: "Payment reported as sent",
+    body: `${actor} reported sending a payment.`,
   }),
   "payment.confirmed": (actor) => ({
-    title: "Payment confirmed",
-    body: `${actor} confirmed your recorded payment.`,
+    title: "Payment received",
+    body: `${actor} recorded receiving your payment.`,
   }),
   "payment.rejected": (actor) => ({
     title: "Payment rejected",

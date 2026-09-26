@@ -31,7 +31,7 @@ describe("notification templates", () => {
       privacyPreview: "detailed",
       actorDisplayName: "Alex",
     });
-    expect(content.title).toBe("Payment awaiting confirmation");
+    expect(content.title).toBe("Payment reported as sent");
     expect(content.body).toContain("Alex");
     expect(content.title).not.toMatch(AMOUNT_OR_REF);
     expect(content.body).not.toMatch(AMOUNT_OR_REF);
