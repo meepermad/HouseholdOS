@@ -121,12 +121,10 @@ function HouseholdShellFallback({
   householdName,
   householdId,
   householdOptions,
-  children,
 }: {
   householdName: string;
   householdId: string;
   householdOptions: { id: string; name: string }[];
-  children: React.ReactNode;
 }) {
   return (
     <>
@@ -176,9 +174,7 @@ function HouseholdShellFallback({
           />
         </div>
         <div className="app-main-pad flex-1 px-4 py-4 md:px-6 md:py-6">
-          <Suspense fallback={<RouteLoadGuard stage="home" />}>
-            {children}
-          </Suspense>
+          <RouteLoadGuard stage="household_shell" />
         </div>
         <HouseholdNav
           householdId={householdId}
@@ -276,9 +272,7 @@ export default async function HouseholdLayout({
             householdName={household.name}
             householdId={householdId}
             householdOptions={householdOptions}
-          >
-            {children}
-          </HouseholdShellFallback>
+          />
         }
       >
         <HouseholdNavChrome

@@ -301,6 +301,7 @@ test.describe("two-user settlement workflow", () => {
   test("partial then full settlement shows the same official balance for both users", async () => {
     // B can open settle-up for the household (UI surface), then records via RPC.
     await pageB.goto(`/app/${householdId}/money/payments/new`);
+    await expect(pageB.getByTestId("settle-up-form")).toHaveCount(1);
     await expect(pageB.getByTestId("settle-up-form")).toBeVisible({
       timeout: 15_000,
     });
@@ -315,7 +316,7 @@ test.describe("two-user settlement workflow", () => {
 
     await pageA.goto(`/app/${householdId}/money/payments/${paymentId}`);
     await pageA.getByTestId("confirm-receipt").click();
-    await expect(pageA.getByText("Confirmed received").first()).toBeVisible({
+    await expect(pageA.getByText("acknowledged receiving").first()).toBeVisible({
       timeout: 20_000,
     });
 
@@ -333,7 +334,7 @@ test.describe("two-user settlement workflow", () => {
     });
     await pageA.goto(`/app/${householdId}/money/payments/${remainderId}`);
     await pageA.getByTestId("confirm-receipt").click();
-    await expect(pageA.getByText("Confirmed received").first()).toBeVisible({
+    await expect(pageA.getByText("acknowledged receiving").first()).toBeVisible({
       timeout: 20_000,
     });
 

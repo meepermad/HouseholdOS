@@ -95,9 +95,11 @@ export default async function PaymentDetailPage({
             : "—"}
         </p>
         {payment.confirmed_at ? (
-          <p>
-            Confirmed received by {label(payment.confirmed_by_membership_id ?? "")} at{" "}
-            {new Date(payment.confirmed_at).toLocaleString()}
+          <p data-testid="payment-acknowledgment">
+            {recipientRecorded
+              ? `${label(payment.confirmed_by_membership_id ?? "")} recorded receiving this payment at ${new Date(payment.confirmed_at).toLocaleString()}.`
+              : `${label(payment.confirmed_by_membership_id ?? "")} acknowledged receiving this payment at ${new Date(payment.confirmed_at).toLocaleString()}.`}{" "}
+            This is their record of receipt. HouseholdOS did not verify an outside account.
           </p>
         ) : null}
         {payment.rejected_at ? (
@@ -130,23 +132,46 @@ export default async function PaymentDetailPage({
           Applied to
         </h2>
         <ul className="divide-y divide-border rounded-md border border-border bg-surface">
-          {allocations.map((a) => (
-            <li key={a.id} className="flex justify-between gap-2 px-4 py-3 text-sm">
-              <Link
-                href={`/app/${householdId}/money/reimbursements/${a.obligation_id}`}
-                className="underline"
-              >
-                {obligationPurchaseLabel(
-                  sourceFromMaps(
-                    expenseByObl.get(a.obligation_id)?.expenseId ?? null,
-                    expenseByObl.get(a.obligation_id)?.kind ?? "reimbursement",
-                    sources,
-                  ),
-                )}
-              </Link>
-              <span className="tabular-nums">{formatMoney(a.amount_cents)}</span>
-            </li>
-          ))}
+          {allocations.map((a) => {
+            const source = sourceFromMaps(
+              expenseByObl.get(a.obligation_id)?.expenseId ?? null,
+              expenseByObl.get(a.obligation_id)?.kind ?? "reimbursement",
+              sources,
+            );
+            return (
+              <li key={a.id} className="space-y-1 px-4 py-3 text-sm">
+                <div className="flex justify-between gap-2">
+                  <Link
+                    href={`/app/${householdId}/money/reimbursements/${a.obligation_id}`}
+                    className="underline"
+                  >
+                    {obligationPurchaseLabel(source)}
+                  </Link>
+                  <span className="tabular-nums">{formatMoney(a.amount_cents)}</span>
+                </div>
+                <p className="flex flex-wrap gap-x-3 text-xs">
+                  {source.expenseId ? (
+                    <Link
+                      href={`/app/${householdId}/money/expenses/${source.expenseId}`}
+                      className="font-medium text-primary underline-offset-2 hover:underline"
+                    >
+                      Original expense
+                    </Link>
+                  ) : null}
+                  {source.receiptId ? (
+                    <Link
+                      href={`/app/${householdId}/money/receipts/${source.receiptId}`}
+                      className="font-medium text-primary underline-offset-2 hover:underline"
+                    >
+                      Receipt and items
+                    </Link>
+                  ) : (
+                    <span className="text-text-muted">No receipt is attached.</span>
+                  )}
+                </p>
+              </li>
+            );
+          })}
         </ul>
         <div className="flex flex-wrap gap-2 text-sm">
           {[...new Set([...expenseByObl.values()].map((row) => row.expenseId).filter(Boolean))].map((expenseId) => (

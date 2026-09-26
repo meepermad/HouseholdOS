@@ -44,13 +44,13 @@ export function MoneyPairwiseBalances({
                     <p className="mt-1 text-xs text-text-muted">
                       Pending:{" "}
                       {row.pendingOutgoingCents > 0
-                        ? `${formatMoney(row.pendingOutgoingCents)} awaiting their confirmation`
+                        ? `${formatMoney(row.pendingOutgoingCents)} reported as sent`
                         : null}
                       {row.pendingOutgoingCents > 0 && row.pendingIncomingCents > 0
                         ? " · "
                         : null}
                       {row.pendingIncomingCents > 0
-                        ? `${formatMoney(row.pendingIncomingCents)} awaiting yours`
+                        ? `${formatMoney(row.pendingIncomingCents)} waiting for your acknowledgment`
                         : null}
                     </p>
                   ) : null}
@@ -98,7 +98,14 @@ export function MoneyPairwiseBalances({
         </ul>
       )}
       {settledHiddenCount > 0 ? (
-        <p className="text-xs text-text-muted">Everyone else is settled</p>
+        <p className="text-xs text-text-muted">
+          <Link
+            href={`/app/${householdId}/money/balances#settled`}
+            className="font-medium text-primary underline-offset-2 hover:underline"
+          >
+            View settled history
+          </Link>
+        </p>
       ) : null}
       {routedSuggestionAvailable ? (
         <div

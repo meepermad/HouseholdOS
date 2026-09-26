@@ -5,6 +5,7 @@ export function DocumentLoadWatchdogScript({ nonce }: { nonce?: string }) {
   return (
     <script
       nonce={nonce}
+      suppressHydrationWarning
       dangerouslySetInnerHTML={{ __html: DOCUMENT_LOAD_WATCHDOG_SCRIPT }}
     />
   );

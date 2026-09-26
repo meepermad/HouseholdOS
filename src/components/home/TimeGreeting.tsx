@@ -1,14 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import { timeOfDayGreeting } from "@/lib/presentation/human-status";
 
-export function TimeGreeting() {
-  const [greeting, setGreeting] = useState("Home");
+function subscribeGreeting(): () => void {
+  return () => undefined;
+}
 
-  useEffect(() => {
-    setGreeting(timeOfDayGreeting(new Date()));
-  }, []);
+export function TimeGreeting() {
+  const greeting = useSyncExternalStore(
+    subscribeGreeting,
+    () => timeOfDayGreeting(new Date()),
+    () => "Home",
+  );
 
   return <>{greeting}</>;
 }

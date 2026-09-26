@@ -15,6 +15,7 @@ import {
 import { sourceFromMaps } from "@/lib/payments/obligation-source";
 import { explainCounterpartyBalance } from "@/lib/money/explain-balances";
 import { BalanceBreakdown } from "@/components/money/BalanceBreakdown";
+import { settledRelationships } from "@/lib/payments/settled-history";
 
 export const dynamic = "force-dynamic";
 
@@ -52,6 +53,11 @@ export default async function BalancesPage({
     })),
   );
   const explanationById = new Map(explanations.map((row) => [row.id, row.result]));
+
+  const settled = settledRelationships({
+    viewerMembershipId: ctx.membershipId,
+    obligations,
+  });
 
   const open = obligations.filter(
     (o) =>
@@ -107,13 +113,13 @@ export default async function BalancesPage({
         data-testid="projected-balances"
       >
         <div className="rounded-md border border-border bg-surface p-4">
-          <p className="text-xs text-text-muted">Awaiting confirmation (out)</p>
+          <p className="text-xs text-text-muted">Reported as sent</p>
           <p className="mt-1 text-lg font-semibold tabular-nums">
             {formatMoney(balances.pendingOutgoing ?? 0)}
           </p>
         </div>
         <div className="rounded-md border border-border bg-surface p-4">
-          <p className="text-xs text-text-muted">Awaiting confirmation (in)</p>
+          <p className="text-xs text-text-muted">Waiting for your acknowledgment</p>
           <p className="mt-1 text-lg font-semibold tabular-nums">
             {formatMoney(balances.pendingIncoming ?? 0)}
           </p>
@@ -193,9 +199,50 @@ export default async function BalancesPage({
         )}
       </section>
 
+      <section id="settled" className="space-y-2" data-testid="settled-history">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-text-muted">
+          Settled
+        </h2>
+        {settled.length === 0 ? (
+          <p className="text-sm text-text-secondary">No settled relationships yet.</p>
+        ) : (
+          <ul className="divide-y divide-border rounded-md border border-border bg-surface">
+            {settled.map((pair) => (
+              <li key={pair.counterpartyMembershipId} className="space-y-2 px-4 py-3 text-sm">
+                <p className="font-medium">
+                  {label(pair.counterpartyMembershipId)} · Fully settled
+                </p>
+                <ul className="space-y-2">
+                  {pair.obligations.map((obligation) => (
+                    <li key={obligation.obligationId} className="space-y-1">
+                      <ObligationSourceLinks
+                        householdId={householdId}
+                        source={sourceFromMaps(
+                          obligation.expenseId,
+                          obligation.kind,
+                          sources,
+                        )}
+                      />
+                      <Link
+                        href={`/app/${householdId}/money/reimbursements/${obligation.obligationId}`}
+                        className="inline-flex min-h-11 items-center text-sm font-medium text-primary underline-offset-2 hover:underline"
+                      >
+                        View settled balance
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
       <p className="text-xs text-text-muted">
         Confirmed amounts change when the person who is owed records receiving a
         payment, or when they acknowledge a payment the payer reported sending.
+        A recorded receipt is that person&apos;s acknowledgment. HouseholdOS does
+        not verify an outside account.
       </p>
 
       <section className="space-y-2">

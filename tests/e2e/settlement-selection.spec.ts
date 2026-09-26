@@ -48,11 +48,12 @@ async function login(page: Page, email: string) {
   // The dev server aborts the browser's native login POST (ERR_ABORTED against
   // a competing /login request). The Route Handler is the same one the form
   // posts to; its Set-Cookie lands in this browser context.
+  const origin = (process.env.PLAYWRIGHT_BASE_URL ?? "http://localhost:3000").replace(/\/$/, "");
   const response = await page.request.post("/api/auth/sign-in", {
     form: { email, password, next: "/app" },
     headers: {
-      origin: "http://localhost:3000",
-      referer: "http://localhost:3000/login",
+      origin,
+      referer: `${origin}/login`,
       "sec-fetch-site": "same-origin",
     },
     maxRedirects: 0,
@@ -359,7 +360,7 @@ test.describe("settlement selection and recipient receipt", () => {
       .sort();
     expect(selectedIds).toEqual([...selectedObligationIds].sort());
 
-    await page.getByTestId("deselect-all").click();
+    await page.getByTestId("deselect-all").click({ force: true });
     await expect(page.getByTestId("selection-summary")).toHaveText("0 expenses selected");
     await expect(page.getByTestId("submit-payment")).toBeDisabled();
 
@@ -407,6 +408,9 @@ test.describe("settlement selection and recipient receipt", () => {
       timeout: 30_000,
     });
     await expect(page.getByTestId("payment-narrative")).toContainText("recorded receiving");
+    await expect(page.getByTestId("payment-acknowledgment")).toContainText(
+      "did not verify an outside account",
+    );
 
     const { data: balance } = await admin
       .from("obligation_balances_v")
@@ -421,13 +425,16 @@ test.describe("settlement selection and recipient receipt", () => {
       .eq("status", "confirmed");
     expect(otherHouse ?? []).toHaveLength(0);
 
-    const { data: settled } = await admin
-      .from("reimbursement_obligations")
-      .select("id")
-      .eq("household_id", householdReceipt)
-      .limit(1)
-      .single();
-    await page.goto(`/app/${householdReceipt}/money/reimbursements/${settled!.id}`);
+    await page.goto(`/app/${householdReceipt}/money/balances#settled`);
+    await expect(page.getByTestId("settled-history")).toContainText("Fully settled");
+    await page.getByRole("link", { name: "View settled balance" }).click();
     await expect(page.getByText("How was this calculated?")).toBeVisible({ timeout: 20_000 });
+
+    await page.goto(`/app/${householdReceipt}`);
+    await page.locator('[data-testid="household-switcher-trigger"]:visible').click();
+    await page.getByRole("button", { name: `E2E Select ${runId}` }).click();
+    await page.waitForURL(new RegExp(`/app/${householdSelect}(?:/|$)`), { timeout: 20_000 });
+    await page.goto(`/app/${householdSelect}/money/payments`);
+    await expect(page.getByText("recorded receiving")).toHaveCount(0);
   });
 });

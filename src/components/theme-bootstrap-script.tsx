@@ -5,6 +5,7 @@ export function ThemeBootstrapScript({ nonce }: { nonce?: string }) {
   return (
     <script
       nonce={nonce}
+      suppressHydrationWarning
       dangerouslySetInnerHTML={{ __html: THEME_BOOTSTRAP_SCRIPT }}
     />
   );

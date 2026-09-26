@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { DeploymentSkewRecovery } from "@/components/deployment-skew-recovery";
 import {
@@ -28,13 +28,17 @@ export default function HouseholdError({
   const reference = formatErrorReference(error.digest);
   const copy = classifyHouseholdPageError(error);
   const skew = isDeploymentSkewError(error);
-  const [receiptsPath, setReceiptsPath] = useState<{ householdId: string } | null>(
-    null,
+  const pathname = useSyncExternalStore(
+    () => () => undefined,
+    () => window.location.pathname,
+    () => "",
   );
+  const receiptsPath = pathname
+    ? householdReceiptsPathFromLocation(pathname)
+    : null;
 
   useEffect(() => {
     headingRef.current?.focus();
-    setReceiptsPath(householdReceiptsPathFromLocation(window.location.pathname));
   }, []);
 
   return (

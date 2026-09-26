@@ -34,7 +34,7 @@ export async function MoneyActionCenter({
               href={`/app/${householdId}/money/payments/${p.id}`}
               className="block px-4 py-3.5 text-sm hover:bg-surface-interactive"
             >
-              Incoming payment awaiting confirmation ·{" "}
+              Payment reported as sent ·{" "}
               {formatMoney(p.total_amount_cents)} ({p.external_method.replaceAll("_", " ")})
             </Link>
           </li>
