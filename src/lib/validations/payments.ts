@@ -22,6 +22,11 @@ export const paymentIdSchema = z.object({
   paymentId: uuid,
 });
 
+export const associatePayerReportSchema = paymentIdSchema.extend({
+  idempotencyKey: z.string().min(8).max(128),
+  note: z.string().max(500).optional().nullable(),
+});
+
 export const rejectPaymentSchema = paymentIdSchema.extend({
   reason: z.string().trim().min(1).max(500),
 });

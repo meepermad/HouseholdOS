@@ -21,7 +21,34 @@ export function mapPaymentError(message: string | undefined | null): AppError {
     return new AppError("validation", "Enter a valid payment amount.");
   }
   if (m.includes("no obligations selected")) {
-    return new AppError("validation", "Select at least one obligation to settle.");
+    return new AppError("validation", "Select at least one expense to settle.");
+  }
+  if (m.includes("only the person owed") || m.includes("only the creditor may record")) {
+    return new AppError(
+      "authorization",
+      "Only the person who is owed this money can record receiving it.",
+    );
+  }
+  if (m.includes("reported payment still waiting")) {
+    return new AppError(
+      "conflict",
+      "A payment was already reported and is still waiting. Confirm that report, or ask for it to be cancelled, before recording a different amount.",
+    );
+  }
+  if (m.includes("ineligible obligation")) {
+    return new AppError(
+      "validation",
+      "One selected expense is no longer eligible. Review the list and try again.",
+    );
+  }
+  if (m.includes("invalid payer") || m.includes("removed member")) {
+    return new AppError("validation", "Choose a current roommate in this household.");
+  }
+  if (m.includes("only the payer may associate")) {
+    return new AppError(
+      "authorization",
+      "Only the person who paid can attach a note to this receipt.",
+    );
   }
   if (m.includes("allocation sum mismatch")) {
     return new AppError(

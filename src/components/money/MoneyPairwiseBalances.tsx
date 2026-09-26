@@ -69,21 +69,29 @@ export function MoneyPairwiseBalances({
                     </ul>
                   ) : null}
                 </div>
-                {owesThem ? (
+                <div className="flex flex-wrap gap-2">
+                  {owesThem ? (
+                    <Link
+                      href={`/app/${householdId}/money/payments/new?direction=sent&counterparty=${row.counterpartyMembershipId}`}
+                      className="inline-flex min-h-11 items-center rounded-md bg-primary px-3 text-sm font-semibold text-primary-foreground"
+                    >
+                      I sent payment
+                    </Link>
+                  ) : (
+                    <Link
+                      href={`/app/${householdId}/money/payments/new?direction=received&counterparty=${row.counterpartyMembershipId}`}
+                      className="inline-flex min-h-11 items-center rounded-md bg-primary px-3 text-sm font-semibold text-primary-foreground"
+                    >
+                      Record payment received
+                    </Link>
+                  )}
                   <Link
-                    href={`/app/${householdId}/money/payments/new`}
+                    href={`/app/${householdId}/money/balances#pair-${row.counterpartyMembershipId}`}
                     className="inline-flex min-h-11 items-center rounded-md border border-border px-3 text-sm font-medium"
                   >
-                    Record payment
+                    See breakdown
                   </Link>
-                ) : (
-                  <Link
-                    href={`/app/${householdId}/money/balances`}
-                    className="inline-flex min-h-11 items-center rounded-md border border-border px-3 text-sm font-medium"
-                  >
-                    View details
-                  </Link>
-                )}
+                </div>
               </li>
             );
           })}

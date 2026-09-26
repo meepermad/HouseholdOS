@@ -72,7 +72,7 @@ export function ActionForm({
   }, [state, actionCategory]);
 
   return (
-    <form method="post" action={formAction} className={className} noValidate>
+    <form action={formAction} className={className} noValidate>
       <fieldset disabled={pending || Boolean(hardRedirect)} className="contents">
         {children}
       </fieldset>

@@ -52,6 +52,9 @@ const withPWA = withPWAInit({
 });
 
 const nextConfig: NextConfig = {
+  // Playwright addresses the dev server as 127.0.0.1. Next blocks that host
+  // unless it is listed, which prevents the login form from hydrating.
+  allowedDevOrigins: ["127.0.0.1"],
   turbopack: {
     root: __dirname,
   },
