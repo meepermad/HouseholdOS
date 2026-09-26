@@ -12,6 +12,8 @@ import { AppBackButton } from "@/components/app-back-button";
 import { ActionForm } from "@/components/action-form";
 import { createWaiverAction, openDisputeAction } from "@/app/actions/payments";
 import { createClient } from "@/lib/supabase/server";
+import { explainCounterpartyBalance } from "@/lib/money/explain-balances";
+import { BalanceBreakdown } from "@/components/money/BalanceBreakdown";
 
 export const dynamic = "force-dynamic";
 
@@ -62,6 +64,17 @@ export default async function ObligationDetailPage({
     balance.expense_id,
   ]);
   const source = sourceFromMaps(balance.expense_id, balance.obligation_kind, sources);
+  const otherId =
+    ctx.membershipId === balance.debtor_membership_id
+      ? balance.creditor_membership_id
+      : balance.debtor_membership_id;
+  const explained = await explainCounterpartyBalance({
+    householdId,
+    viewerMembershipId: ctx.membershipId,
+    counterpartyMembershipId: otherId,
+    counterpartyName: label(otherId),
+    includeItemShares: true,
+  });
 
   return (
     <main className="space-y-6">
@@ -81,6 +94,14 @@ export default async function ObligationDetailPage({
         </p>
         <ObligationSourceLinks householdId={householdId} source={source} />
       </header>
+
+      {"explanation" in explained ? (
+        <BalanceBreakdown explanation={explained.explanation} />
+      ) : (
+        <p className="text-sm text-danger" role="alert">
+          {explained.error}
+        </p>
+      )}
 
       <section
         className="grid grid-cols-1 gap-3 sm:grid-cols-2"

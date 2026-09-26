@@ -13,6 +13,8 @@ import {
   ObligationSourceLinks,
 } from "@/components/payments/ObligationSourceLinks";
 import { sourceFromMaps } from "@/lib/payments/obligation-source";
+import { explainCounterpartyBalance } from "@/lib/money/explain-balances";
+import { BalanceBreakdown } from "@/components/money/BalanceBreakdown";
 
 export const dynamic = "force-dynamic";
 
@@ -37,6 +39,19 @@ export default async function BalancesPage({
 
   const label = (id: string) =>
     members.find((m) => m.id === id)?.label ?? id.slice(0, 8);
+
+  const explanations = await Promise.all(
+    settlement.pairwise.map(async (pair) => ({
+      id: pair.counterpartyMembershipId,
+      result: await explainCounterpartyBalance({
+        householdId,
+        viewerMembershipId: ctx.membershipId,
+        counterpartyMembershipId: pair.counterpartyMembershipId,
+        counterpartyName: label(pair.counterpartyMembershipId),
+      }),
+    })),
+  );
+  const explanationById = new Map(explanations.map((row) => [row.id, row.result]));
 
   const open = obligations.filter(
     (o) =>
@@ -120,6 +135,7 @@ export default async function BalancesPage({
         ) : (
           <ul className="divide-y divide-border rounded-md border border-border bg-surface">
             {settlement.pairwise.map((p) => {
+              const explained = explanationById.get(p.counterpartyMembershipId);
               const purchases = open.filter(
                 (o) =>
                   (o.debtor_membership_id === ctx.membershipId &&
@@ -128,7 +144,11 @@ export default async function BalancesPage({
                     o.debtor_membership_id === p.counterpartyMembershipId),
               );
               return (
-                <li key={p.counterpartyMembershipId} className="space-y-3 px-4 py-3 text-sm">
+                <li
+                  key={p.counterpartyMembershipId}
+                  id={`pair-${p.counterpartyMembershipId}`}
+                  className="space-y-3 px-4 py-3 text-sm"
+                >
                   <p className="font-medium">
                     {p.officialNetCents > 0
                       ? `You owe ${label(p.counterpartyMembershipId)} ${formatMoney(p.officialNetCents)}`
@@ -157,6 +177,15 @@ export default async function BalancesPage({
                       ))}
                     </ul>
                   ) : null}
+                  {explained && "explanation" in explained ? (
+                    <BalanceBreakdown explanation={explained.explanation} />
+                  ) : (
+                    <p className="text-sm text-danger" role="alert">
+                      {explained && "error" in explained
+                        ? explained.error
+                        : "This balance could not be reconciled with the ledger."}
+                    </p>
+                  )}
                 </li>
               );
             })}
@@ -165,8 +194,8 @@ export default async function BalancesPage({
       </section>
 
       <p className="text-xs text-text-muted">
-        Confirmed amounts change only after the recipient says they received the
-        payment.
+        Confirmed amounts change when the person who is owed records receiving a
+        payment, or when they acknowledge a payment the payer reported sending.
       </p>
 
       <section className="space-y-2">
