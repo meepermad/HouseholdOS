@@ -8,6 +8,7 @@ import {
   loadObligationPurchaseSources,
 } from "@/lib/payments/queries";
 import { obligationPurchaseLabel, sourceFromMaps } from "@/lib/payments/obligation-source";
+import { planHouseholdSettlement } from "@/lib/payments/household-plan";
 import { suggestRoutedSettlements } from "@/lib/payments/routed-suggestions";
 import { can } from "@/lib/permissions";
 import { getLaunchFeatureReadiness } from "@/lib/launch/feature-readiness";
@@ -81,6 +82,7 @@ export type MoneyOverview = {
   pairwise: PairwiseHubRow[];
   settledHiddenCount: number;
   routedSuggestionAvailable: boolean;
+  householdPlan: { paymentCount: number; offsetCount: number };
   monthly: MonthlyFinancialSummary;
   activity: ActivityItem[];
   tools: MoneyToolsGroups;
@@ -532,6 +534,7 @@ export async function loadMoneyOverview(params: {
     : Math.max(0, activeMemberCount - 1 - unsettledIds.size);
 
   let routedSuggestionAvailable = false;
+  let householdPlan = { paymentCount: 0, offsetCount: 0 };
   if (!isSingleMember) {
     try {
       const edges = obligations
@@ -543,6 +546,15 @@ export async function loadMoneyOverview(params: {
           availableCents: o.official_outstanding_cents,
           currency: "USD",
         }));
+      try {
+        const plan = planHouseholdSettlement(edges);
+        householdPlan = {
+          paymentCount: plan.payments.length,
+          offsetCount: plan.offsets.length,
+        };
+      } catch {
+        householdPlan = { paymentCount: 0, offsetCount: 0 };
+      }
       const suggestions = suggestRoutedSettlements(edges, { maxSuggestions: 3 });
       routedSuggestionAvailable = suggestions.some(
         (s) =>
@@ -621,6 +633,7 @@ export async function loadMoneyOverview(params: {
     pairwise: isSingleMember ? [] : pairwise,
     settledHiddenCount,
     routedSuggestionAvailable: !isSingleMember && routedSuggestionAvailable,
+    householdPlan,
     monthly,
     activity,
     tools,

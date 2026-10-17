@@ -78,6 +78,7 @@ async function MoneyDashboard({
           rows={overview.pairwise}
           settledHiddenCount={overview.settledHiddenCount}
           routedSuggestionAvailable={overview.routedSuggestionAvailable}
+          householdPlan={overview.householdPlan}
           isSingleMember={overview.isSingleMember}
         />
         <MoneyMonthlySummary householdId={householdId} summary={overview.monthly} />

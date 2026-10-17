@@ -7,12 +7,14 @@ export function MoneyPairwiseBalances({
   rows,
   settledHiddenCount,
   routedSuggestionAvailable,
+  householdPlan,
   isSingleMember,
 }: {
   householdId: string;
   rows: PairwiseHubRow[];
   settledHiddenCount: number;
   routedSuggestionAvailable: boolean;
+  householdPlan: { paymentCount: number; offsetCount: number };
   isSingleMember: boolean;
 }) {
   if (isSingleMember) return null;
@@ -107,7 +109,37 @@ export function MoneyPairwiseBalances({
           </Link>
         </p>
       ) : null}
-      {routedSuggestionAvailable ? (
+      {householdPlan.paymentCount > 0 ? (
+        <div
+          className="rounded-md border border-border bg-surface px-4 py-3 text-sm"
+          data-testid="money-household-plan-teaser"
+        >
+          <p>
+            {householdPlan.paymentCount === 1
+              ? "The household can finish with one payment."
+              : `The household can finish with ${householdPlan.paymentCount} payments.`}
+          </p>
+          <Link
+            href={`/app/${householdId}/money/simplify`}
+            className="mt-2 inline-flex min-h-11 items-center font-semibold text-primary underline-offset-2 hover:underline"
+          >
+            Review the plan
+          </Link>
+        </div>
+      ) : householdPlan.offsetCount > 0 ? (
+        <div
+          className="rounded-md border border-border bg-surface px-4 py-3 text-sm"
+          data-testid="money-household-plan-teaser"
+        >
+          <p>Some balances already cancel each other.</p>
+          <Link
+            href={`/app/${householdId}/money/simplify`}
+            className="mt-2 inline-flex min-h-11 items-center font-semibold text-primary underline-offset-2 hover:underline"
+          >
+            Review the plan
+          </Link>
+        </div>
+      ) : routedSuggestionAvailable ? (
         <div
           className="rounded-md border border-border bg-surface px-4 py-3 text-sm"
           data-testid="money-routed-teaser"
