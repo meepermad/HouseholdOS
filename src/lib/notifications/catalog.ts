@@ -221,6 +221,7 @@ export const EVENT_DISPUTE_OPENED = "dispute.opened" as const;
 export const EVENT_DISPUTE_RESOLVED = "dispute.resolved" as const;
 export const EVENT_REFUND_OBLIGATION_CREATED =
   "refund_obligation.created" as const;
+export const EVENT_REIMBURSEMENT_CREATED = "reimbursement.created" as const;
 export const EVENT_EXPENSE_VOIDED = "expense.voided" as const;
 export const EVENT_EXPENSE_AMENDED = "expense.amended" as const;
 export const EVENT_RECEIPT_CLAIMING_STARTED = "receipt.claiming_started" as const;
@@ -444,6 +445,17 @@ export const NOTIFICATION_CATALOG: Readonly<Record<string, CatalogEntry>> = {
     deepLinkPattern: PAYMENT_LINK,
     digestAllowed: false,
     actionOriented: false,
+    privacy: "generic_ok",
+    active: true,
+  }),
+  [EVENT_REIMBURSEMENT_CREATED]: entry({
+    eventType: EVENT_REIMBURSEMENT_CREATED,
+    category: "payments",
+    defaultUrgency: "high",
+    recipientRule: "explicit",
+    deepLinkPattern: REIMBURSEMENT_LINK,
+    digestAllowed: false,
+    actionOriented: true,
     privacy: "generic_ok",
     active: true,
   }),

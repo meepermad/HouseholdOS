@@ -13,15 +13,19 @@ function makeIdempotencyKey(): string {
   return `route-${Math.random().toString(36).slice(2)}`;
 }
 
+function memberName(labels: Record<string, string>, membershipId: string): string {
+  return labels[membershipId] ?? membershipId.slice(0, 8);
+}
+
 export function SimplifySuggestionList({
   householdId,
   suggestions,
-  memberLabel,
+  memberLabels,
   currentMembershipId,
 }: {
   householdId: string;
   suggestions: RoutedSettlementSuggestion[];
-  memberLabel: (membershipId: string) => string;
+  memberLabels: Record<string, string>;
   currentMembershipId: string;
 }) {
   if (suggestions.length === 0) {
@@ -36,9 +40,9 @@ export function SimplifySuggestionList({
   return (
     <ul className="space-y-4" data-testid="simplify-suggestions">
       {suggestions.map((s) => {
-        const payer = memberLabel(s.payerMembershipId);
-        const intermediary = memberLabel(s.intermediaryMembershipId);
-        const recipient = memberLabel(s.recipientMembershipId);
+        const payer = memberName(memberLabels, s.payerMembershipId);
+        const intermediary = memberName(memberLabels, s.intermediaryMembershipId);
+        const recipient = memberName(memberLabels, s.recipientMembershipId);
         const isPayer = currentMembershipId === s.payerMembershipId;
         return (
           <li
@@ -51,7 +55,7 @@ export function SimplifySuggestionList({
             </p>
             <div className="mt-3 space-y-2 text-sm text-text-secondary">
               <p>
-                You owe {intermediary} {formatMoney(s.beforeEdges.ab)}.
+                {payer} owes {intermediary} {formatMoney(s.beforeEdges.ab)}.
               </p>
               <p>
                 {intermediary} owes {recipient} {formatMoney(s.beforeEdges.bc)}.

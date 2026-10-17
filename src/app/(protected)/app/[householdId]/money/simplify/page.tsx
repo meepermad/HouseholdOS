@@ -28,6 +28,7 @@ export default async function SimplifyBalancesPage({
 
   const label = (id: string) =>
     members.find((m) => m.id === id)?.label ?? id.slice(0, 8);
+  const memberLabels = Object.fromEntries(members.map((member) => [member.id, member.label]));
 
   return (
     <main className="space-y-8">
@@ -49,7 +50,7 @@ export default async function SimplifyBalancesPage({
         <SimplifySuggestionList
           householdId={householdId}
           suggestions={suggestions}
-          memberLabel={label}
+          memberLabels={memberLabels}
           currentMembershipId={ctx.membershipId}
         />
       </section>

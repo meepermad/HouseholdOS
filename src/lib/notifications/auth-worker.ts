@@ -52,6 +52,58 @@ export function authorizeWorkerSecret(
   return { ok: true };
 }
 
+/**
+ * Accept the first configured secret that matches the bearer token.
+ * Used so Vercel Cron (`CRON_SECRET`) and the notification worker secret
+ * can both call the same dispatch route.
+ */
+export function authorizeAnyWorkerSecret(
+  request: Request,
+  secrets: Array<string | undefined>,
+  familyLabel: string,
+): WorkerAuthResult {
+  const usable = secrets.filter(
+    (secret): secret is string => typeof secret === "string" && secret.length >= 16,
+  );
+  if (usable.length === 0) {
+    return {
+      ok: false,
+      status: 503,
+      error: `${familyLabel} worker secret is not configured`,
+    };
+  }
+
+  const header = request.headers.get("authorization");
+  if (!header || !header.startsWith("Bearer ")) {
+    return {
+      ok: false,
+      status: 401,
+      error: "Missing or invalid Authorization bearer token",
+    };
+  }
+
+  const presented = header.slice("Bearer ".length).trim();
+  if (!presented) {
+    return {
+      ok: false,
+      status: 401,
+      error: "Missing or invalid Authorization bearer token",
+    };
+  }
+
+  for (const expected of usable) {
+    if (timingSafeEqualSecrets(presented, expected)) {
+      return { ok: true };
+    }
+  }
+
+  return {
+    ok: false,
+    status: 401,
+    error: "Invalid Authorization bearer token",
+  };
+}
+
 /** @deprecated Prefer authorizeWorkerSecret with an explicit family label. */
 export function authorizeNotificationWorker(
   request: Request,

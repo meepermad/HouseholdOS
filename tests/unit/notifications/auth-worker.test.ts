@@ -2,7 +2,10 @@ import { describe, expect, it, vi } from "vitest";
 
 vi.mock("server-only", () => ({}));
 
-import { authorizeNotificationWorker } from "@/lib/notifications/auth-worker";
+import {
+  authorizeAnyWorkerSecret,
+  authorizeNotificationWorker,
+} from "@/lib/notifications/auth-worker";
 
 const SECRET = "notification-worker-secret-ok";
 
@@ -61,5 +64,33 @@ describe("authorizeNotificationWorker", () => {
       SECRET,
     );
     expect(cookieOnly).toMatchObject({ ok: false, status: 401 });
+  });
+});
+
+describe("authorizeAnyWorkerSecret", () => {
+  it("accepts either the worker secret or the cron secret", () => {
+    const cron = "cron-secret-value-ok";
+    const viaCron = authorizeAnyWorkerSecret(
+      requestWith({ authorization: `Bearer ${cron}` }),
+      [SECRET, cron],
+      "Notification",
+    );
+    expect(viaCron).toEqual({ ok: true });
+
+    const viaWorker = authorizeAnyWorkerSecret(
+      requestWith({ authorization: `Bearer ${SECRET}` }),
+      [undefined, SECRET],
+      "Notification",
+    );
+    expect(viaWorker).toEqual({ ok: true });
+  });
+
+  it("rejects when every secret is missing", () => {
+    const missing = authorizeAnyWorkerSecret(
+      requestWith({ authorization: `Bearer ${SECRET}` }),
+      [undefined, "short"],
+      "Notification",
+    );
+    expect(missing).toMatchObject({ ok: false, status: 503 });
   });
 });

@@ -120,6 +120,28 @@ const DETAILED_FALLBACKS: Record<string, (actor: string) => PushContent> = {
     title: "Dispute resolved",
     body: `${actor} resolved a financial dispute.`,
   }),
+  "reimbursement.created": (actor) => ({
+    title: "You owe a roommate",
+    body: actor === "Someone"
+      ? "A shared expense added something you owe. Open HouseholdOS to see it."
+      : `${actor} recorded a shared expense you owe.`,
+  }),
+  "chore.assigned": () => ({
+    title: "A chore is yours",
+    body: "Open HouseholdOS to see what you were assigned.",
+  }),
+  "chore.due_soon": () => ({
+    title: "A chore is coming due",
+    body: "Open HouseholdOS before it is late.",
+  }),
+  "chore.overdue": () => ({
+    title: "A chore is overdue",
+    body: "Open HouseholdOS to finish or hand it off.",
+  }),
+  "chore.reminder": () => ({
+    title: "Chore reminder",
+    body: "Open HouseholdOS to review it.",
+  }),
   "refund_obligation.created": (actor) => ({
     title: "A correction means money is owed the other way",
     body: actor === "Someone"

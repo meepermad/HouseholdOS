@@ -2,6 +2,8 @@
 
 import { useActionState, useState } from "react";
 import type { ActionResult } from "@/app/actions/auth";
+import { EXTERNAL_PAYMENT_METHODS } from "@/lib/payments/types";
+import { paymentMethodLabel } from "@/lib/presentation/human-status";
 import {
   acceptRoutedRecipientAction,
   approveRoutedIntermediaryAction,
@@ -343,12 +345,11 @@ function SubmitPayForm({
           className="mt-1 w-full rounded-md border border-border bg-background px-3 py-2"
           defaultValue="venmo"
         >
-          <option value="venmo">Venmo</option>
-          <option value="cash_app">Cash App</option>
-          <option value="zelle">Zelle</option>
-          <option value="cash">Cash</option>
-          <option value="check">Check</option>
-          <option value="other">Other</option>
+          {EXTERNAL_PAYMENT_METHODS.map((method) => (
+            <option key={method} value={method}>
+              {paymentMethodLabel(method)}
+            </option>
+          ))}
         </select>
       </label>
       <label className="flex items-start gap-2 text-sm">

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getServerEnv } from "@/lib/env/server";
-import { authorizeWorkerSecret } from "@/lib/notifications/auth-worker";
+import { authorizeAnyWorkerSecret } from "@/lib/notifications/auth-worker";
 import { dispatchNotificationDeliveries } from "@/lib/notifications/worker";
 
 export const runtime = "nodejs";
@@ -23,13 +23,17 @@ function acceptRateLimit(): boolean {
   return true;
 }
 
-export async function POST(request: Request) {
+function authorizeDispatch(request: Request) {
   const env = getServerEnv();
-  const auth = authorizeWorkerSecret(
+  return authorizeAnyWorkerSecret(
     request,
-    env.NOTIFICATION_WORKER_SECRET,
+    [env.NOTIFICATION_WORKER_SECRET, process.env.CRON_SECRET],
     "Notification",
   );
+}
+
+async function runDispatch(request: Request) {
+  const auth = authorizeDispatch(request);
   if (!auth.ok) {
     return NextResponse.json({ error: auth.error }, { status: auth.status });
   }
@@ -45,6 +49,11 @@ export async function POST(request: Request) {
   return NextResponse.json(summary);
 }
 
-export async function GET() {
-  return NextResponse.json({ error: "Method not allowed" }, { status: 405 });
+/** Worker callers use POST. Vercel Cron invokes GET with the cron secret. */
+export async function POST(request: Request) {
+  return runDispatch(request);
+}
+
+export async function GET(request: Request) {
+  return runDispatch(request);
 }

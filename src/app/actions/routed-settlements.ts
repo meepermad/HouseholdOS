@@ -6,6 +6,7 @@ import type { ActionResult } from "@/app/actions/auth";
 import { logServerError } from "@/lib/errors";
 import { assertActiveMembership } from "@/lib/household-context";
 import { can } from "@/lib/permissions";
+import { EXTERNAL_PAYMENT_METHODS } from "@/lib/payments/types";
 import { z } from "zod";
 
 const uuid = z.string().uuid();
@@ -175,7 +176,7 @@ export async function submitRoutedPaymentAction(
       .object({
         householdId: uuid,
         proposalId: uuid,
-        externalMethod: z.string().min(2).max(40),
+        externalMethod: z.enum(EXTERNAL_PAYMENT_METHODS),
         idempotencyKey: z.string().min(8),
         publicNote: z.string().max(500).optional().nullable(),
         acknowledgeExternal: z.literal(true),

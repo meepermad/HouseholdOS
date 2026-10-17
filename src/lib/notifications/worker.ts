@@ -94,63 +94,49 @@ export async function dispatchNotificationDeliveries(options?: {
     console.info("[notifications.dispatch]", {
       correlationId,
       enabled: false,
-      claimed: 0,
+      inAppReminders: true,
     });
-    const summary: DispatchSummary = {
-      correlationId,
-      claimed: 0,
-      sent: 0,
-      retried: 0,
-      expired: 0,
-      deadLetter: 0,
-      subscriptionsDeactivated: 0,
-      scheduledProcessed: 0,
-      calendarHorizonsExtended: 0,
-      choreHorizonsExtended: 0,
-      empty: true,
-      durationMs: Date.now() - started,
-    };
-    await recordWorkerHeartbeat(client, summary, false);
-    return summary;
   }
 
   const batchSize = Math.min(Math.max(options?.batchSize ?? 50, 1), 100);
 
-  const publicEnv = getPublicEnv();
-  const webPushAdapter =
-    options?.webPushAdapter ??
-    createWebPushAdapter({
-      publicKey: publicEnv.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
-      privateKey: env.VAPID_PRIVATE_KEY,
-      subject: env.VAPID_SUBJECT,
-      enabled: true,
-    });
-  const emailAdapter = createEmailAdapter(env);
-  const inAppAdapter = createInAppAdapter();
-
   const db = workerDb(client);
-  const { data: claimedRows, error: claimError } = await db.rpc(
-    "claim_notification_deliveries",
-    { p_batch_size: batchSize },
-  );
-
-  if (claimError) {
-    console.error("[notifications.dispatch]", {
-      correlationId,
-      error: "claim_failed",
-      message: claimError.message.slice(0, 200),
-    });
-    throw new Error(`claim_notification_deliveries failed: ${claimError.message}`);
-  }
-
-  const claimed = (claimedRows ?? []) as ClaimedDelivery[];
+  let claimed: ClaimedDelivery[] = [];
   let sent = 0;
   let retried = 0;
   let expired = 0;
   let deadLetter = 0;
   let subscriptionsDeactivated = 0;
 
-  for (const delivery of claimed) {
+  if (deliveryEnabled) {
+    const publicEnv = getPublicEnv();
+    const webPushAdapter =
+      options?.webPushAdapter ??
+      createWebPushAdapter({
+        publicKey: publicEnv.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
+        privateKey: env.VAPID_PRIVATE_KEY,
+        subject: env.VAPID_SUBJECT,
+        enabled: true,
+      });
+    const emailAdapter = createEmailAdapter(env);
+    const inAppAdapter = createInAppAdapter();
+    const { data: claimedRows, error: claimError } = await db.rpc(
+      "claim_notification_deliveries",
+      { p_batch_size: batchSize },
+    );
+
+    if (claimError) {
+      console.error("[notifications.dispatch]", {
+        correlationId,
+        error: "claim_failed",
+        message: claimError.message.slice(0, 200),
+      });
+      throw new Error(`claim_notification_deliveries failed: ${claimError.message}`);
+    }
+
+    claimed = (claimedRows ?? []) as ClaimedDelivery[];
+
+    for (const delivery of claimed) {
     if (delivery.status !== "claimed" || !delivery.claim_token) {
       continue;
     }
@@ -193,11 +179,12 @@ export async function dispatchNotificationDeliveries(options?: {
       };
     }
 
-    sent += outcome.sent;
-    retried += outcome.retried;
-    expired += outcome.expired;
-    deadLetter += outcome.deadLetter;
-    subscriptionsDeactivated += outcome.subscriptionsDeactivated;
+      sent += outcome.sent;
+      retried += outcome.retried;
+      expired += outcome.expired;
+      deadLetter += outcome.deadLetter;
+      subscriptionsDeactivated += outcome.subscriptionsDeactivated;
+    }
   }
 
   const { data: scheduledCount, error: scheduledError } = await db.rpc(
@@ -213,8 +200,23 @@ export async function dispatchNotificationDeliveries(options?: {
     });
   }
 
+  let overdueNotified = 0;
+  const { data: overdueCount, error: overdueError } = await db.rpc(
+    "notify_overdue_chores",
+    { p_limit: batchSize },
+  );
+  if (overdueError) {
+    console.error("[notifications.dispatch]", {
+      correlationId,
+      error: "overdue_chores_failed",
+      message: overdueError.message.slice(0, 200),
+    });
+  } else if (typeof overdueCount === "number") {
+    overdueNotified = overdueCount;
+  }
+
   const scheduledProcessed =
-    typeof scheduledCount === "number" ? scheduledCount : 0;
+    (typeof scheduledCount === "number" ? scheduledCount : 0) + overdueNotified;
 
   // Extend the materialized occurrence horizon for recurring events that are
   // close to running out. Errors per event are swallowed so one bad master
@@ -263,7 +265,7 @@ export async function dispatchNotificationDeliveries(options?: {
     durationMs: summary.durationMs,
   });
 
-  await recordWorkerHeartbeat(client, summary, true);
+  await recordWorkerHeartbeat(client, summary, deliveryEnabled);
   return summary;
 }
 
@@ -284,7 +286,7 @@ async function recordWorkerHeartbeat(
       p_calendar_horizons_extended: summary.calendarHorizonsExtended,
       p_empty: summary.empty,
       p_duration_ms: summary.durationMs,
-      p_successful: deliveryEnabled,
+      p_successful: true,
       p_horizon_extension_current: true,
     },
   );
